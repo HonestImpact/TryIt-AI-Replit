@@ -44,7 +44,7 @@ export class WandererAgent extends BaseAgent {
       const result = await this.llmProvider.generateText({
         messages: [{ role: 'user', content: request.content }],
         system: this.getSystemPrompt(),
-        model: 'claude-sonnet-4-20250514',
+        model: process.env.MODEL_ID || 'claude-sonnet-4-20250514',
         temperature: 0.75
       });
 

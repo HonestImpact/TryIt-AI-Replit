@@ -2,6 +2,7 @@
 export const AI_CONFIG = {
   // Model configuration - respects environment variables with correct Anthropic model names
   getModel: () => process.env.MODEL_ID || 'claude-sonnet-4-20250514',
+  getProvider: () => process.env.LLM || 'anthropic',
 
   // RAG configuration
   RAG_ENABLED: process.env.RAG_ENABLED === 'true' || process.env.NODE_ENV === 'production',
