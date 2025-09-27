@@ -16,8 +16,11 @@ let tinkererInstance: PracticalAgent | null = null;
 let sharedResourcesCache: any = null;
 let agentInitializationPromise: Promise<void> | null = null;
 
-// Timeout configuration for Noah Direct
-const NOAH_TIMEOUT = 30000; // 30 seconds max for Noah responses
+// Optimized timeout configuration for production
+const NOAH_TIMEOUT = 45000; // 45 seconds for Noah direct responses
+const WANDERER_TIMEOUT = 30000; // 30 seconds for fast research (Haiku)
+const TINKERER_TIMEOUT = 60000; // 60 seconds for deep building (Sonnet 4)
+const MULTI_AGENT_TIMEOUT = 90000; // 90 seconds for full orchestration
 
 interface ChatResponse {
   content: string;
@@ -119,16 +122,18 @@ async function ensureAgentsInitialized(): Promise<void> {
         logger.info('✅ Shared resources cached');
       }
 
-      // Initialize Wanderer
+      // Initialize Wanderer with research-optimized provider
       if (!wandererInstance) {
-        wandererInstance = new WandererAgent(llmProvider, { temperature: 0.75, maxTokens: 2500 }, sharedResourcesCache);
-        logger.info('✅ Wanderer agent cached');
+        const researchProvider = createLLMProvider('research');
+        wandererInstance = new WandererAgent(researchProvider, { temperature: 0.75, maxTokens: 2500 }, sharedResourcesCache);
+        logger.info('✅ Wanderer agent cached with research provider');
       }
 
-      // Initialize Tinkerer
+      // Initialize Tinkerer with deep-build optimized provider
       if (!tinkererInstance) {
-        tinkererInstance = new PracticalAgent(llmProvider, { temperature: 0.3, maxTokens: 4000 }, sharedResourcesCache);
-        logger.info('✅ Tinkerer agent cached');
+        const deepbuildProvider = createLLMProvider('deepbuild');
+        tinkererInstance = new PracticalAgent(deepbuildProvider, { temperature: 0.3, maxTokens: 4000 }, sharedResourcesCache);
+        logger.info('✅ Tinkerer agent cached with deepbuild provider');
       }
 
       logger.info('🎉 All agents initialized and cached');
@@ -237,22 +242,22 @@ async function noahChatHandler(req: NextRequest, context: LoggingContext): Promi
     try {
       if (analysis.needsResearch) {
         logger.info('🔬 Noah delegating to Wanderer for research...');
-        const research = await withTimeout(wandererResearch(messages, context), 25000);
+        const research = await withTimeout(wandererResearch(messages, context), WANDERER_TIMEOUT);
         if (analysis.needsBuilding) {
           logger.info('🔧 Noah chaining to Tinkerer for building...');
-          const tool = await withTimeout(tinkererBuild(messages, research, context), 30000);
+          const tool = await withTimeout(tinkererBuild(messages, research, context), TINKERER_TIMEOUT);
           result = { content: tool.content };
         } else {
           result = { content: research.content };
         }
       } else if (analysis.needsBuilding) {
         logger.info('🔧 Noah delegating to Tinkerer for building...');
-        const tool = await withTimeout(tinkererBuild(messages, null, context), 30000);
+        const tool = await withTimeout(tinkererBuild(messages, null, context), TINKERER_TIMEOUT);
         result = { content: tool.content };
       } else {
         // Noah handles directly
         logger.info('🦉 Noah handling directly...');
-        const llmProvider = createLLMProvider();
+        const llmProvider = createLLMProvider('default');
         const generatePromise = llmProvider.generateText({
           messages: messages.map((msg: any) => ({
             role: msg.role,

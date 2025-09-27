@@ -17,25 +17,47 @@ export interface LLMProvider {
 }
 
 /**
- * Provider Mapping Strategy - supports multiple LLM providers
+ * Enhanced Provider Mapping Strategy - Task-Type Optimization
  * Environment variables:
- * - LLM=anthropic|openai|google|mistral (provider selection)
- * - MODEL_ID=specific-model-name (model within provider)
+ * - LLM_DEFAULT/LLM_DEFAULT_ID (general conversations)
+ * - LLM_RESEARCH/LLM_RESEARCH_ID (fast research tasks)
+ * - LLM_DEEPBUILD/LLM_DEEPBUILD_ID (complex building tasks)
  */
-export function createLLMProvider(): LLMProvider {
-  const llmProvider = process.env.LLM || 'anthropic';
-  const modelId = process.env.MODEL_ID || 'claude-sonnet-4-20250514';
 
-  logger.info('🤖 LLM Provider initialized', { provider: llmProvider, model: modelId });
+export type TaskType = 'default' | 'research' | 'deepbuild';
+
+interface ModelConfig {
+  provider: string;
+  model: string;
+}
+
+function getModelConfigForTask(taskType: TaskType): ModelConfig {
+  const taskUpper = taskType.toUpperCase();
+  
+  // Task-specific configuration
+  const provider = process.env[`LLM_${taskUpper}`] || process.env.LLM_DEFAULT || process.env.LLM || 'anthropic';
+  const model = process.env[`LLM_${taskUpper}_ID`] || process.env.LLM_DEFAULT_ID || process.env.MODEL_ID || 'claude-sonnet-4-20250514';
+  
+  return { provider, model };
+}
+
+export function createLLMProvider(taskType: TaskType = 'default'): LLMProvider {
+  const config = getModelConfigForTask(taskType);
+
+  logger.info('🤖 LLM Provider initialized', { 
+    taskType, 
+    provider: config.provider, 
+    model: config.model 
+  });
 
   return {
     async generateText(params) {
-      const model = params.model || modelId;
+      const model = params.model || config.model;
       
       try {
         let result;
         
-        switch (llmProvider.toLowerCase()) {
+        switch (config.provider.toLowerCase()) {
           case 'anthropic':
             result = await generateText({
               model: anthropic(model),
@@ -63,7 +85,7 @@ export function createLLMProvider(): LLMProvider {
             break;
 
           default:
-            logger.warn('⚠️ Unknown LLM provider, falling back to Anthropic', { provider: llmProvider });
+            logger.warn('⚠️ Unknown LLM provider, falling back to Anthropic', { provider: config.provider });
             result = await generateText({
               model: anthropic(model),
               messages: params.messages.map(msg => ({
@@ -77,7 +99,8 @@ export function createLLMProvider(): LLMProvider {
         }
 
         logger.info('✅ LLM generation completed', { 
-          provider: llmProvider,
+          taskType,
+          provider: config.provider,
           model,
           responseLength: result.text.length 
         });
@@ -87,7 +110,8 @@ export function createLLMProvider(): LLMProvider {
       } catch (error) {
         logger.error('💥 LLM generation failed', { 
           error, 
-          provider: llmProvider, 
+          taskType,
+          provider: config.provider, 
           model 
         });
         throw error;
