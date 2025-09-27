@@ -4,13 +4,13 @@ import { createLogger } from './logger';
 
 export interface LoggingContext {
   sessionId: string;
-  requestBody?: any;
+  requestBody?: Record<string, unknown>;
   startTime: number;
 }
 
 const logger = createLogger('logging-middleware');
 
-export function withLogging<T extends (...args: any[]) => Promise<NextResponse>>(
+export function withLogging(
   handler: (req: NextRequest, context: LoggingContext) => Promise<NextResponse>
 ) {
   return async (req: NextRequest): Promise<NextResponse> => {

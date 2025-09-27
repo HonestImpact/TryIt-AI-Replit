@@ -2,8 +2,8 @@
 export class ArtifactService {
   static async handleArtifactWorkflow(
     content: string,
-    userMessage: string,
-    sessionId: string
+    _userMessage: string, // Available for future enhancement
+    _sessionId: string // Available for future enhancement
   ): Promise<{ hasArtifact: boolean; title?: string; content?: string }> {
     // Simple artifact detection for now
     const hasTitle = content.includes('TITLE:');

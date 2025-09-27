@@ -78,7 +78,7 @@ class RAGSystem {
   async search(query: string, options?: {
     maxResults?: number;
     minRelevanceScore?: number;
-    filter?: Record<string, any>;
+    filter?: Record<string, unknown>;
   }) {
     await this.initialize();
     return await vectorStore.search(query, options);

@@ -16,7 +16,7 @@ export class PracticalAgent extends BaseAgent {
   constructor(
     llmProvider: LLMProvider,
     config: AgentConfig = {},
-    sharedResources?: AgentSharedResources
+    _sharedResources?: AgentSharedResources // Available for future enhancement
   ) {
     const capabilities: AgentCapability[] = [
       {

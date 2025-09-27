@@ -1,35 +1,5 @@
 // Base agent class for all Noah agents
-export interface AgentCapability {
-  name: string;
-  description: string;
-  version: string;
-}
-
-export interface AgentRequest {
-  id: string;
-  sessionId: string;
-  content: string;
-  timestamp: Date;
-}
-
-export interface AgentResponse {
-  requestId: string;
-  agentId: string;
-  content: string;
-  confidence: number;
-  reasoning: string;
-  timestamp: Date;
-  metadata?: Record<string, any>;
-}
-
-export interface LLMProvider {
-  generateText(params: any): Promise<{ content: string }>;
-}
-
-export interface AgentConfig {
-  temperature?: number;
-  maxTokens?: number;
-}
+import type { AgentCapability, AgentRequest, AgentResponse, LLMProvider, AgentConfig } from './types';
 
 export abstract class BaseAgent {
   protected constructor(

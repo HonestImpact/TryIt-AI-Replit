@@ -30,7 +30,13 @@ export interface SearchResult {
 
 export class VectorStore {
   private client: ChromaClient;
-  private collection: any = null;
+  private collection: { 
+    add: (data: { ids: string[]; documents: string[]; metadatas: Record<string, unknown>[] }) => Promise<void>;
+    query: (params: { queryTexts: string[]; nResults: number; where?: Record<string, unknown> }) => Promise<{ documents?: string[][]; distances?: number[][]; metadatas?: Record<string, unknown>[][]; ids?: string[][] }>;
+    count: () => Promise<number>;
+    update: (data: { ids: string[]; documents: string[]; metadatas: Record<string, unknown>[] }) => Promise<void>;
+    delete: (params: { ids: string[] }) => Promise<void>;
+  } | null = null;
   private readonly collectionName = 'noah-knowledge-base';
   private initialized = false;
 
@@ -54,9 +60,9 @@ export class VectorStore {
       try {
         this.collection = await this.client.getCollection({
           name: this.collectionName
-        });
+        }) as typeof this.collection;
         logger.info('✅ Connected to existing ChromaDB collection');
-      } catch (error) {
+      } catch {
         // Collection doesn't exist, create it
         this.collection = await this.client.createCollection({
           name: this.collectionName,
@@ -64,7 +70,7 @@ export class VectorStore {
             description: 'Noah agent knowledge base for RAG operations',
             created: new Date().toISOString()
           }
-        });
+        }) as typeof this.collection;
         logger.info('✅ Created new ChromaDB collection');
       }
 
@@ -114,7 +120,7 @@ export class VectorStore {
   async search(query: string, options: {
     maxResults?: number;
     minRelevanceScore?: number;
-    filter?: Record<string, any>;
+    filter?: Record<string, unknown>;
   } = {}): Promise<SearchResult[]> {
     await this.initialize();
 

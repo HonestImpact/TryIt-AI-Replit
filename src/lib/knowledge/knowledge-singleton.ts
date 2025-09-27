@@ -31,7 +31,7 @@ class KnowledgeService {
   async search(query: string, options?: { 
     maxResults?: number; 
     minRelevanceScore?: number;
-    filter?: Record<string, any>;
+    filter?: Record<string, unknown>;
   }): Promise<KnowledgeResult[]> {
     try {
       await this.initialize();
@@ -54,10 +54,10 @@ class KnowledgeService {
         filter
       });
 
-      const knowledgeResults: KnowledgeResult[] = searchResults.map((result: any) => ({
+      const knowledgeResults: KnowledgeResult[] = searchResults.map((result: {id: string; content: string; score: number; metadata: Record<string, unknown>}) => ({
         item: {
           content: result.content,
-          type: result.metadata.type,
+          type: String(result.metadata.type || 'knowledge'),
           metadata: {
             id: result.id,
             title: result.metadata.title,

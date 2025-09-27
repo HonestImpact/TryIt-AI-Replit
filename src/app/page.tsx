@@ -19,7 +19,7 @@ export default function TrustRecoveryProtocol() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [artifact, setArtifact] = useState<Artifact | null>(null);
-  const [showReasoning, setShowReasoning] = useState(false);
+  const [showReasoning] = useState(false);
   const [reasoning] = useState('');
   const [skepticMode, setSkepticMode] = useState(false);
   const [trustLevel, setTrustLevel] = useState(50);
@@ -490,7 +490,7 @@ export default function TrustRecoveryProtocol() {
               <div className="space-y-3 text-sm text-slate-600">
                 <div className="flex items-start space-x-2">
                   <span className="text-blue-600 font-semibold">1.</span>
-                  <span>Ask for anything you'd like built or tested</span>
+                  <span>Ask for anything you&apos;d like built or tested</span>
                 </div>
                 <div className="flex items-start space-x-2">
                   <span className="text-blue-600 font-semibold">2.</span>

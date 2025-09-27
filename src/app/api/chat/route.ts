@@ -6,21 +6,21 @@ import { withLogging, LoggingContext } from '@/lib/logging-middleware';
 import { createLLMProvider } from '@/lib/providers/provider-factory';
 import { WandererAgent } from '@/lib/agents/wanderer-agent';
 import { PracticalAgent } from '@/lib/agents/practical-agent';
-import { sharedResourceManager } from '@/lib/agents/shared-resources';
+import { sharedResourceManager, type AgentSharedResources } from '@/lib/agents/shared-resources';
+import type { ChatMessage } from '@/lib/agents/types';
 
 const logger = createLogger('noah-chat');
 
 // 🚀 MODULE-LEVEL AGENT CACHING - Initialize ONCE, reuse forever
 let wandererInstance: WandererAgent | null = null;
 let tinkererInstance: PracticalAgent | null = null;
-let sharedResourcesCache: any = null;
+let sharedResourcesCache: AgentSharedResources | null = null;
 let agentInitializationPromise: Promise<void> | null = null;
 
 // Optimized timeout configuration for production
 const NOAH_TIMEOUT = 45000; // 45 seconds for Noah direct responses
 const WANDERER_TIMEOUT = 30000; // 30 seconds for fast research (Haiku)
 const TINKERER_TIMEOUT = 60000; // 60 seconds for deep building (Sonnet 4)
-const MULTI_AGENT_TIMEOUT = 90000; // 90 seconds for full orchestration
 
 interface ChatResponse {
   content: string;
@@ -153,7 +153,7 @@ async function ensureAgentsInitialized(): Promise<void> {
 /**
  * 🔬 Wanderer research using cached instance
  */
-async function wandererResearch(messages: any[], context: LoggingContext): Promise<{ content: string }> {
+async function wandererResearch(messages: ChatMessage[], context: LoggingContext): Promise<{ content: string }> {
   await ensureAgentsInitialized();
 
   if (!wandererInstance) {
@@ -176,7 +176,7 @@ async function wandererResearch(messages: any[], context: LoggingContext): Promi
 /**
  * 🔧 Tinkerer build using cached instance
  */
-async function tinkererBuild(messages: any[], research: { content: string } | null, context: LoggingContext): Promise<{ content: string }> {
+async function tinkererBuild(messages: ChatMessage[], research: { content: string } | null, context: LoggingContext): Promise<{ content: string }> {
   await ensureAgentsInitialized();
 
   if (!tinkererInstance) {
@@ -259,7 +259,7 @@ async function noahChatHandler(req: NextRequest, context: LoggingContext): Promi
         logger.info('🦉 Noah handling directly...');
         const llmProvider = createLLMProvider('default');
         const generatePromise = llmProvider.generateText({
-          messages: messages.map((msg: any) => ({
+          messages: messages.map((msg: ChatMessage) => ({
             role: msg.role,
             content: msg.content
           })),
@@ -274,7 +274,7 @@ async function noahChatHandler(req: NextRequest, context: LoggingContext): Promi
       // Fallback to Noah Direct if orchestration fails
       const llmProvider = createLLMProvider();
       const generatePromise = llmProvider.generateText({
-        messages: messages.map((msg: any) => ({
+        messages: messages.map((msg: ChatMessage) => ({
           role: msg.role,
           content: msg.content
         })),

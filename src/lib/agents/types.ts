@@ -1,4 +1,10 @@
 // Type definitions for agent system
+export interface ChatMessage {
+  role: string;
+  content: string;
+  timestamp?: Date;
+}
+
 export interface AgentCapability {
   name: string;
   description: string;
@@ -19,7 +25,7 @@ export interface AgentResponse {
   confidence: number;
   reasoning: string;
   timestamp: Date;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface LLMProvider {
@@ -40,7 +46,7 @@ export interface KnowledgeResult {
   item: {
     content: string;
     type: string;
-    metadata: Record<string, any>;
+    metadata: Record<string, unknown>;
   };
   context?: string;
 }
