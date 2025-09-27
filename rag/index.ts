@@ -8,6 +8,11 @@ export { vectorStore } from './vector-store';
 export { embeddingService } from './embeddings';
 export { documentProcessor } from './document-processor';
 
+// Import for internal use
+import { vectorStore } from './vector-store';
+import { embeddingService } from './embeddings';
+import { documentProcessor } from './document-processor';
+
 // Re-export knowledge service from lib
 export { default as knowledgeService } from '../src/lib/knowledge/knowledge-singleton';
 

@@ -9,7 +9,7 @@ import { AI_CONFIG } from '@/lib/ai-config';
 
 const logger = createLogger('vector-store');
 
-interface DocumentChunk {
+export interface DocumentChunk {
   id: string;
   content: string;
   metadata: {
@@ -21,7 +21,7 @@ interface DocumentChunk {
   embedding?: number[];
 }
 
-interface SearchResult {
+export interface SearchResult {
   id: string;
   content: string;
   score: number;

@@ -9,7 +9,7 @@ import { createLogger } from '@/lib/logger';
 
 const logger = createLogger('embeddings');
 
-interface EmbeddingResult {
+export interface EmbeddingResult {
   embedding: number[];
   tokens: number;
 }
