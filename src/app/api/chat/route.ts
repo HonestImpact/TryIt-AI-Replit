@@ -52,8 +52,8 @@ async function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T
 }
 
 /**
- * Noah's internal analysis - determines if he needs help from other agents
- * Following the exact pattern suggested by user
+ * Noah's enhanced analysis - more nuanced delegation decisions
+ * Keeps simple tools and conversation with Noah for natural flow
  */
 function analyzeRequest(content: string): {
   needsResearch: boolean;
@@ -63,38 +63,88 @@ function analyzeRequest(content: string): {
 } {
   const contentLower = content.toLowerCase();
 
-  // Research indicators
-  const researchKeywords = [
-    'research', 'investigate', 'analyze', 'study', 'explore', 'compare',
-    'what are the best', 'how do I choose', 'pros and cons', 'options',
-    'best practices', 'state of the art', 'current trends', 'approaches'
+  // Noah handles directly - text-based tools and simple requests
+  const noahCanHandle = [
+    'list', 'template', 'guide', 'email', 'letter', 'checklist', 'outline',
+    'summary', 'plan', 'advice', 'tips', 'steps', 'instructions', 'format',
+    'structure', 'framework', 'process', 'workflow', 'schedule', 'agenda'
   ];
 
-  // Building indicators
-  const buildingKeywords = [
-    'build', 'create', 'make', 'develop', 'implement', 'code', 'write',
-    'app', 'website', 'component', 'tool', 'system', 'solution',
-    'react', 'python', 'javascript', 'html', 'css', 'database'
+  // Simple web tools Noah can create directly (basic HTML/JS)
+  const simpleWebTools = [
+    'calculator', 'converter', 'timer', 'counter', 'form', 'quiz',
+    'basic calendar', 'simple game', 'color picker', 'text formatter'
   ];
 
-  const needsResearch = researchKeywords.some(keyword => contentLower.includes(keyword));
-  const needsBuilding = buildingKeywords.some(keyword => contentLower.includes(keyword));
+  // Genuine creative/sideways thinking indicators for Wanderer
+  const creativeThinking = [
+    'creative approach', 'think differently', 'alternative perspective', 'brainstorm',
+    'out of the box', 'unconventional', 'innovative angle', 'fresh perspective',
+    'paradigm shift', 'reframe', 'lateral thinking', 'creative solution'
+  ];
 
-  // Calculate confidence based on keyword matches
-  const researchMatches = researchKeywords.filter(keyword => contentLower.includes(keyword)).length;
-  const buildingMatches = buildingKeywords.filter(keyword => contentLower.includes(keyword)).length;
-  const confidence = Math.min(0.9, (researchMatches + buildingMatches) * 0.2 + 0.3);
+  // Complex interactive tools that need Tinkerer (RAG components, sophisticated apps)
+  const complexInteractive = [
+    'interactive dashboard', 'data visualization', 'advanced app', 'full application',
+    'database integration', 'api integration', 'multi-page', 'complex interface',
+    'sophisticated tool', 'advanced calculator', 'data analysis tool', 'visualization'
+  ];
 
+  // Research indicators - only for genuine research needs
+  const researchIndicators = [
+    'research and compare', 'market analysis', 'competitive analysis',
+    'comprehensive study', 'detailed investigation', 'industry trends',
+    'state of the art analysis', 'benchmark study', 'feasibility study'
+  ];
+
+  // Check if Noah can handle this directly
+  const isSimpleTextTool = noahCanHandle.some(keyword => contentLower.includes(keyword));
+  const isSimpleWebTool = simpleWebTools.some(tool => contentLower.includes(tool));
+  const isBasicAdvice = contentLower.includes('how to') || contentLower.includes('explain') || contentLower.includes('help me understand');
+
+  // Check if it needs specialized agents
+  const needsCreativeThinking = creativeThinking.some(keyword => contentLower.includes(keyword));
+  const needsComplexTool = complexInteractive.some(keyword => contentLower.includes(keyword));
+  const needsGenuineResearch = researchIndicators.some(keyword => contentLower.includes(keyword));
+
+  // Decision logic - COMPLEX FIRST, then Noah for simple requests
+  let needsResearch = false;
+  let needsBuilding = false;
   let reasoning = '';
-  if (needsResearch && needsBuilding) {
-    reasoning = 'Complex request requiring research then implementation';
-  } else if (needsResearch) {
-    reasoning = 'Research and analysis needed';
-  } else if (needsBuilding) {
-    reasoning = 'Direct implementation requested';
-  } else {
-    reasoning = 'Simple conversation or tool creation';
+
+  // Priority 1: Handle complex requests that need both agents
+  if (needsGenuineResearch && needsComplexTool) {
+    needsResearch = true;
+    needsBuilding = true;
+    reasoning = 'Complex request requiring research then sophisticated implementation';
   }
+  // Priority 2: Complex interactive tools (even if phrased as questions)
+  else if (needsComplexTool) {
+    needsBuilding = true;
+    reasoning = 'Complex interactive tool - delegate to Tinkerer for component retrieval';
+  }
+  // Priority 3: Genuine creative/research needs (even if phrased as questions)
+  else if (needsCreativeThinking) {
+    needsResearch = true;
+    reasoning = 'Needs genuine creative/sideways thinking - delegate to Wanderer';
+  }
+  else if (needsGenuineResearch) {
+    needsResearch = true;
+    reasoning = 'Comprehensive research needed - delegate to Wanderer';
+  }
+  // Priority 4: Simple tools and advice (only after complex checks)
+  else if (isSimpleTextTool || isSimpleWebTool || (isBasicAdvice && !needsComplexTool && !needsCreativeThinking && !needsGenuineResearch)) {
+    reasoning = 'Simple tool/advice - Noah handles directly for natural flow';
+  }
+  // Priority 5: Default to Noah for pure conversation
+  else {
+    reasoning = 'Conversational request - Noah handles directly';
+  }
+
+  // Calculate confidence based on clarity of indicators
+  const confidence = Math.min(0.9, 
+    (needsResearch || needsBuilding) ? 0.8 : 0.9
+  );
 
   return { needsResearch, needsBuilding, confidence, reasoning };
 }
