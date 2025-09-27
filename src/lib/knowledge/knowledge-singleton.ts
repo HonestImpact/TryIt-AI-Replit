@@ -1,6 +1,6 @@
 // Knowledge Service - RAG implementation for Noah
 import type { KnowledgeResult } from '../agents/types';
-import { vectorStore } from '../../rag/vector-store';
+import { vectorStore } from '../../../rag/vector-store';
 import { createLogger } from '../logger';
 import { AI_CONFIG } from '../ai-config';
 
@@ -54,16 +54,18 @@ class KnowledgeService {
         filter
       });
 
-      const knowledgeResults: KnowledgeResult[] = searchResults.map(result => ({
-        id: result.id,
-        content: result.content,
-        relevance: result.score,
-        source: result.metadata.source,
-        type: result.metadata.type,
-        metadata: {
-          title: result.metadata.title,
-          category: result.metadata.category,
-          timestamp: result.metadata.timestamp
+      const knowledgeResults: KnowledgeResult[] = searchResults.map((result: any) => ({
+        item: {
+          content: result.content,
+          type: result.metadata.type,
+          metadata: {
+            id: result.id,
+            title: result.metadata.title,
+            category: result.metadata.category,
+            timestamp: result.metadata.timestamp,
+            source: result.metadata.source,
+            relevance: result.score
+          }
         }
       }));
 

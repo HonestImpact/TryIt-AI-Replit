@@ -3,7 +3,7 @@
  * Provides vector storage and semantic search capabilities for the Noah agent system
  */
 
-import { ChromaApi } from 'chromadb';
+import { ChromaClient } from 'chromadb';
 import { createLogger } from '@/lib/logger';
 import { AI_CONFIG } from '@/lib/ai-config';
 
@@ -29,14 +29,14 @@ export interface SearchResult {
 }
 
 export class VectorStore {
-  private client: ChromaApi;
+  private client: ChromaClient;
   private collection: any = null;
   private readonly collectionName = 'noah-knowledge-base';
   private initialized = false;
 
   constructor() {
     // Initialize ChromaDB client
-    this.client = new ChromaApi({
+    this.client = new ChromaClient({
       path: process.env.CHROMA_URL || 'http://localhost:8000'
     });
   }

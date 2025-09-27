@@ -65,6 +65,7 @@ class RAGSystem {
       type: 'knowledge' | 'artifact' | 'conversation';
       title?: string;
       category?: string;
+      timestamp: string;
     };
   }>): Promise<void> {
     await this.initialize();
