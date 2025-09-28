@@ -8,6 +8,7 @@ import { WandererAgent } from '@/lib/agents/wanderer-agent';
 import { PracticalAgent } from '@/lib/agents/practical-agent';
 import { sharedResourceManager, type AgentSharedResources } from '@/lib/agents/shared-resources';
 import type { ChatMessage } from '@/lib/agents/types';
+import { analyticsService } from '@/lib/analytics';
 
 const logger = createLogger('noah-chat');
 
@@ -30,6 +31,13 @@ interface ChatResponse {
     title: string;
     content: string;
   };
+}
+
+interface ConversationState {
+  sessionId: string | null;
+  conversationId: string | null;
+  messageSequence: number;
+  startTime: number;
 }
 
 interface HealthResponse {
@@ -250,6 +258,35 @@ async function tinkererBuild(messages: ChatMessage[], research: { content: strin
 }
 
 /**
+ * Initialize conversation state with elegant analytics integration
+ */
+async function initializeConversationState(req: NextRequest, context: LoggingContext, skepticMode: boolean): Promise<ConversationState> {
+  const startTime = Date.now();
+  
+  // Extract session information for analytics (privacy-first)
+  const userAgent = req.headers.get('user-agent') || undefined;
+  const forwardedFor = req.headers.get('x-forwarded-for') || undefined;
+  
+  // Fire-and-forget session management - zero performance impact
+  const sessionPromise = analyticsService.ensureSession(userAgent, forwardedFor);
+  const sessionId = await sessionPromise;
+  
+  // Fire-and-forget conversation creation if session exists
+  let conversationId: string | null = null;
+  if (sessionId) {
+    const conversationPromise = analyticsService.startConversation(sessionId, skepticMode);
+    conversationId = await conversationPromise;
+  }
+  
+  return {
+    sessionId,
+    conversationId,
+    messageSequence: 0,
+    startTime
+  };
+}
+
+/**
  * Clean Noah-only chat handler - handles simple tools and general conversation
  */
 async function noahChatHandler(req: NextRequest, context: LoggingContext): Promise<NextResponse<ChatResponse>> {
@@ -264,6 +301,9 @@ async function noahChatHandler(req: NextRequest, context: LoggingContext): Promi
     // Store parsed body in context for logging middleware
     context.requestBody = { messages, skepticMode };
 
+    // Initialize conversation state with analytics (async, zero performance impact)
+    const conversationState = await initializeConversationState(req, context, skepticMode || false);
+
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
       return NextResponse.json({
         content: "I didn't receive any messages to respond to. Want to try sending me something?",
@@ -275,8 +315,21 @@ async function noahChatHandler(req: NextRequest, context: LoggingContext): Promi
     const lastMessage = messages[messages.length - 1]?.content || '';
     logger.info('📝 Processing Noah request', {
       messageCount: messages.length,
-      messageLength: lastMessage.length
+      messageLength: lastMessage.length,
+      analytics: conversationState.sessionId ? 'enabled' : 'disabled'
     });
+
+    // Log user message (fire-and-forget, zero performance impact)
+    if (conversationState.conversationId && conversationState.sessionId) {
+      conversationState.messageSequence++;
+      analyticsService.logMessage(
+        conversationState.conversationId,
+        conversationState.sessionId,
+        conversationState.messageSequence,
+        'user',
+        lastMessage
+      );
+    }
 
     // Noah analyzes and decides internally - following user's exact pattern
     const analysis = analyzeRequest(lastMessage);
@@ -288,13 +341,18 @@ async function noahChatHandler(req: NextRequest, context: LoggingContext): Promi
     });
 
     let result: { content: string };
+    let agentUsed: 'noah' | 'wanderer' | 'tinkerer' = 'noah';
+    let agentStrategy = 'noah_direct';
 
     try {
       if (analysis.needsResearch) {
         logger.info('🔬 Noah delegating to Wanderer for research...');
+        agentUsed = 'wanderer';
+        agentStrategy = analysis.needsBuilding ? 'noah_wanderer_tinkerer' : 'noah_wanderer';
         const research = await withTimeout(wandererResearch(messages, context), WANDERER_TIMEOUT);
         if (analysis.needsBuilding) {
           logger.info('🔧 Noah chaining to Tinkerer for building...');
+          agentUsed = 'tinkerer';
           const tool = await withTimeout(tinkererBuild(messages, research, context), TINKERER_TIMEOUT);
           result = { content: tool.content };
         } else {
@@ -302,6 +360,8 @@ async function noahChatHandler(req: NextRequest, context: LoggingContext): Promi
         }
       } else if (analysis.needsBuilding) {
         logger.info('🔧 Noah delegating to Tinkerer for building...');
+        agentUsed = 'tinkerer';
+        agentStrategy = 'noah_tinkerer';
         const tool = await withTimeout(tinkererBuild(messages, null, context), TINKERER_TIMEOUT);
         result = { content: tool.content };
       } else {
@@ -321,6 +381,8 @@ async function noahChatHandler(req: NextRequest, context: LoggingContext): Promi
       }
     } catch (agentError) {
       logger.error('🚨 Agent orchestration failed, Noah handling directly', { error: agentError });
+      agentUsed = 'noah';
+      agentStrategy = 'noah_direct_fallback';
       // Fallback to Noah Direct if orchestration fails
       const llmProvider = createLLMProvider();
       const generatePromise = llmProvider.generateText({
@@ -341,11 +403,26 @@ async function noahChatHandler(req: NextRequest, context: LoggingContext): Promi
       responseTime
     });
 
-    // Process for artifacts using established workflow
+    // Log assistant response (fire-and-forget, zero performance impact)
+    if (conversationState.conversationId && conversationState.sessionId) {
+      conversationState.messageSequence++;
+      analyticsService.logMessage(
+        conversationState.conversationId,
+        conversationState.sessionId,
+        conversationState.messageSequence,
+        'assistant',
+        result.content,
+        responseTime,
+        agentUsed
+      );
+    }
+
+    // Process for artifacts using established workflow with analytics integration
     const parsed = await ArtifactService.handleArtifactWorkflow(
       result.content,
       lastMessage,
-      context.sessionId
+      context.sessionId,
+      conversationState
     );
 
     let noahContent = result.content;

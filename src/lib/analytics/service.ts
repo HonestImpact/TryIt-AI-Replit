@@ -314,7 +314,7 @@ class AnalyticsService {
     return text.trim() ? text.trim().split(/\s+/).length : 0;
   }
 
-  private inferMessageType(content: string, role: 'user' | 'assistant'): string {
+  private inferMessageType(content: string, role: 'user' | 'assistant'): 'question' | 'request' | 'challenge' | 'feedback' | 'response' | 'tool-generation' | undefined {
     if (role === 'user') {
       const contentLower = content.toLowerCase();
       if (contentLower.includes('?')) return 'question';
