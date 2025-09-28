@@ -64,8 +64,9 @@ async function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T
 }
 
 /**
- * Noah's enhanced analysis - more nuanced delegation decisions
- * Keeps simple tools and conversation with Noah for natural flow
+ * Noah's simple decision process - like a human brain would think
+ * 1. Can I do this quickly and easily? → Do it!
+ * 2. Too complex for me? → Delegate appropriately  
  */
 function analyzeRequest(content: string): {
   needsResearch: boolean;
@@ -75,117 +76,58 @@ function analyzeRequest(content: string): {
 } {
   const contentLower = content.toLowerCase();
 
-  // Noah handles directly - text-based tools and simple requests
-  const noahCanHandle = [
-    'list', 'template', 'guide', 'email', 'letter', 'checklist', 'outline',
-    'summary', 'plan', 'advice', 'tips', 'steps', 'instructions', 'format',
-    'structure', 'framework', 'process', 'workflow', 'schedule', 'agenda'
+  // Things Noah can do quickly and easily
+  const quickAndEasy = [
+    // Simple conversation
+    'how to', 'explain', 'help me understand', 'what is', 'tell me about',
+    
+    // Quick tools Noah loves making
+    'calculator', 'timer', 'converter', 'counter', 'stopwatch', 'clock',
+    'password generator', 'random generator', 'color picker', 'notepad',
+    
+    // Text-based stuff Noah's great at
+    'list', 'checklist', 'outline', 'template', 'email', 'letter',
+    'summary', 'plan', 'advice', 'tips', 'steps', 'instructions'
   ];
 
-  // Simple web tools Noah can create directly (basic HTML/JS)
-  const simpleWebTools = [
-    'calculator', 'converter', 'timer', 'counter', 'form', 'quiz',
-    'calendar', 'basic calendar', 'simple calendar', 'event calendar',
-    'simple game', 'color picker', 'text formatter', 'notepad', 'todo',
-    'stopwatch', 'clock', 'random generator', 'password generator'
+  // Only delegate for genuinely tough stuff
+  const needsWanderer = [
+    'research the latest', 'research current', 'market analysis', 
+    'industry trends', 'comprehensive study', 'latest trends in'
   ];
 
-  // Genuine creative/sideways thinking indicators for Wanderer
-  const creativeThinking = [
-    'creative approach', 'think differently', 'alternative perspective', 'brainstorm',
-    'out of the box', 'unconventional', 'innovative angle', 'fresh perspective',
-    'paradigm shift', 'reframe', 'lateral thinking', 'creative solution'
+  const needsTinkerer = [
+    'react component', 'vue component', 'angular component',
+    'interactive dashboard', 'data visualization', 'full application',
+    'database integration', 'api integration', 'complex interface'
   ];
 
-  // Complex interactive tools that need Tinkerer (creation intents only)
-  const complexInteractive = [
-    'build a react component', 'create a react component', 'make a react component',
-    'build a vue component', 'create a vue component', 'make a vue component',
-    'build a component', 'create a component', 'make a component',
-    'build a ui', 'create a ui', 'make a ui',
-    'interactive dashboard', 'data visualization', 'advanced app', 'full application',
-    'database integration', 'api integration', 'multi-page', 'complex interface',
-    'sophisticated tool', 'advanced calculator', 'data analysis tool', 'visualization'
-  ];
-
-  // Research indicators - both simple and complex research needs
-  const researchIndicators = [
-    'research', 'research the', 'research latest', 'research current', 'research trends',
-    'research and compare', 'market analysis', 'competitive analysis',
-    'comprehensive study', 'detailed investigation', 'industry trends',
-    'state of the art analysis', 'benchmark study', 'feasibility study',
-    'latest trends', 'current trends', 'trends in', 'what\'s new in', 'recent developments'
-  ];
-
-  // Check if Noah can handle this directly
-  const isSimpleTextTool = noahCanHandle.some(keyword => contentLower.includes(keyword));
-  const isSimpleWebTool = simpleWebTools.some(tool => contentLower.includes(tool));
-  const isBasicAdvice = contentLower.includes('how to') || contentLower.includes('explain') || contentLower.includes('help me understand');
+  // Can Noah handle this quickly and easily?
+  const canNoahDoThis = quickAndEasy.some(keyword => contentLower.includes(keyword));
   
-  // Enhanced tool creation detection - catches common patterns
-  const isToolCreation = contentLower.includes('create a') || contentLower.includes('make a') || contentLower.includes('build a') || contentLower.includes('generate a');
-  const isSimpleToolRequest = isToolCreation && (isSimpleTextTool || isSimpleWebTool);
+  // Only delegate if it's genuinely complex
+  const needsResearch = needsWanderer.some(keyword => contentLower.includes(keyword));
+  const needsBuilding = needsTinkerer.some(keyword => contentLower.includes(keyword));
 
-  // Check if it needs specialized agents
-  const needsCreativeThinking = creativeThinking.some(keyword => contentLower.includes(keyword));
-  
-  // Enhanced component detection: Creation verbs directly connected to component terms
-  const isComponentCreation = /(build|create|make|implement|code|craft|develop|design|construct|compose).+(component|interface|dashboard|ui)/
-    .test(contentLower) ||
-    /(need you to|want to|help me).+(build|create|make|implement|design).+(component|interface)/
-    .test(contentLower);
-  
-  // Exclude prose/discussion and strategy/planning intents that should stay with Noah
-  const isProse = /(write about|explain|document|discuss|describe|tell me about).+(component|interface)/.test(contentLower);
-  const hasStrategyWords = /(strategy|approach|plan|methodology|framework)/.test(contentLower);
-  const hasComponentWords = /(component|interface)/.test(contentLower);
-  const hasCreationVerb = /(build|create|make|implement|code|craft|develop|design|construct|compose)/.test(contentLower);
-  const isStrategy = hasCreationVerb && hasStrategyWords && hasComponentWords;
-  const finalComponentCreation = isComponentCreation && !isProse && !isStrategy;
-  
-  const needsComplexTool = complexInteractive.some(keyword => contentLower.includes(keyword)) || finalComponentCreation;
-  const needsGenuineResearch = researchIndicators.some(keyword => contentLower.includes(keyword));
-
-  // Decision logic - COMPLEX FIRST, then Noah for simple requests
-  let needsResearch = false;
-  let needsBuilding = false;
   let reasoning = '';
-
-  // Priority 1: Handle complex requests that need both agents
-  if (needsGenuineResearch && needsComplexTool) {
-    needsResearch = true;
-    needsBuilding = true;
-    reasoning = 'Complex request requiring research then sophisticated implementation';
-  }
-  // Priority 2: Complex interactive tools (even if phrased as questions)
-  else if (needsComplexTool) {
-    needsBuilding = true;
-    reasoning = 'Complex interactive tool - delegate to Tinkerer for component retrieval';
-  }
-  // Priority 3: Genuine creative/research needs (even if phrased as questions)
-  else if (needsCreativeThinking) {
-    needsResearch = true;
-    reasoning = 'Needs genuine creative/sideways thinking - delegate to Wanderer';
-  }
-  else if (needsGenuineResearch) {
-    needsResearch = true;
-    reasoning = 'Comprehensive research needed - delegate to Wanderer';
-  }
-  // Priority 4: Simple tools and advice (only after complex checks)
-  else if (isSimpleToolRequest || isSimpleTextTool || isSimpleWebTool || (isBasicAdvice && !needsComplexTool && !needsCreativeThinking && !needsGenuineResearch)) {
-    reasoning = 'Simple tool/advice - Noah handles directly for natural flow';
-  }
-  // Priority 5: Default to Noah for pure conversation
-  else {
-    reasoning = 'Conversational request - Noah handles directly';
+  if (needsResearch && needsBuilding) {
+    reasoning = 'Too complex - needs research then building';
+  } else if (needsBuilding) {
+    reasoning = 'Too complex - needs specialized building';
+  } else if (needsResearch) {
+    reasoning = 'Too complex - needs deep research';  
+  } else if (canNoahDoThis) {
+    reasoning = 'Quick and easy - Noah can handle this!';
+  } else {
+    reasoning = 'Simple conversation - Noah handles directly';
   }
 
-  // Calculate confidence based on clarity of indicators
-  const confidence = Math.min(0.9, 
-    (needsResearch || needsBuilding) ? 0.8 : 0.9
-  );
-
-  return { needsResearch, needsBuilding, confidence, reasoning };
+  return { 
+    needsResearch, 
+    needsBuilding, 
+    confidence: 0.9, 
+    reasoning 
+  };
 }
 
 /**
