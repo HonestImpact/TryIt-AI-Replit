@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createLogger } from '@/lib/logger';
-import { Pool } from 'pg';
+import { analyticsPool } from '@/lib/analytics/connection-pool';
 
 const logger = createLogger('artifacts-api');
 
@@ -23,33 +23,51 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       sessionId: sessionId.substring(0, 8) + '...' 
     });
 
-    // Get the latest artifact for this session using shared analytics pool
-    const result = await analyticsPool.executeQuery<Array<{ title: string; content: string }>>(
-      'SELECT title, content FROM generated_tools WHERE session_id = $1 ORDER BY created_at DESC LIMIT 1',
+    // Get all artifacts for this session using shared analytics pool
+    const result = await analyticsPool.executeQuery<Array<{ 
+      id: string; 
+      title: string; 
+      content: string; 
+      created_at: string; 
+      agent: string; 
+    }>>(
+      'SELECT id, title, content, created_at, agent FROM generated_tools WHERE session_id = $1 ORDER BY created_at DESC',
       [sessionId]
     );
 
     if (result && result.length > 0) {
-        const artifact = result[0];
-        
-        logger.info('Artifact found for session', { 
-          sessionId: sessionId.substring(0, 8) + '...',
+        const sessionArtifacts = result.map(artifact => ({
+          id: artifact.id,
           title: artifact.title,
-          contentLength: artifact.content.length
+          content: artifact.content,
+          timestamp: new Date(artifact.created_at).getTime(),
+          agent: artifact.agent || 'noah'
+        }));
+        
+        const latestArtifact = sessionArtifacts[0];
+        
+        logger.info('Session artifacts found', { 
+          sessionId: sessionId.substring(0, 8) + '...',
+          count: sessionArtifacts.length,
+          latestTitle: latestArtifact.title
         });
         
         return NextResponse.json({
           artifact: {
-            title: artifact.title,
-            content: artifact.content
-          }
+            title: latestArtifact.title,
+            content: latestArtifact.content
+          },
+          sessionArtifacts: sessionArtifacts
         });
       } else {
-        logger.debug('No artifact found for session', { 
+        logger.debug('No artifacts found for session', { 
           sessionId: sessionId.substring(0, 8) + '...' 
         });
         
-        return NextResponse.json({ artifact: null });
+        return NextResponse.json({ 
+          artifact: null, 
+          sessionArtifacts: [] 
+        });
       }
     
   } catch (error) {

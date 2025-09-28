@@ -285,6 +285,11 @@ export default function TrustRecoveryProtocol() {
                   });
                 }, 800);
               }
+              // Handle session artifacts for accumulated toolbox
+              if (artifactData.sessionArtifacts) {
+                logger.info('Session artifacts received after streaming', { count: artifactData.sessionArtifacts.length });
+                setSessionArtifacts(artifactData.sessionArtifacts);
+              }
             }
           }
         } catch (artifactError) {
@@ -347,6 +352,26 @@ export default function TrustRecoveryProtocol() {
     URL.revokeObjectURL(url);
     logger.info('Artifact download completed', { filename: artifact.title });
   }, [artifact]);
+
+  const downloadIndividualArtifact = useCallback((sessionArtifact: {
+    title: string;
+    content: string;
+    id: string;
+  }) => {
+    logger.debug('Individual download initiated', { title: sessionArtifact.title, id: sessionArtifact.id });
+
+    const content = `${sessionArtifact.title}\n\n${sessionArtifact.content}`;
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${sessionArtifact.title.toLowerCase().replace(/\s+/g, '-')}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    logger.info('Individual artifact download completed', { filename: sessionArtifact.title, id: sessionArtifact.id });
+  }, []);
 
   const toggleSkepticMode = useCallback(() => {
     setSkepticMode(prev => !prev);
@@ -648,7 +673,7 @@ export default function TrustRecoveryProtocol() {
             {artifact && (
               <div className="bg-white border border-slate-200 rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-sm animate-fade-in-up">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-base sm:text-lg font-semibold text-slate-900">Generated Tool</h3>
+                  <h3 className="text-base sm:text-lg font-semibold text-slate-900">Latest Tool</h3>
                   <button
                     onClick={downloadArtifact}
                     className="text-blue-600 hover:text-blue-700 transition-colors duration-200 min-h-[44px] min-w-[44px] flex items-center justify-center"
@@ -664,6 +689,54 @@ export default function TrustRecoveryProtocol() {
                   <div className="bg-slate-50 rounded-lg p-3 sm:p-4 max-h-80 sm:max-h-96 overflow-y-auto">
                     <pre className="text-xs sm:text-sm text-slate-700 whitespace-pre-wrap font-mono">{artifact.content}</pre>
                   </div>
+                </div>
+              </div>
+            )}
+
+            {/* Session Toolbox - All Generated Tools */}
+            {sessionArtifacts && sessionArtifacts.length > 0 && (
+              <div className="bg-white border border-slate-200 rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-sm animate-fade-in-up">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-base sm:text-lg font-semibold text-slate-900">
+                    Your Toolbox ({sessionArtifacts.length})
+                  </h3>
+                  <div className="text-xs text-slate-500">
+                    All conversation tools
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  {sessionArtifacts.map((sessionArtifact, index) => (
+                    <div key={sessionArtifact.id} className="border border-slate-100 rounded-lg p-3">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <h5 className="font-medium text-slate-800 text-sm">{sessionArtifact.title}</h5>
+                            <span className="text-xs px-2 py-1 bg-slate-100 text-slate-600 rounded-full">
+                              {sessionArtifact.agent}
+                            </span>
+                          </div>
+                          <div className="text-xs text-slate-500 mb-3">
+                            {new Date(sessionArtifact.timestamp).toLocaleString()}
+                          </div>
+                          <div className="bg-slate-50 rounded p-2 max-h-32 overflow-y-auto">
+                            <pre className="text-xs text-slate-600 whitespace-pre-wrap font-mono">
+                              {sessionArtifact.content.substring(0, 200)}
+                              {sessionArtifact.content.length > 200 ? '...' : ''}
+                            </pre>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => downloadIndividualArtifact(sessionArtifact)}
+                          className="ml-3 text-blue-600 hover:text-blue-700 transition-colors duration-200 min-h-[32px] min-w-[32px] flex items-center justify-center"
+                          title={`Download ${sessionArtifact.title}`}
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
