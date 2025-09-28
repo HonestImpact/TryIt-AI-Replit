@@ -85,7 +85,9 @@ function analyzeRequest(content: string): {
   // Simple web tools Noah can create directly (basic HTML/JS)
   const simpleWebTools = [
     'calculator', 'converter', 'timer', 'counter', 'form', 'quiz',
-    'basic calendar', 'simple game', 'color picker', 'text formatter'
+    'calendar', 'basic calendar', 'simple calendar', 'event calendar',
+    'simple game', 'color picker', 'text formatter', 'notepad', 'todo',
+    'stopwatch', 'clock', 'random generator', 'password generator'
   ];
 
   // Genuine creative/sideways thinking indicators for Wanderer
@@ -113,6 +115,10 @@ function analyzeRequest(content: string): {
   const isSimpleTextTool = noahCanHandle.some(keyword => contentLower.includes(keyword));
   const isSimpleWebTool = simpleWebTools.some(tool => contentLower.includes(tool));
   const isBasicAdvice = contentLower.includes('how to') || contentLower.includes('explain') || contentLower.includes('help me understand');
+  
+  // Enhanced tool creation detection - catches common patterns
+  const isToolCreation = contentLower.includes('create a') || contentLower.includes('make a') || contentLower.includes('build a') || contentLower.includes('generate a');
+  const isSimpleToolRequest = isToolCreation && (isSimpleTextTool || isSimpleWebTool);
 
   // Check if it needs specialized agents
   const needsCreativeThinking = creativeThinking.some(keyword => contentLower.includes(keyword));
@@ -145,7 +151,7 @@ function analyzeRequest(content: string): {
     reasoning = 'Comprehensive research needed - delegate to Wanderer';
   }
   // Priority 4: Simple tools and advice (only after complex checks)
-  else if (isSimpleTextTool || isSimpleWebTool || (isBasicAdvice && !needsComplexTool && !needsCreativeThinking && !needsGenuineResearch)) {
+  else if (isSimpleToolRequest || isSimpleTextTool || isSimpleWebTool || (isBasicAdvice && !needsComplexTool && !needsCreativeThinking && !needsGenuineResearch)) {
     reasoning = 'Simple tool/advice - Noah handles directly for natural flow';
   }
   // Priority 5: Default to Noah for pure conversation

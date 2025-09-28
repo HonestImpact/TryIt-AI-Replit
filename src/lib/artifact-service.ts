@@ -168,4 +168,5 @@ export class ArtifactService {
       issues
     };
   }
+
 }

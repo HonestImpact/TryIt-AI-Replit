@@ -216,7 +216,27 @@ export default function TrustRecoveryProtocol() {
           setTrustLevel(prev => Math.min(100, prev + 5));
         }
 
-        // Note: Artifacts will be handled separately since streaming responses don't include them
+        // Check for artifacts after streaming completes
+        try {
+          if (currentSessionId || sessionIdFromResponse) {
+            const sessionId = sessionIdFromResponse || currentSessionId;
+            const artifactResponse = await fetch(`/api/artifacts?sessionId=${sessionId}`);
+            if (artifactResponse.ok) {
+              const artifactData = await artifactResponse.json();
+              if (artifactData.artifact) {
+                logger.info('Artifact received after streaming', { title: artifactData.artifact.title });
+                setTimeout(() => {
+                  setArtifact({
+                    title: artifactData.artifact.title,
+                    content: artifactData.artifact.content
+                  });
+                }, 800);
+              }
+            }
+          }
+        } catch (artifactError) {
+          logger.warn('Failed to fetch artifacts', { error: artifactError });
+        }
       } else {
         // Fallback to non-streaming if no body
         const data = await response.json();
