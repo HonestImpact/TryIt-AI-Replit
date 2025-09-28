@@ -497,11 +497,11 @@ export default function TrustRecoveryProtocol() {
 
               {isLoading && (
                 <div className="flex justify-start">
-                  <div className="max-w-2xl">
-                    <div className="bg-white border border-slate-200 px-6 py-4 rounded-2xl rounded-bl-md shadow-sm">
+                  <div className="max-w-full sm:max-w-2xl">
+                    <div className="bg-white border border-slate-200 px-4 sm:px-6 py-3 sm:py-4 rounded-xl sm:rounded-2xl rounded-bl-md shadow-sm">
                       <div className="flex items-start space-x-3">
-                        <div className="w-8 h-8 bg-gradient-to-br from-slate-100 to-slate-200 rounded-full flex items-center justify-center flex-shrink-0">
-                          <span className="text-sm font-semibold text-slate-600">N</span>
+                        <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-br from-slate-100 to-slate-200 rounded-full flex items-center justify-center flex-shrink-0">
+                          <span className="text-xs sm:text-sm font-semibold text-slate-600">N</span>
                         </div>
                         <div className="flex-1">
                           <div className="loading-dots">
@@ -520,7 +520,7 @@ export default function TrustRecoveryProtocol() {
             </div>
 
             {/* Input Section */}
-            <div className="mt-8 border-t border-slate-200 pt-8">
+            <div className="mt-6 sm:mt-8 border-t border-slate-200 pt-6 sm:pt-8">
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="relative">
                   <textarea
@@ -534,20 +534,20 @@ export default function TrustRecoveryProtocol() {
                       }
                     }}
                     placeholder={skepticMode ? "Question everything. What would you like to test?" : "What would you like to try?"}
-                    className="w-full px-6 py-4 rounded-2xl border border-slate-300 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 placeholder-slate-500 bg-white shadow-sm"
+                    className="w-full px-4 sm:px-6 py-3 sm:py-4 rounded-xl sm:rounded-2xl border border-slate-300 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 placeholder-slate-500 bg-white shadow-sm text-base"
                     rows={3}
                     disabled={isLoading}
                   />
-                  <div className="absolute bottom-4 right-4 flex items-center space-x-2">
-                    <div className="text-xs text-slate-400">
+                  <div className="absolute bottom-3 sm:bottom-4 right-3 sm:right-4 flex items-center space-x-2">
+                    <div className="hidden sm:block text-xs text-slate-400">
                       Press Enter to send
                     </div>
                     <button
                       type="submit"
                       disabled={!input.trim() || isLoading}
-                      className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                      className="p-2 sm:p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 min-h-[44px] min-w-[44px] flex items-center justify-center"
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-5 h-5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                       </svg>
                     </button>
@@ -558,15 +558,15 @@ export default function TrustRecoveryProtocol() {
           </div>
 
           {/* Sidebar */}
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-1 mt-6 lg:mt-0">
             {/* Artifact Display */}
             {artifact && (
-              <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm animate-fade-in-up">
+              <div className="bg-white border border-slate-200 rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-sm animate-fade-in-up">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-slate-900">Generated Tool</h3>
+                  <h3 className="text-base sm:text-lg font-semibold text-slate-900">Generated Tool</h3>
                   <button
                     onClick={downloadArtifact}
-                    className="text-blue-600 hover:text-blue-700 transition-colors duration-200"
+                    className="text-blue-600 hover:text-blue-700 transition-colors duration-200 min-h-[44px] min-w-[44px] flex items-center justify-center"
                     title="Download artifact"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -575,9 +575,9 @@ export default function TrustRecoveryProtocol() {
                   </button>
                 </div>
                 <div className="space-y-3">
-                  <h4 className="font-medium text-slate-800">{artifact.title}</h4>
-                  <div className="bg-slate-50 rounded-lg p-4 max-h-96 overflow-y-auto">
-                    <pre className="text-sm text-slate-700 whitespace-pre-wrap font-mono">{artifact.content}</pre>
+                  <h4 className="font-medium text-slate-800 text-sm sm:text-base">{artifact.title}</h4>
+                  <div className="bg-slate-50 rounded-lg p-3 sm:p-4 max-h-80 sm:max-h-96 overflow-y-auto">
+                    <pre className="text-xs sm:text-sm text-slate-700 whitespace-pre-wrap font-mono">{artifact.content}</pre>
                   </div>
                 </div>
               </div>
@@ -585,14 +585,14 @@ export default function TrustRecoveryProtocol() {
 
             {/* Reasoning Display */}
             {showReasoning && reasoning && (
-              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 shadow-sm animate-fade-in-up mt-6">
-                <h3 className="text-lg font-semibold text-amber-900 mb-4">Reasoning Process</h3>
-                <div className="text-sm text-amber-800 whitespace-pre-wrap">{reasoning}</div>
+              <div className="bg-amber-50 border border-amber-200 rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-sm animate-fade-in-up mt-4 sm:mt-6">
+                <h3 className="text-base sm:text-lg font-semibold text-amber-900 mb-3 sm:mb-4">Reasoning Process</h3>
+                <div className="text-xs sm:text-sm text-amber-800 whitespace-pre-wrap">{reasoning}</div>
               </div>
             )}
 
-            {/* Trust Indicators */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm mt-6">
+            {/* Trust Indicators - Hidden on mobile since it's in header */}
+            <div className="hidden lg:block bg-white border border-slate-200 rounded-2xl p-6 shadow-sm mt-6">
               <h3 className="text-lg font-semibold text-slate-900 mb-4">System Health</h3>
               <div className="space-y-4">
                 <div>
@@ -614,15 +614,15 @@ export default function TrustRecoveryProtocol() {
             </div>
 
             {/* Instructions */}
-            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 shadow-sm mt-6">
-              <h3 className="text-lg font-semibold text-slate-900 mb-4">How This Works</h3>
-              <div className="space-y-3 text-sm text-slate-600">
+            <div className="bg-slate-50 border border-slate-200 rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-sm mt-4 sm:mt-6">
+              <h3 className="text-base sm:text-lg font-semibold text-slate-900 mb-3 sm:mb-4">How This Works</h3>
+              <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm text-slate-600">
                 <div className="flex items-start space-x-2">
-                  <span className="text-blue-600 font-semibold">1.</span>
+                  <span className="text-blue-600 font-semibold text-sm sm:text-base">1.</span>
                   <span>Ask for anything you&apos;d like built or tested</span>
                 </div>
                 <div className="flex items-start space-x-2">
-                  <span className="text-blue-600 font-semibold">2.</span>
+                  <span className="text-blue-600 font-semibold text-sm sm:text-base">2.</span>
                   <span>Challenge responses if they seem off</span>
                 </div>
                 <div className="flex items-start space-x-2">
