@@ -99,16 +99,20 @@ function analyzeRequest(content: string): {
 
   // Complex interactive tools that need Tinkerer (RAG components, sophisticated apps)
   const complexInteractive = [
+    'react component', 'vue component', 'angular component', 'component', 'jsx component',
     'interactive dashboard', 'data visualization', 'advanced app', 'full application',
     'database integration', 'api integration', 'multi-page', 'complex interface',
-    'sophisticated tool', 'advanced calculator', 'data analysis tool', 'visualization'
+    'sophisticated tool', 'advanced calculator', 'data analysis tool', 'visualization',
+    'user interface', 'ui component', 'frontend component', 'web component'
   ];
 
-  // Research indicators - only for genuine research needs
+  // Research indicators - both simple and complex research needs
   const researchIndicators = [
+    'research', 'research the', 'research latest', 'research current', 'research trends',
     'research and compare', 'market analysis', 'competitive analysis',
     'comprehensive study', 'detailed investigation', 'industry trends',
-    'state of the art analysis', 'benchmark study', 'feasibility study'
+    'state of the art analysis', 'benchmark study', 'feasibility study',
+    'latest trends', 'current trends', 'trends in', 'what\'s new in', 'recent developments'
   ];
 
   // Check if Noah can handle this directly
