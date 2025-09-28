@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { analyticsPool } from '@/lib/analytics/connection-pool';
+import { analyticsDb } from '@/lib/analytics/database';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -8,12 +9,53 @@ export async function GET(request: NextRequest) {
 
   try {
     if (table) {
-      // Get data from specific table
-      const validTables = ['user_sessions', 'conversations', 'messages', 'generated_tools', 'tool_usage_events'];
+      // Enhanced table data with analytical views
+      const validTables = ['user_sessions', 'conversations', 'messages', 'generated_tools', 'tool_usage_events', 'trust_events', 'message_annotations'];
       if (!validTables.includes(table)) {
         return NextResponse.json({ error: 'Invalid table name' }, { status: 400 });
       }
 
+      // Special handling for enhanced conversation view
+      if (table === 'conversations') {
+        const data = await analyticsDb.getAnalyticsDashboard(limit);
+        return NextResponse.json({ table, data, count: data?.length || 0, enhanced: true });
+      }
+
+      // Enhanced messages view with content
+      if (table === 'messages') {
+        const data = await analyticsPool.executeQuery(
+          `SELECT 
+            m.*,
+            c.conversation_sequence,
+            CASE WHEN LENGTH(m.content) > 100 
+              THEN LEFT(m.content, 100) || '...' 
+              ELSE m.content 
+            END as content_preview
+          FROM messages m
+          LEFT JOIN conversations c ON m.conversation_id = c.id
+          ORDER BY m.created_at DESC LIMIT $1`,
+          [limit]
+        );
+        return NextResponse.json({ table, data, count: data?.length || 0, enhanced: true });
+      }
+
+      // Enhanced artifacts view with content
+      if (table === 'generated_tools') {
+        const data = await analyticsPool.executeQuery(
+          `SELECT 
+            gt.*,
+            CASE WHEN LENGTH(gt.content) > 200 
+              THEN LEFT(gt.content, 200) || '...' 
+              ELSE gt.content 
+            END as content_preview
+          FROM generated_tools gt
+          ORDER BY gt.created_at DESC LIMIT $1`,
+          [limit]
+        );
+        return NextResponse.json({ table, data, count: data?.length || 0, enhanced: true });
+      }
+
+      // Default table view
       const data = await analyticsPool.executeQuery(
         `SELECT * FROM ${table} ORDER BY created_at DESC LIMIT $1`,
         [limit]
@@ -30,6 +72,10 @@ export async function GET(request: NextRequest) {
         SELECT 'messages', COUNT(*) FROM messages
         UNION ALL
         SELECT 'generated_tools', COUNT(*) FROM generated_tools
+        UNION ALL
+        SELECT 'trust_events', COUNT(*) FROM trust_events
+        UNION ALL
+        SELECT 'message_annotations', COUNT(*) FROM message_annotations
         UNION ALL
         SELECT 'tool_usage_events', COUNT(*) FROM tool_usage_events
         ORDER BY table_name

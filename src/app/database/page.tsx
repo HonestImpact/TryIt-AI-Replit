@@ -62,10 +62,32 @@ export default function DatabaseViewer() {
   const formatValue = (value: any): string => {
     if (value === null || value === undefined) return '-';
     if (typeof value === 'object') return JSON.stringify(value);
-    if (typeof value === 'string' && value.length > 50) {
-      return value.substring(0, 47) + '...';
+    if (typeof value === 'string' && value.length > 100) {
+      return value.substring(0, 97) + '...';
     }
     return String(value);
+  };
+
+  const formatContent = (content: string): JSX.Element => {
+    if (!content || content === '-') return <span>-</span>;
+    
+    const preview = content.length > 200 ? content.substring(0, 197) + '...' : content;
+    return (
+      <div className="space-y-1">
+        <div className="text-slate-600">{preview}</div>
+        {content.length > 200 && (
+          <button 
+            onClick={() => {
+              navigator.clipboard.writeText(content);
+              alert('Full content copied to clipboard!');
+            }}
+            className="text-xs text-blue-600 hover:text-blue-800 underline"
+          >
+            Copy full content ({content.length} chars)
+          </button>
+        )}
+      </div>
+    );
   };
 
   const formatTimestamp = (timestamp: string): string => {
@@ -95,22 +117,41 @@ export default function DatabaseViewer() {
           </div>
         )}
 
-        {/* Table Counts Overview */}
+        {/* Enhanced Database Overview */}
         <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 mb-6">
-          <h2 className="text-xl font-semibold text-slate-900 mb-4">Database Overview</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            {counts.map((item) => (
-              <div 
-                key={item.table_name}
-                className="border border-slate-200 rounded-lg p-4 hover:bg-slate-50 cursor-pointer transition-colors"
-                onClick={() => fetchTableData(item.table_name)}
-              >
-                <div className="text-sm text-slate-600 capitalize">
-                  {item.table_name.replace('_', ' ')}
+          <h2 className="text-xl font-semibold text-slate-900 mb-4">Noah Analytics Database Overview</h2>
+          <p className="text-slate-600 mb-6">
+            Enhanced database with complete conversation content, trust tracking, and artifact storage
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {counts.map((item) => {
+              const tableLabels: Record<string, { label: string; description: string; color: string }> = {
+                'user_sessions': { label: 'User Sessions', description: 'Active user sessions', color: 'bg-blue-50 border-blue-200 text-blue-800' },
+                'conversations': { label: 'Conversations', description: 'Complete conversations with analytics', color: 'bg-green-50 border-green-200 text-green-800' },
+                'messages': { label: 'Messages', description: 'Full message content & metadata', color: 'bg-purple-50 border-purple-200 text-purple-800' },
+                'generated_tools': { label: 'Artifacts', description: 'Generated tools & content', color: 'bg-orange-50 border-orange-200 text-orange-800' },
+                'trust_events': { label: 'Trust Events', description: 'Trust level changes', color: 'bg-red-50 border-red-200 text-red-800' },
+                'message_annotations': { label: 'Annotations', description: 'Message annotations', color: 'bg-yellow-50 border-yellow-200 text-yellow-800' },
+                'tool_usage_events': { label: 'Tool Usage', description: 'Tool usage tracking', color: 'bg-gray-50 border-gray-200 text-gray-800' }
+              };
+              const config = tableLabels[item.table_name] || { label: item.table_name, description: 'Database table', color: 'bg-slate-50 border-slate-200 text-slate-800' };
+              
+              return (
+                <div 
+                  key={item.table_name}
+                  className={`border rounded-lg p-4 hover:bg-opacity-70 cursor-pointer transition-colors ${config.color}`}
+                  onClick={() => fetchTableData(item.table_name)}
+                >
+                  <div className="text-sm font-medium">
+                    {config.label}
+                  </div>
+                  <div className="text-2xl font-bold">{item.count}</div>
+                  <div className="text-xs opacity-75 mt-1">
+                    {config.description}
+                  </div>
                 </div>
-                <div className="text-2xl font-bold text-slate-900">{item.count}</div>
-              </div>
-            ))}
+              )
+            })}
           </div>
           <button
             onClick={fetchCounts}
@@ -159,6 +200,8 @@ export default function DatabaseViewer() {
                           <td key={key} className="py-3 px-4 text-slate-600">
                             {key.includes('_at') || key.includes('timestamp') ? 
                               formatTimestamp(value as string) : 
+                              key === 'content' || key === 'content_preview' ? 
+                                formatContent(value as string) :
                               formatValue(value)
                             }
                           </td>
