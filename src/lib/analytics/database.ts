@@ -91,7 +91,7 @@ class AnalyticsDatabase {
 
       const result = await this.executeQuery<{ id: string }[]>(
         `INSERT INTO conversations (
-          session_id, conversation_sequence, initial_trust_level, skeptic_mode_enabled,
+          session_id, conversation_sequence, initial_trust_level, skeptic_mode,
           conversation_length, conversation_duration_ms, user_engagement_level,
           completion_status, agent_strategy
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
@@ -100,7 +100,7 @@ class AnalyticsDatabase {
           conversationData.sessionId,
           nextSequence, // Use calculated sequence instead of hardcoded value
           conversationData.initialTrustLevel || 50,
-          conversationData.skepticModeEnabled,
+          conversationData.skepticModeEnabled, // maps to skeptic_mode column
           conversationData.conversationLength,
           conversationData.conversationDurationMs,
           conversationData.userEngagementLevel,
