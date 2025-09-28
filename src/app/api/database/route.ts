@@ -21,22 +21,26 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ table, data, count: data?.length || 0, enhanced: true });
       }
 
-      // Enhanced messages view with content
+      // Clean messages view with requested columns
       if (table === 'messages') {
         const data = await analyticsPool.executeQuery(
           `SELECT 
-            m.*,
-            c.conversation_sequence,
-            CASE WHEN LENGTH(m.content) > 100 
-              THEN LEFT(m.content, 100) || '...' 
-              ELSE m.content 
-            END as content_preview
+            m.conversation_id,
+            m.message_sequence,
+            m.role,
+            m.message_type,
+            m.agent_involved,
+            m.skeptic_mode_active,
+            m.content,
+            m.created_at,
+            m.response_time_ms
           FROM messages m
-          LEFT JOIN conversations c ON m.conversation_id = c.id
-          ORDER BY m.created_at DESC LIMIT $1`,
+          WHERE m.conversation_id IS NOT NULL
+          ORDER BY m.created_at DESC 
+          LIMIT $1`,
           [limit]
         );
-        return NextResponse.json({ table, data, count: data?.length || 0, enhanced: true });
+        return NextResponse.json({ table, data, count: data?.length || 0, view: 'clean_messages' });
       }
 
       // Enhanced artifacts view with content
