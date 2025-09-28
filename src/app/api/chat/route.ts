@@ -16,6 +16,26 @@ import { NoahSafetyService } from '@/lib/safety';
 
 const logger = createLogger('noah-chat');
 
+/**
+ * Concise prompt for Noah's direct tool generation - optimized for speed and efficiency
+ */
+function getToolGenerationPrompt(): string {
+  return `You are Noah, creating functional web tools efficiently.
+
+Create tools using this exact format:
+TITLE: [Tool name]
+TOOL:
+[Complete HTML with embedded CSS and JavaScript]
+
+Requirements:
+- Modern, responsive design
+- Complete functionality in a single HTML file
+- Clean, minimal code without excessive comments
+- Focus on core features requested
+
+Keep tools concise but fully functional.`;
+}
+
 // 🚀 MODULE-LEVEL AGENT CACHING - Initialize ONCE, reuse forever
 let wandererInstance: WandererAgent | null = null;
 let tinkererInstance: PracticalAgent | null = null;
@@ -377,15 +397,19 @@ async function noahChatHandler(req: NextRequest, context: LoggingContext): Promi
         const tool = await withTimeout(tinkererBuild(messages, null, context), TINKERER_TIMEOUT);
         result = { content: tool.content };
       } else {
-        // Noah handles directly
-        logger.info('🦉 Noah handling directly...');
-        const llmProvider = createLLMProvider('default');
+        // Noah handles directly - use fast model for tool generation, premium for conversation
+        const lastMessage = messages[messages.length - 1]?.content?.toLowerCase() || '';
+        const toolKeywords = ['create', 'build', 'make', 'calculator', 'timer', 'converter', 'tool', 'app', 'component'];
+        const isToolGeneration = toolKeywords.some(keyword => lastMessage.includes(keyword));
+        const taskType = isToolGeneration ? 'deepbuild' : 'default';
+        logger.info(`🦉 Noah handling directly${isToolGeneration ? ' (tool generation)' : ' (conversation)'}...`);
+        const llmProvider = createLLMProvider(taskType);
         const generatePromise = llmProvider.generateText({
           messages: messages.map((msg: ChatMessage) => ({
             role: msg.role,
             content: msg.content
           })),
-          system: AI_CONFIG.CHAT_SYSTEM_PROMPT,
+          system: isToolGeneration ? getToolGenerationPrompt() : AI_CONFIG.CHAT_SYSTEM_PROMPT,
           model: AI_CONFIG.getModel(),
           temperature: 0.7
         });
@@ -395,8 +419,12 @@ async function noahChatHandler(req: NextRequest, context: LoggingContext): Promi
       logger.error('🚨 Agent orchestration failed, Noah handling directly', { error: agentError });
       agentUsed = 'noah';
       agentStrategy = 'noah_direct_fallback';
-      // Fallback to Noah Direct if orchestration fails
-      const llmProvider = createLLMProvider();
+      // Fallback to Noah Direct - use appropriate model based on request type
+      const lastMessage = messages[messages.length - 1]?.content?.toLowerCase() || '';
+      const toolKeywords = ['create', 'build', 'make', 'calculator', 'timer', 'converter', 'tool', 'app', 'component'];
+      const isToolGeneration = toolKeywords.some(keyword => lastMessage.includes(keyword));
+      const taskType = isToolGeneration ? 'deepbuild' : 'default';
+      const llmProvider = createLLMProvider(taskType);
       const generatePromise = llmProvider.generateText({
         messages: messages.map((msg: ChatMessage) => ({
           role: msg.role,

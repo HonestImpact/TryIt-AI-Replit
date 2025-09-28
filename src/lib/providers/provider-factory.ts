@@ -34,11 +34,43 @@ interface ModelConfig {
 function getModelConfigForTask(taskType: TaskType): ModelConfig {
   const taskUpper = taskType.toUpperCase();
   
-  // Task-specific configuration
-  const provider = process.env[`LLM_${taskUpper}`] || process.env.LLM_DEFAULT || process.env.LLM || 'anthropic';
-  const model = process.env[`LLM_${taskUpper}_ID`] || process.env.LLM_DEFAULT_ID || process.env.MODEL_ID || 'claude-sonnet-4-20250514';
+  // Task-specific configuration with optimized defaults for performance
+  const provider = process.env[`LLM_${taskUpper}`] || process.env.LLM_DEFAULT || process.env.LLM || getOptimalProviderForTask(taskType);
+  const model = process.env[`LLM_${taskUpper}_ID`] || process.env.LLM_DEFAULT_ID || process.env.MODEL_ID || getOptimalModelForTask(taskType);
   
   return { provider, model };
+}
+
+/**
+ * Performance-optimized defaults based on task requirements
+ * - default: Premium conversation experience (Sonnet 4)
+ * - deepbuild: Fast structured tool generation (GPT-4o)  
+ * - research: Quick research tasks (GPT-4o-mini)
+ */
+function getOptimalProviderForTask(taskType: TaskType): string {
+  switch (taskType) {
+    case 'default':
+      return 'anthropic';  // Noah's premium conversation
+    case 'deepbuild':
+      return 'openai';     // Fast tool generation
+    case 'research':
+      return 'openai';     // Quick research
+    default:
+      return 'anthropic';
+  }
+}
+
+function getOptimalModelForTask(taskType: TaskType): string {
+  switch (taskType) {
+    case 'default':
+      return 'claude-sonnet-4-20250514';  // Noah's premium conversation
+    case 'deepbuild':
+      return 'gpt-4o';                    // Fast, structured tool generation
+    case 'research':
+      return 'gpt-4o-mini';               // Quick, efficient research
+    default:
+      return 'claude-sonnet-4-20250514';
+  }
 }
 
 export function createLLMProvider(taskType: TaskType = 'default'): LLMProvider {
