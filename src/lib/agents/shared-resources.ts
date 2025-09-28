@@ -1,6 +1,7 @@
 // Shared resources for agents - Production RAG Integration Complete
 import type { LLMProvider } from './types';
 import knowledgeService from '@/lib/knowledge/knowledge-singleton';
+import { ToolKnowledgeService } from './tool-knowledge-service';
 import { AI_CONFIG } from '@/lib/ai-config';
 import { createLogger } from '@/lib/logger';
 
@@ -23,6 +24,7 @@ export interface AgentSharedResources {
   knowledgeService?: KnowledgeService;
   ragIntegration?: RAGIntegration;
   solutionGenerator?: SolutionGenerator;
+  toolKnowledgeService?: ToolKnowledgeService;
 }
 
 class ProductionRAGIntegration implements RAGIntegration {
@@ -90,6 +92,9 @@ export const sharedResourceManager = {
       // Initialize solution generator
       const solutionGenerator = new ProductionSolutionGenerator(llmProvider);
 
+      // Initialize tool knowledge service
+      const toolKnowledgeService = new ToolKnowledgeService();
+
       // Test RAG connectivity if enabled
       if (ragIntegration.enabled) {
         try {
@@ -106,13 +111,15 @@ export const sharedResourceManager = {
       const resources: AgentSharedResources = {
         knowledgeService,
         ragIntegration,
-        solutionGenerator
+        solutionGenerator,
+        toolKnowledgeService
       };
 
       logger.info('✅ Shared agent resources initialized', {
         ragEnabled: ragIntegration.enabled,
         knowledgeServiceAvailable: !!resources.knowledgeService,
-        solutionGeneratorAvailable: !!resources.solutionGenerator
+        solutionGeneratorAvailable: !!resources.solutionGenerator,
+        toolKnowledgeServiceAvailable: !!resources.toolKnowledgeService
       });
 
       return resources;
