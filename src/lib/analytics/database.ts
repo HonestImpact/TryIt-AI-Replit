@@ -348,6 +348,172 @@ class AnalyticsDatabase {
       return null;
     }
   }
+
+  // ===========================================
+  // ANALYTICAL QUERY LAYER FOR TRUST RECOVERY
+  // ===========================================
+
+  /**
+   * Get complete conversation with messages and trust timeline
+   */
+  async getConversationHistory(conversationId: string): Promise<any> {
+    try {
+      const conversation = await this.executeQuery(`
+        SELECT 
+          c.*,
+          s.session_fingerprint,
+          COUNT(m.id) as total_messages,
+          COUNT(gt.id) as total_artifacts,
+          MIN(m.created_at) as first_message_time,
+          MAX(m.created_at) as last_message_time
+        FROM conversations c
+        LEFT JOIN user_sessions s ON c.session_id = s.id
+        LEFT JOIN messages m ON c.id = m.conversation_id
+        LEFT JOIN generated_tools gt ON c.id = gt.conversation_id
+        WHERE c.id = $1
+        GROUP BY c.id, s.session_fingerprint
+      `, [conversationId]);
+
+      const messages = await this.executeQuery(`
+        SELECT 
+          m.*,
+          array_agg(
+            json_build_object(
+              'type', ma.annotation_type,
+              'value', ma.annotation_value,
+              'confidence', ma.confidence_score
+            )
+          ) FILTER (WHERE ma.id IS NOT NULL) as annotations
+        FROM messages m
+        LEFT JOIN message_annotations ma ON m.id = ma.message_id
+        WHERE m.conversation_id = $1
+        GROUP BY m.id
+        ORDER BY m.message_sequence ASC
+      `, [conversationId]);
+
+      const trustEvents = await this.executeQuery(`
+        SELECT * FROM trust_events 
+        WHERE conversation_id = $1 
+        ORDER BY created_at ASC
+      `, [conversationId]);
+
+      const artifacts = await this.executeQuery(`
+        SELECT * FROM generated_tools 
+        WHERE conversation_id = $1 
+        ORDER BY created_at ASC
+      `, [conversationId]);
+
+      return {
+        conversation: conversation?.[0],
+        messages: messages || [],
+        trustEvents: trustEvents || [],
+        artifacts: artifacts || []
+      };
+
+    } catch (error) {
+      logger.error('Failed to get conversation history', { 
+        error: error instanceof Error ? error.message : String(error),
+        conversationId
+      });
+      return null;
+    }
+  }
+
+  /**
+   * Get trust evolution across all conversations for a session
+   */
+  async getTrustTimeline(sessionId: string): Promise<any> {
+    try {
+      const result = await this.executeQuery(`
+        SELECT 
+          te.*,
+          c.conversation_sequence,
+          m.content as trigger_message_content,
+          m.role as trigger_message_role
+        FROM trust_events te
+        LEFT JOIN conversations c ON te.conversation_id = c.id
+        LEFT JOIN messages m ON te.conversation_id = m.conversation_id 
+          AND m.created_at <= te.created_at
+        WHERE te.session_id = $1
+        ORDER BY te.created_at ASC
+      `, [sessionId]);
+
+      return result || [];
+
+    } catch (error) {
+      logger.error('Failed to get trust timeline', { 
+        error: error instanceof Error ? error.message : String(error),
+        sessionId
+      });
+      return [];
+    }
+  }
+
+  /**
+   * Get rich analytics dashboard data
+   */
+  async getAnalyticsDashboard(limit: number = 50): Promise<any> {
+    try {
+      const conversations = await this.executeQuery(`
+        SELECT 
+          c.*,
+          s.session_fingerprint,
+          COUNT(DISTINCT m.id) as message_count,
+          COUNT(DISTINCT gt.id) as artifact_count,
+          AVG(m.response_time_ms) as avg_response_time,
+          STRING_AGG(DISTINCT m.agent_involved, ', ') as agents_used,
+          MAX(te.new_level) as peak_trust_level,
+          MIN(te.new_level) as lowest_trust_level
+        FROM conversations c
+        LEFT JOIN user_sessions s ON c.session_id = s.id
+        LEFT JOIN messages m ON c.id = m.conversation_id
+        LEFT JOIN generated_tools gt ON c.id = gt.conversation_id
+        LEFT JOIN trust_events te ON c.id = te.conversation_id
+        GROUP BY c.id, s.session_fingerprint
+        ORDER BY c.created_at DESC
+        LIMIT $1
+      `, [limit]);
+
+      return conversations || [];
+
+    } catch (error) {
+      logger.error('Failed to get analytics dashboard', { 
+        error: error instanceof Error ? error.message : String(error)
+      });
+      return [];
+    }
+  }
+
+  /**
+   * Search conversations by content 
+   */
+  async searchConversations(searchTerm: string, limit: number = 20): Promise<any> {
+    try {
+      const result = await this.executeQuery(`
+        SELECT DISTINCT
+          c.*,
+          s.session_fingerprint,
+          COUNT(m.id) as message_count,
+          ts_headline('english', m.content, plainto_tsquery('english', $1)) as content_snippet
+        FROM conversations c
+        LEFT JOIN user_sessions s ON c.session_id = s.id
+        LEFT JOIN messages m ON c.id = m.conversation_id
+        WHERE to_tsvector('english', m.content) @@ plainto_tsquery('english', $1)
+        GROUP BY c.id, s.session_fingerprint, m.content
+        ORDER BY c.created_at DESC
+        LIMIT $2
+      `, [searchTerm, limit]);
+
+      return result || [];
+
+    } catch (error) {
+      logger.error('Failed to search conversations', { 
+        error: error instanceof Error ? error.message : String(error),
+        searchTerm
+      });
+      return [];
+    }
+  }
 }
 
 // Export singleton instance for consistent database access
