@@ -721,7 +721,8 @@ export async function POST(req: NextRequest): Promise<NextResponse | Response> {
   
   if (isStreamingRequest) {
     // Streaming handler returns Response directly (not wrapped in withLogging)
-    return noahStreamingChatHandler(req, { sessionId: null });
+    const sessionId = `stream_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return noahStreamingChatHandler(req, { sessionId, startTime: Date.now() });
   } else {
     return withLogging(noahChatHandler)(req);
   }
