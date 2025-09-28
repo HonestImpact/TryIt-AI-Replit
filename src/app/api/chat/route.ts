@@ -516,27 +516,27 @@ async function noahChatHandler(req: NextRequest, context: LoggingContext): Promi
 }
 
 /**
- * Fast path for simple questions - Noah can handle both simple questions AND tool creation directly
+ * Fast path for simple factual questions only - tool creation always uses full artifact processing
  */
 function isSimpleQuestion(content: string): boolean {
   const contentLower = content.toLowerCase();
   
-  // Simple factual questions
+  // Simple factual questions only
   const simpleFactual = [
     'what is', 'who is', 'when is', 'where is', 'how many', 'what are',
     'capital of', 'population of', 'currency of', 'language of',
     'definition of', 'meaning of', 'explain', 'define'
   ];
   
-  // Simple tool creation requests Noah can handle directly 
-  const simpleTools = [
-    'create', 'build', 'make', 'calculator', 'timer', 'converter'
+  // Tool creation keywords should NOT use fast path
+  const toolCreationKeywords = [
+    'create', 'build', 'make', 'calculator', 'timer', 'converter', 'tool', 'app', 'component'
   ];
   
   const isFactual = simpleFactual.some(pattern => contentLower.includes(pattern)) && content.length < 100;
-  const isSimpleTool = simpleTools.some(pattern => contentLower.includes(pattern)) && content.length < 50;
+  const isToolCreation = toolCreationKeywords.some(pattern => contentLower.includes(pattern));
   
-  return isFactual || isSimpleTool;
+  return isFactual && !isToolCreation;
 }
 
 /**
