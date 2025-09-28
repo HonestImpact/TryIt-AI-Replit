@@ -23,20 +23,14 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       sessionId: sessionId.substring(0, 8) + '...' 
     });
 
-    // Create database connection
-    const pool = new Pool({
-      connectionString: process.env.DATABASE_URL,
-    });
+    // Get the latest artifact for this session using shared analytics pool
+    const result = await analyticsPool.executeQuery<Array<{ title: string; content: string }>>(
+      'SELECT title, content FROM generated_tools WHERE session_id = $1 ORDER BY created_at DESC LIMIT 1',
+      [sessionId]
+    );
 
-    try {
-      // Get the latest artifact for this session
-      const result = await pool.query(
-        'SELECT title, content FROM generated_tools WHERE session_id = $1 ORDER BY created_at DESC LIMIT 1',
-        [sessionId]
-      );
-
-      if (result.rows.length > 0) {
-        const artifact = result.rows[0];
+    if (result && result.length > 0) {
+        const artifact = result[0];
         
         logger.info('Artifact found for session', { 
           sessionId: sessionId.substring(0, 8) + '...',
@@ -57,9 +51,6 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
         
         return NextResponse.json({ artifact: null });
       }
-    } finally {
-      await pool.end();
-    }
     
   } catch (error) {
     logger.error('Failed to fetch artifacts', { error });

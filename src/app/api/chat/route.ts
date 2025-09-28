@@ -524,22 +524,139 @@ async function noahChatHandler(req: NextRequest, context: LoggingContext): Promi
 }
 
 /**
- * Streaming Noah chat handler - preserves all existing functionality with streaming responses
+ * Fast path for simple questions - skip all the complex overhead
+ */
+function isSimpleQuestion(content: string): boolean {
+  const simple = [
+    'what is', 'who is', 'when is', 'where is', 'how many', 'what are',
+    'capital of', 'population of', 'currency of', 'language of',
+    'definition of', 'meaning of', 'explain', 'define'
+  ];
+  
+  const contentLower = content.toLowerCase();
+  return simple.some(pattern => contentLower.includes(pattern)) && 
+         content.length < 100 && // Short questions only
+         !contentLower.includes('create') && 
+         !contentLower.includes('build') && 
+         !contentLower.includes('make');
+}
+
+/**
+ * Streaming Noah chat handler - with fast path for simple questions
  */
 async function noahStreamingChatHandler(req: NextRequest, context: LoggingContext) {
   const startTime = Date.now();
   logger.info('🦉 Noah processing streaming request');
 
   try {
-    // Parse request with timeout protection (same as existing)
+    // Parse request with timeout protection
     const parsePromise = req.json();
     const { messages, skepticMode } = await withTimeout(parsePromise, 2000);
     
     // Store parsed body in context for logging middleware
     context.requestBody = { messages, skepticMode };
 
-    // Initialize conversation state with analytics (same as existing)
+    // CRITICAL: Validate messages before accessing
+    if (!messages || !Array.isArray(messages) || messages.length === 0) {
+      const model = AI_CONFIG.getProvider() === 'openai' ? openai(AI_CONFIG.getModel()) : anthropic(AI_CONFIG.getModel());
+      return streamText({
+        model,
+        messages: [{ role: 'assistant', content: "I didn't receive any messages to respond to. Want to try sending me something?" }],
+        temperature: 0.7,
+      }).toTextStreamResponse();
+    }
+
+    // Initialize conversation state with analytics (required for all paths)
     const conversationState = await initializeConversationState(req, context, skepticMode || false);
+
+    const lastMessage = messages[messages.length - 1]?.content || '';
+    
+    // 🛡️ SAFETY CHECK - Required for all paths, including fast path
+    const safetyCheck = await NoahSafetyService.checkUserMessage(
+      lastMessage,
+      conversationState.sessionId || undefined,
+      conversationState.conversationId || undefined,
+      messages.slice(0, -1).map(m => m.content)
+    );
+
+    if (safetyCheck.radioSilence) {
+      logger.warn('🔴 Radio silence activated - safety violation detected', {
+        violationType: safetyCheck.violation?.type,
+        reason: safetyCheck.violation?.reason,
+        sessionId: conversationState.sessionId?.substring(0, 8) + '...'
+      });
+
+      // Log the attempted violation 
+      if (conversationState.conversationId && conversationState.sessionId) {
+        conversationState.messageSequence++;
+        analyticsService.logMessage(
+          conversationState.conversationId,
+          conversationState.sessionId,
+          conversationState.messageSequence,
+          'user',
+          `[SAFETY_VIOLATION] ${safetyCheck.violation?.type}: Content filtered`
+        );
+      }
+
+      // Return empty stream - radio silence
+      const model = AI_CONFIG.getProvider() === 'openai' ? openai(AI_CONFIG.getModel()) : anthropic(AI_CONFIG.getModel());
+      return streamText({
+        model,
+        messages: [{ role: 'assistant', content: '' }],
+        temperature: 0.7,
+      }).toTextStreamResponse();
+    }
+
+    // Fast path for simple questions - AFTER safety and analytics
+    if (isSimpleQuestion(lastMessage)) {
+      logger.info('🚀 Fast path for simple question (post-safety)');
+      
+      // Log user message (required for analytics)
+      if (conversationState.conversationId && conversationState.sessionId) {
+        conversationState.messageSequence++;
+        analyticsService.logMessage(
+          conversationState.conversationId,
+          conversationState.sessionId,
+          conversationState.messageSequence,
+          'user',
+          lastMessage
+        );
+      }
+
+      const model = AI_CONFIG.getProvider() === 'openai' ? openai(AI_CONFIG.getModel()) : anthropic(AI_CONFIG.getModel());
+      
+      return streamText({
+        model,
+        messages: messages.map((msg: ChatMessage) => ({
+          role: msg.role as 'user' | 'assistant' | 'system',
+          content: msg.content
+        })),
+        system: "You are Noah, a helpful AI assistant. Give direct, accurate answers to simple questions.",
+        temperature: 0.3, // Lower temperature for factual questions
+        maxTokens: 150,   // Limit response length
+        onFinish: async (completion) => {
+          const responseTime = Date.now() - startTime;
+          logger.info('✅ Noah fast path completed', {
+            responseLength: completion.text.length,
+            responseTime
+          });
+          
+          // Log assistant response (required for analytics)
+          if (conversationState.conversationId && conversationState.sessionId) {
+            conversationState.messageSequence++;
+            analyticsService.logMessage(
+              conversationState.conversationId,
+              conversationState.sessionId,
+              conversationState.messageSequence,
+              'assistant',
+              completion.text,
+              responseTime,
+              'noah'
+            );
+          }
+        }
+      }).toTextStreamResponse();
+    }
 
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
       const model = AI_CONFIG.getProvider() === 'openai' ? openai(AI_CONFIG.getModel()) : anthropic(AI_CONFIG.getModel());
