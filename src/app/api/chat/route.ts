@@ -832,13 +832,38 @@ async function noahStreamingChatHandler(req: NextRequest, context: LoggingContex
       }
     }
 
-    // Return pre-computed response as a stream
-    const model = AI_CONFIG.getProvider() === 'openai' ? openai(AI_CONFIG.getModel()) : anthropic(AI_CONFIG.getModel());
-    return streamText({
-      model,
-      messages: [{ role: 'assistant', content: finalContent }],
-      temperature: 0,
-    }).toTextStreamResponse();
+    // Return pre-computed response with proper chunk-based streaming
+    return new Response(
+      new ReadableStream({
+        start(controller) {
+          const encoder = new TextEncoder();
+          let index = 0;
+          const chunkSize = 3; // Stream 3 characters at a time for natural typing effect
+          
+          const streamChunk = () => {
+            if (index < finalContent.length) {
+              const chunk = finalContent.slice(index, index + chunkSize);
+              controller.enqueue(encoder.encode(chunk));
+              index += chunkSize;
+              
+              // Add small delay for natural streaming effect
+              setTimeout(streamChunk, 30); // 30ms delay between chunks
+            } else {
+              controller.close();
+            }
+          };
+          
+          streamChunk();
+        }
+      }),
+      {
+        headers: {
+          'Content-Type': 'text/plain; charset=utf-8',
+          'Transfer-Encoding': 'chunked',
+          'x-session-id': conversationState.sessionId || 'unknown'
+        }
+      }
+    );
 
   } catch (error) {
     logger.error('💥 Noah streaming handler failed', { error });
