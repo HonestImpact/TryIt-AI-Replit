@@ -67,6 +67,11 @@ export class NoahContentFilter {
       return this.createViolationResult('hate-speech', hateSpeechCheck.reason || 'Hate speech detected', hateSpeechCheck.confidence);
     }
 
+    const adultContentCheck = this.checkAdultContentIntent(messageLower, userMessage);
+    if (adultContentCheck.isViolation) {
+      return this.createViolationResult('adult-content', adultContentCheck.reason || 'Adult content detected', adultContentCheck.confidence);
+    }
+
     // Content is safe to process
     logger.debug('Content passed safety checks', { sessionId: context.sessionId });
     return {
@@ -77,25 +82,67 @@ export class NoahContentFilter {
   }
 
   /**
-   * Violence & Weapons - HARMFUL INTENT Detection
+   * Violence & Weapons - HARMFUL INTENT Detection (COMPREHENSIVE)
    */
   private static checkViolenceIntent(messageLower: string, originalMessage: string): { isViolation: boolean; reason?: string; confidence: number } {
+    // Instructional violence - how to cause harm
     const instructionalPatterns = [
       /how to (make|build|create|construct).*(bomb|weapon|explosive|gun)/,
       /teach me to (hurt|harm|kill|attack)/,
       /help me (hurt|harm|kill|attack|fight)/,
       /instructions for (making|building).*(weapon|bomb|explosive)/,
-      /guide to (violence|fighting|hurting)/
+      /guide to (violence|fighting|hurting)/,
+      // CRITICAL: Direct harm method instructions (including kill/murder) - ALL MODAL VARIANTS COMPREHENSIVE
+      /how (to|do i|can i|should i|could i|would i|might i) (kill|murder|hurt|harm|poison|stab|shoot|strangle|choke|burn|beat|torture)/,
+      /how (can|should|could|would|might) i.*(kill|murder|hurt|harm|poison|stab|shoot|strangle|choke|burn|beat|torture)/,
+      /how (can|should|could|would|might) we.*(kill|murder|hurt|harm|poison|stab|shoot|strangle|choke|burn|beat|torture)/,
+      /(best|easiest|fastest|simplest) (way|method) to (kill|murder|hurt|harm|poison|stab|shoot|strangle|choke|burn|beat|torture)/,
+      /ways to (kill|murder|poison|stab|shoot|strangle|choke|burn|beat|torture)/,
+      /teach me (to|how to) (kill|murder|poison|stab|shoot|strangle|choke|burn|beat|torture)/,
+      /show me how to (kill|murder|poison|stab|shoot|strangle|choke|burn|beat|torture)/,
+      /show me.*(kill|murder|poison|stab|shoot|strangle|choke|burn|beat|torture).*(methods|ways|techniques)/,
+      /help me (kill|murder|poison|stab|shoot|strangle|choke|burn|beat|torture)/,
+      /instructions (for|to) (kill|murder|poison|stab|shoot|strangle|choke|burn|beat|torture)/,
+      // CRITICAL: Indirect/oblique violence instruction patterns
+      /get away with (killing|murdering|hurting|harming|poisoning|stabbing|shooting|strangling|choking|burning|beating|torturing)/,
+      /(give me|provide|share) ideas for (killing|murdering|hurting|harming|poisoning|stabbing|shooting|strangling|choking|burning|beating|torturing)/,
+      /(tips|advice) (on|for) (killing|murdering|hurting|harming|poisoning|stabbing|shooting|strangling|choking|burning|beating|torturing)/,
+      /figure out how to (kill|murder|hurt|harm|poison|stab|shoot|strangle|choke|burn|beat|torture)/,
+      /help me think of ways to (kill|murder|hurt|harm|poison|stab|shoot|strangle|choke|burn|beat|torture)/,
+      /suggest ways to (kill|murder|hurt|harm|poison|stab|shoot|strangle|choke|burn|beat|torture)/,
+      /brainstorm.*to (kill|murder|hurt|harm|poison|stab|shoot|strangle|choke|burn|beat|torture)/,
+      // CRITICAL: Additional indirect patterns with broader syntax
+      /(help|assistance) to (kill|murder|hurt|harm|poison|stab|shoot|strangle|choke|burn|beat|torture)/,
+      /(advice|tips|ideas) (to|about) (killing|murdering|hurting|harming|poisoning|stabbing|shooting|strangling|choking|burning|beating|torturing)/,
+      /give me.*to (kill|murder|hurt|harm|poison|stab|shoot|strangle|choke|burn|beat|torture)/
     ];
 
+    // Planning violence - intent to cause harm
     const planningPatterns = [
       /i want to (hurt|harm|kill|attack)/,
       /i'm going to (hurt|harm|kill|attack)/,
       /planning to (hurt|harm|kill|attack)/,
       /help me plan.*attack/,
-      /want to get revenge/
+      /want to get revenge/,
+      // CRITICAL: Direct harm planning with specific methods (including kill/murder)
+      /i want to (kill|murder|poison|stab|shoot|strangle|choke|burn|beat|torture)/,
+      /i'm going to (kill|murder|poison|stab|shoot|strangle|choke|burn|beat|torture)/,
+      /planning to (kill|murder|poison|stab|shoot|strangle|choke|burn|beat|torture)/,
+      /going to (kill|murder|poison|stab|shoot|strangle|choke|burn|beat|torture)/,
+      /want to (kill|murder|poison|stab|shoot|strangle|choke|burn|beat|torture)/,
+      // Targeting specific people
+      /(kill|murder|poison|stab|shoot|strangle|choke|burn|beat|torture).*(someone|my.*neighbor|my.*roommate|my.*friend|my.*boss|people)/,
+      /show me how to.*my.*(neighbor|roommate|friend|boss|family)/,
+      /help me (hurt|kill|attack).*my.*(neighbor|roommate|friend|boss|family)/,
+      // CRITICAL: Indirect violence planning patterns - EXPANDED TARGETS
+      /i need (advice|help|ideas) (on|for|to|about) (killing|murdering|hurting|harming).*(someone|my.*(neighbor|roommate|friend|boss|wife|husband|family|coworker)|people)/,
+      /i need help (killing|murdering|hurting|harming).*(someone|my.*(neighbor|roommate|friend|boss|wife|husband|family|coworker)|people)/,
+      /figure out.*to (kill|murder|hurt|harm).*(someone|my.*(neighbor|roommate|friend|boss|wife|husband|family|coworker)|people)/,
+      /get away with (killing|murdering|hurting|harming).*(someone|my.*(neighbor|roommate|friend|boss|wife|husband|family|coworker)|people)/,
+      /(give me|please give me) (advice|help|tips|ideas) to (kill|murder|hurt|harm).*(someone|my.*(neighbor|roommate|friend|boss|wife|husband|family|coworker)|people)/
     ];
 
+    // Glorification and encouragement of violence
     const glorificationPatterns = [
       /violence is (good|great|awesome)/,
       /killing is (fun|easy|justified)/,
@@ -148,17 +195,73 @@ export class NoahContentFilter {
   }
 
   /**
-   * Self-Harm - HARMFUL INTENT Detection
+   * Self-Harm - HARMFUL INTENT Detection (COMPREHENSIVE)
    */
   private static checkSelfHarmIntent(messageLower: string, originalMessage: string): { isViolation: boolean; reason?: string; confidence: number } {
+    // Instructional self-harm requests
     const selfHarmInstructions = [
       /how to (cut|hurt|harm) myself/,
       /ways to (end|kill) myself/,
       /teach me to.*self.*harm/,
       /methods for.*suicide/,
-      /help me (hurt|harm|kill) myself/
+      /help me (hurt|harm|kill) myself/,
+      // Specific self-harm methods
+      /how to.*suicide/,
+      /ways to.*suicide/,
+      /methods to.*kill.*myself/,
+      /how to.*overdose/,
+      /ways to.*overdose/
     ];
 
+    // CRITICAL: Direct self-harm intent statements - first person declarations  
+    const directSelfHarmIntent = [
+      /i want to (kill|hurt|harm|cut) myself/,
+      /i'm going to (kill|hurt|harm|cut) myself/,
+      /i want to (die|suicide|end it)/,
+      /i'm going to (die|suicide|end it)/,
+      /going to kill myself/,
+      /want to kill myself/,
+      /planning to kill myself/,
+      /thinking of killing myself/,
+      /considering suicide/,
+      /want to end.*life/,
+      /going to end.*life/,
+      /ready to die/,
+      /want to die/,
+      /going to die/,
+      /end it.*tonight/,
+      /end it.*today/,
+      /kill myself.*tonight/,
+      /kill myself.*today/,
+      /suicide.*tonight/,
+      /suicide.*today/,
+      // CRITICAL: Softer but dangerous self-harm declarations
+      /i feel suicidal/,
+      /i might (kill|hurt) myself/,
+      /i feel like (ending|killing)/,
+      /i feel like (ending|killing).*(my life|myself)/,
+      /planning to end.*life/,
+      /i'm suicidal/,
+      /thinking about ending.*(it|my life)/,
+      /plan to end my life/,
+      /might end.*life/,
+      /might kill myself/,
+      /might suicide/,
+      /considering ending.*(it|my life)/,
+      /feel like dying/,
+      /feel like ending it/,
+      /thinking of ending.*(it|my life)/,
+      /planning.*end.*life/,
+      /plan.*kill.*myself/,
+      /might.*end.*tonight/,
+      /might.*end.*today/,
+      /thinking.*suicide/,
+      /considering.*kill.*myself/,
+      /feel.*suicidal.*thoughts/,
+      /having.*suicidal.*thoughts/
+    ];
+
+    // Encouragement of self-harm toward others
     const encouragementPatterns = [
       /you should (hurt|kill) yourself/,
       /self.*harm is (good|justified)/,
@@ -172,6 +275,17 @@ export class NoahContentFilter {
           isViolation: true, 
           reason: 'Instructions for self-harm', 
           confidence: 0.95 
+        };
+      }
+    }
+
+    // CRITICAL: Check direct self-harm intent statements
+    for (const pattern of directSelfHarmIntent) {
+      if (pattern.test(messageLower)) {
+        return { 
+          isViolation: true, 
+          reason: 'Direct self-harm intent statement', 
+          confidence: 0.98 
         };
       }
     }
@@ -190,10 +304,11 @@ export class NoahContentFilter {
   }
 
   /**
-   * Child Safety - HARMFUL INTENT Detection
+   * Child Safety - HARMFUL INTENT Detection (COMPREHENSIVE)
    */
   private static checkChildSafetyIntent(messageLower: string, originalMessage: string): { isViolation: boolean; reason?: string; confidence: number } {
-    const childEndangermentPatterns = [
+    // Comprehensive grooming and inappropriate contact patterns
+    const groomingPatterns = [
       /how to.*approach.*child/,
       /ways to.*contact.*minors/,
       /help me.*meet.*kids/,
@@ -203,35 +318,202 @@ export class NoahContentFilter {
       /ways to.*approach.*kids/,
       /approach.*kids.*without.*parents/,
       /contact.*kids.*without.*parents/,
-      /meet.*children.*without.*supervision/
+      /meet.*children.*without.*supervision/,
+      /talk.*to.*kids.*alone/,
+      /get.*close.*to.*children/,
+      /befriend.*young.*people/,
+      /gain.*trust.*of.*child/,
+      /(how|ways).*to.*talk.*to.*kids.*privately/,
+      /ways.*to.*isolate.*child/
     ];
 
-    const inappropriateContactPatterns = [
-      /want to.*meet.*child/,
-      /looking for.*young.*kids/,
+    // Sexual exploitation and abuse patterns
+    const exploitationPatterns = [
+      /sexual.*with.*child/,
+      /teach.*child.*about.*sex/,
+      /show.*child.*inappropriate/,
+      /seduce.*minor/,
+      /sexual.*relationship.*with.*kid/,
+      /inappropriate.*touch.*child/,
+      /child.*sexual/,
+      /minor.*sexual/,
+      /kid.*inappropriate/,
+      /young.*person.*sexual/,
+      /teach.*kids.*adult.*things/,
+      /show.*kids.*private.*parts/,
+      /child.*abuse/,
+      /hurt.*child.*sexually/,
+      /touch.*kids.*inappropriately/
+    ];
+
+    // Euphemistic and coded language patterns
+    const euphemisticPatterns = [
+      /special.*relationship.*with.*child/,
+      /private.*games.*with.*kids/,
+      /secret.*between.*us.*child/,
+      /don.*t.*tell.*parents/,
+      /our.*little.*secret.*kid/,
+      /special.*friend.*child/,
+      /teach.*child.*grown.*up.*games/,
+      /child.*mature.*for.*age/,
+      /old.*enough.*to.*understand/,
+      /child.*ready.*for.*adult/,
+      /young.*but.*mature/,
+      /age.*just.*number/,
+      /child.*consenting/,
+      /kid.*wants.*this/
+    ];
+
+    // Online predatory behavior patterns
+    const onlinePredatorPatterns = [
       /find.*children.*online/,
-      /contact.*kids.*without.*parents/,
-      /approach.*kids.*without.*knowing/,
-      /help me.*approach.*kids.*without/,
-      /ways to.*meet.*kids.*alone/
+      /chat.*with.*kids.*privately/,
+      /meet.*kids.*from.*internet/,
+      /social.*media.*kids/,
+      /gaming.*with.*children.*alone/,
+      /video.*chat.*with.*minors/,
+      /send.*pictures.*to.*kids/,
+      /ask.*kids.*for.*photos/,
+      /snapchat.*with.*children/,
+      /discord.*kids.*private/,
+      /instagram.*young.*people/,
+      /tiktok.*children.*contact/
     ];
 
-    for (const pattern of childEndangermentPatterns) {
+    // Bypassing supervision patterns
+    const supervisionBypassPatterns = [
+      /without.*parents.*knowing/,
+      /when.*parents.*not.*home/,
+      /avoid.*adult.*supervision/,
+      /sneak.*away.*with.*child/,
+      /take.*child.*somewhere.*private/,
+      /get.*child.*alone/,
+      /away.*from.*family/,
+      /without.*guardian.*permission/,
+      /behind.*parents.*back/,
+      /when.*no.*adults.*around/
+    ];
+
+    // Age-related targeting patterns
+    const ageTargetingPatterns = [
+      /looking.*for.*young/,
+      /prefer.*younger/,
+      /kids.*under.*\d+/,
+      /children.*age.*\d+/,
+      /teens.*young/,
+      /elementary.*age/,
+      /middle.*school.*kids/,
+      /high.*school.*young/,
+      /college.*freshman/,
+      /barely.*legal/,
+      /just.*turned.*\d+/
+    ];
+
+    // CRITICAL: Sexual exploitation with age references (COMPREHENSIVE ALL FORMATS)
+    const sexualExploitationAgePatterns = [
+      // ALL age format variations with sexual intent (numeric ages 5-17)
+      /(sex|sexual|fuck|screw|bang|sleep with|have sex with|want to|attracted to|touch|kiss|date|relationship with).*(1[0-7]|[5-9])[\s\-]*(year|yr)[\s\-]*olds?/,
+      /(sex|sexual|fuck|screw|bang|sleep with|have sex with|want to|attracted to|touch|kiss|date|relationship with).*(1[0-7]|[5-9])[\s\-]*yo/,
+      /(sex|sexual|fuck|screw|bang|sleep with|have sex with|want to|attracted to|touch|kiss|date|relationship with).*(1[0-7]|[5-9])[\s\-]*y\/o/,
+      /(sex|sexual|fuck|screw|bang|sleep with|have sex with|want to|attracted to|touch|kiss|date|relationship with).*(1[0-7]|[5-9])[\s\-]*yrs?\b/,
+      /(sex|sexual|fuck|screw|bang|sleep with|have sex with|want to|attracted to|touch|kiss|date|relationship with).*(1[0-7]|[5-9])[\s\-]*years?[\s\-]*olds?/,
+      // Hyphenated age formats
+      /(sex|sexual|fuck|screw|bang|sleep with|have sex with|want to|attracted to|touch|kiss|date|relationship with).*(1[0-7]|[5-9])[\s\-]*year[\s\-]*olds?/,
+      /(sex|sexual|fuck|screw|bang|sleep with|have sex with|want to|attracted to|touch|kiss|date|relationship with).*\b(1[0-7]|[5-9])\b/,
+      // Spelled-out ages with sexual intent (comprehensive)
+      /(sex|sexual|fuck|screw|bang|sleep with|have sex with|want to|attracted to|touch|kiss|date|relationship with).*(five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen)[\s\-]*(year|yr)[\s\-]*olds?/,
+      /(sex|sexual|fuck|screw|bang|sleep with|have sex with|want to|attracted to|touch|kiss|date|relationship with).*(five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen)[\s\-]*yo/,
+      /(sex|sexual|fuck|screw|bang|sleep with|have sex with|want to|attracted to|touch|kiss|date|relationship with).*(five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen)[\s\-]*year[\s\-]*olds?/,
+      // Teen and minor references
+      /(sex|sexual|fuck|screw|bang|sleep with|have sex with|want to|attracted to|touch|kiss|date|relationship with).*(teen|teenager|adolescent|youth|minor)/,
+      // Age ranges with sexual content
+      /(sex|sexual|fuck|screw|bang|sleep with|have sex with|want to|attracted to|touch|kiss|date|relationship with).*(under.*1[89]|below.*1[89]|younger.*than.*1[89])/,
+      // Euphemistic age references with sexual intent
+      /(sex|sexual|fuck|screw|bang|sleep with|have sex with|want to|attracted to|touch|kiss|date|relationship with).*(pre.*teen|preteen|pre.*pubescent|prepubescent|elementary|middle.*school|junior.*high)/,
+      // School-related age targeting with sexual intent
+      /(sex|sexual|fuck|screw|bang|sleep with|have sex with|want to|attracted to|touch|kiss|date|relationship with).*(elementary.*student|middle.*school.*student|junior.*high.*student|high.*school.*freshman|high.*school.*sophomore)/,
+      // Legal but concerning age targeting
+      /(sex|sexual|fuck|screw|bang|sleep with|have sex with|want to|attracted to|touch|kiss|date|relationship with).*(just.*turned.*1[89]|barely.*1[89]|young.*1[89])/
+    ];
+
+    // CRITICAL: Standalone age references with concerning context (ALL SHORTHAND FORMATS)
+    const ageExploitationPatterns = [
+      // COMPREHENSIVE age format coverage (want/like/love/desire/attracted to + ages 5-17)
+      /(want|like|love|desire|attracted.*to).*(1[0-7]|[5-9])[\s\-]*(year|yr)[\s\-]*olds?/,
+      /(want|like|love|desire|attracted.*to).*(1[0-7]|[5-9])[\s\-]*yo/,
+      /(want|like|love|desire|attracted.*to).*(1[0-7]|[5-9])[\s\-]*y\/o/,
+      /(want|like|love|desire|attracted.*to).*(1[0-7]|[5-9])[\s\-]*yrs?\b/,
+      /(want|like|love|desire|attracted.*to).*(1[0-7]|[5-9])[\s\-]*years?[\s\-]*olds?/,
+      /(want|like|love|desire|attracted.*to).*(1[0-7]|[5-9])[\s\-]*year[\s\-]*olds?/,
+      /(want|like|love|desire|attracted.*to).*\b(1[0-7]|[5-9])\b/,
+      // Special case for "find X attractive" pattern - ALL AGE FORMATS
+      /find.*(1[0-7]|[5-9])[\s\-]*(year|yr)[\s\-]*olds?.*attractive/,
+      /find.*(1[0-7]|[5-9])[\s\-]*yo.*attractive/,
+      /find.*(1[0-7]|[5-9])[\s\-]*y\/o.*attractive/,
+      /find.*(1[0-7]|[5-9])[\s\-]*yrs?\b.*attractive/,
+      /find.*(1[0-7]|[5-9])[\s\-]*years?[\s\-]*olds?.*attractive/,
+      /find.*(1[0-7]|[5-9])[\s\-]*year[\s\-]*olds?.*attractive/,
+      /find.*\b(1[0-7]|[5-9])\b.*attractive/,
+      // Spelled-out ages with any intent - ALL FORMATS
+      /(want|like|love|desire|find.*attractive|attracted.*to).*(five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen)[\s\-]*(year|yr)[\s\-]*olds?/,
+      /(want|like|love|desire|find.*attractive|attracted.*to).*(five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen)[\s\-]*yo/,
+      /(want|like|love|desire|find.*attractive|attracted.*to).*(five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen)[\s\-]*year[\s\-]*olds?/,
+      // Critical: hyphenated spelled-out ages like "fourteen-year-old"
+      /(want|like|love|desire|attracted.*to).*(five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen)[\-]year[\-]olds?/,
+      // Special case: "find [spelled-out-age] attractive" pattern
+      /find.*(five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen)[\-]year[\-]olds?.*attractive/,
+      // Euphemistic targeting with any romantic/sexual intent
+      /(want|like|love|desire|find.*attractive|attracted.*to).*pre.*teens?/,
+      /(want|like|love|desire|find.*attractive|attracted.*to).*preteen/,
+      /(want|like|love|desire|find.*attractive|attracted.*to).*middle.*school/,
+      /(want|like|love|desire|find.*attractive|attracted.*to).*junior.*high/,
+      /(want|like|love|desire|find.*attractive|attracted.*to).*elementary/,
+      // School-specific targeting
+      /like.*junior.*high.*school.*(girls?|boys?|students?)/,
+      /find.*middle.*school.*(girls?|boys?|students?).*attractive/,
+      /attracted.*elementary.*(girls?|boys?|students?)/,
+      // Young targeting patterns
+      /(want|like|love|desire|find.*attractive|attracted.*to).*young.*(girls?|boys?)/,
+      /(want|like|love|desire|find.*attractive|attracted.*to).*(girls?|boys?).*under.*1[89]/,
+      // Neighbor/acquaintance targeting with ages
+      /(want|like|love|desire|find.*attractive|attracted.*to).*(neighbor|friend|classmate|student).*(1[0-7]|[5-9])/,
+      /(want|like|love|desire|find.*attractive|attracted.*to).*my.*(1[0-7]|[5-9])[\s\-]*(yo|y\/o|year[\s\-]*old)/
+    ];
+
+    // Combined pattern checking with comprehensive coverage
+    const allPatterns = [
+      ...groomingPatterns,
+      ...exploitationPatterns,
+      ...euphemisticPatterns,
+      ...onlinePredatorPatterns,
+      ...supervisionBypassPatterns,
+      ...ageTargetingPatterns,
+      ...sexualExploitationAgePatterns,
+      ...ageExploitationPatterns
+    ];
+
+    for (const pattern of allPatterns) {
       if (pattern.test(messageLower)) {
         return { 
           isViolation: true, 
-          reason: 'Content endangering child safety', 
+          reason: 'Content endangering child safety - prohibited contact or exploitation', 
           confidence: 0.95 
         };
       }
     }
 
-    for (const pattern of inappropriateContactPatterns) {
-      if (pattern.test(messageLower)) {
+    // Additional keyword-based detection for edge cases
+    const criticalKeywords = [
+      'groom', 'molest', 'pedophile', 'loli', 'shota', 'cp', 'csam',
+      'child porn', 'kiddie', 'preteen', 'jailbait', 'underage'
+    ];
+
+    for (const keyword of criticalKeywords) {
+      if (messageLower.includes(keyword)) {
         return { 
           isViolation: true, 
-          reason: 'Inappropriate contact with minors', 
-          confidence: 0.90 
+          reason: 'Content endangering child safety - prohibited terminology', 
+          confidence: 0.98 
         };
       }
     }
@@ -382,6 +664,145 @@ export class NoahContentFilter {
           reason: 'Organizing harassment campaigns', 
           confidence: 0.90 
         };
+      }
+    }
+
+    return { isViolation: false, confidence: 0.95 };
+  }
+
+  /**
+   * Adult Content/Pornography - HARMFUL INTENT Detection
+   */
+  private static checkAdultContentIntent(messageLower: string, originalMessage: string): { isViolation: boolean; reason?: string; confidence: number } {
+    // Direct pornography and explicit content requests
+    const pornographyPatterns = [
+      /generate.*porn/,
+      /create.*porn/,
+      /make.*porn/,
+      /write.*porn/,
+      /show.*me.*porn/,
+      /give.*me.*porn/,
+      /find.*porn/,
+      /pornographic/,
+      /explicit.*sexual/,
+      /sexual.*explicit/,
+      /nude.*photo/,
+      /naked.*photo/,
+      /dick.*pic/,
+      /pussy.*pic/,
+      /send.*nudes/,
+      /share.*nudes/
+    ];
+
+    // Sexual roleplay and explicit content generation
+    const sexualRoleplayPatterns = [
+      /roleplay.*sex/,
+      /sexual.*roleplay/,
+      /pretend.*we.*are.*having.*sex/,
+      /act.*like.*we.*are.*having.*sex/,
+      /simulate.*sex/,
+      /write.*sexual.*scenario/,
+      /describe.*sexual.*act/,
+      /generate.*sexual.*content/,
+      /erotic.*story/,
+      /sexual.*fantasy/,
+      /masturbation.*story/,
+      /orgasm.*story/
+    ];
+
+    // Explicit sexual requests and content
+    const explicitSexualRequests = [
+      /how.*to.*have.*sex/,
+      /teach.*me.*sex/,
+      /show.*me.*how.*to.*fuck/,
+      /describe.*fucking/,
+      /tell.*me.*about.*fucking/,
+      /what.*does.*sex.*feel.*like/,
+      /describe.*orgasm/,
+      /tell.*me.*about.*masturbation/,
+      /how.*to.*masturbate/,
+      /sexual.*positions/,
+      /describe.*sexual.*pleasure/
+    ];
+
+    // Adult entertainment and NSFW content
+    const adultEntertainmentPatterns = [
+      /adult.*entertainment/,
+      /nsfw.*content/,
+      /adult.*video/,
+      /sex.*video/,
+      /porn.*video/,
+      /adult.*website/,
+      /sex.*site/,
+      /porn.*site/,
+      /adult.*material/,
+      /sexual.*material/,
+      /xxx.*content/,
+      /adult.*only/
+    ];
+
+    // Combined pattern checking
+    const allPatterns = [
+      ...pornographyPatterns,
+      ...sexualRoleplayPatterns,
+      ...explicitSexualRequests,
+      ...adultEntertainmentPatterns
+    ];
+
+    for (const pattern of allPatterns) {
+      if (pattern.test(messageLower)) {
+        return { 
+          isViolation: true, 
+          reason: 'Adult/sexual content request', 
+          confidence: 0.90 
+        };
+      }
+    }
+
+    // Keyword-based detection for explicit terms
+    const explicitKeywords = [
+      'porn', 'porno', 'pornography', 'xxx', 'nsfw', 'nude', 'naked', 'dick', 'cock', 
+      'pussy', 'vagina', 'penis', 'tits', 'boobs', 'ass', 'anal', 'blowjob', 'handjob',
+      'cumshot', 'orgasm', 'masturbate', 'jerk off', 'finger', 'dildo', 'vibrator'
+    ];
+
+    // Context-based keyword checking (avoid false positives for medical/educational content)
+    const inappropriateContextKeywords = [
+      'sexy', 'horny', 'aroused', 'turned on', 'wet', 'hard', 'erect', 'climax'
+    ];
+
+    for (const keyword of explicitKeywords) {
+      if (messageLower.includes(keyword)) {
+        // Check if it's in a clearly sexual/pornographic context
+        const sexualContext = [
+          'show me', 'give me', 'want to see', 'generate', 'create', 'make me',
+          'describe', 'tell me about', 'roleplay', 'pretend', 'simulate'
+        ];
+        
+        if (sexualContext.some(context => messageLower.includes(context))) {
+          return { 
+            isViolation: true, 
+            reason: 'Explicit sexual content request with inappropriate context', 
+            confidence: 0.95 
+          };
+        }
+      }
+    }
+
+    for (const keyword of inappropriateContextKeywords) {
+      if (messageLower.includes(keyword)) {
+        // Check for sexual context combinations
+        const sexualCombinations = [
+          'make me', 'get me', 'help me get', 'want to be', 'feeling', 'getting'
+        ];
+        
+        if (sexualCombinations.some(combo => messageLower.includes(combo))) {
+          return { 
+            isViolation: true, 
+            reason: 'Sexual content with inappropriate context', 
+            confidence: 0.85 
+          };
+        }
       }
     }
 
