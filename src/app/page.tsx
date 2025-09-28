@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -13,6 +13,75 @@ interface Artifact {
   title: string;
   content: string;
 }
+
+// Memoized individual message component for performance
+const MessageComponent = React.memo(({ 
+  message, 
+  index, 
+  onChallenge, 
+  isAlreadyChallenged,
+  isLoading 
+}: {
+  message: Message;
+  index: number;
+  onChallenge: (index: number) => void;
+  isAlreadyChallenged: boolean;
+  isLoading: boolean;
+}) => {
+  const handleChallenge = useCallback(() => onChallenge(index), [onChallenge, index]);
+
+  return (
+    <div className="group">
+      {message.role === 'user' ? (
+        <div className="flex justify-end">
+          <div className="max-w-2xl">
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-4 rounded-2xl rounded-br-md shadow-lg">
+              <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
+            </div>
+            <div className="text-xs text-slate-500 mt-2 text-right">
+              {new Date(message.timestamp!).toLocaleTimeString()}
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="flex justify-start">
+          <div className="max-w-2xl">
+            <div className="bg-white border border-slate-200 px-6 py-4 rounded-2xl rounded-bl-md shadow-sm hover:shadow-md transition-shadow duration-200">
+              <div className="flex items-start space-x-3">
+                <div className="w-8 h-8 bg-gradient-to-br from-slate-100 to-slate-200 rounded-full flex items-center justify-center flex-shrink-0">
+                  <span className="text-sm font-semibold text-slate-600">N</span>
+                </div>
+                <div className="flex-1">
+                  <p className="text-slate-800 leading-relaxed whitespace-pre-wrap">{message.content}</p>
+                  <div className="flex items-center justify-between mt-3">
+                    <div className="text-xs text-slate-500">
+                      {new Date(message.timestamp!).toLocaleTimeString()}
+                    </div>
+                    {!isAlreadyChallenged && !isLoading && (
+                      <button
+                        onClick={handleChallenge}
+                        className="text-xs text-blue-600 hover:text-blue-700 font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                      >
+                        Challenge this →
+                      </button>
+                    )}
+                    {isAlreadyChallenged && (
+                      <div className="text-xs text-green-600 font-medium">
+                        ✓ Challenged
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+});
+
+MessageComponent.displayName = 'MessageComponent';
 
 export default function TrustRecoveryProtocol() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -162,9 +231,9 @@ export default function TrustRecoveryProtocol() {
   }, [artifact]);
 
   const toggleSkepticMode = useCallback(() => {
-    setSkepticMode(!skepticMode);
+    setSkepticMode(prev => !prev);
     setTrustLevel(prev => Math.max(0, prev - 10));
-  }, [skepticMode]);
+  }, []);
 
   const challengeMessage = useCallback(async (messageIndex: number) => {
     if (isLoading) return;
@@ -241,6 +310,20 @@ export default function TrustRecoveryProtocol() {
 
     setIsLoading(false);
   }, [messages, trustLevel, skepticMode, isLoading]);
+
+  // Memoized message list to prevent unnecessary re-renders
+  const messagesWithMemoization = useMemo(() => {
+    return messages.map((message, index) => (
+      <MessageComponent
+        key={`${index}-${message.timestamp}`} // Better key for memoization
+        message={message}
+        index={index}
+        onChallenge={challengeMessage}
+        isAlreadyChallenged={challengedMessages.has(index)}
+        isLoading={isLoading}
+      />
+    ));
+  }, [messages, challengedMessages, isLoading, challengeMessage]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
@@ -320,55 +403,7 @@ export default function TrustRecoveryProtocol() {
 
             {/* Conversation */}
             <div className="space-y-6">
-              {messages.map((message, index) => (
-                <div key={index} className="group">
-                  {message.role === 'user' ? (
-                    <div className="flex justify-end">
-                      <div className="max-w-2xl">
-                        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-4 rounded-2xl rounded-br-md shadow-lg">
-                          <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
-                        </div>
-                        <div className="text-xs text-slate-500 mt-2 text-right">
-                          {new Date(message.timestamp!).toLocaleTimeString()}
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex justify-start">
-                      <div className="max-w-2xl">
-                        <div className="bg-white border border-slate-200 px-6 py-4 rounded-2xl rounded-bl-md shadow-sm hover:shadow-md transition-shadow duration-200">
-                          <div className="flex items-start space-x-3">
-                            <div className="w-8 h-8 bg-gradient-to-br from-slate-100 to-slate-200 rounded-full flex items-center justify-center flex-shrink-0">
-                              <span className="text-sm font-semibold text-slate-600">N</span>
-                            </div>
-                            <div className="flex-1">
-                              <p className="text-slate-800 leading-relaxed whitespace-pre-wrap">{message.content}</p>
-                              <div className="flex items-center justify-between mt-3">
-                                <div className="text-xs text-slate-500">
-                                  {new Date(message.timestamp!).toLocaleTimeString()}
-                                </div>
-                                {!challengedMessages.has(index) && (
-                                  <button
-                                    onClick={() => challengeMessage(index)}
-                                    className="text-xs text-blue-600 hover:text-blue-700 font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                                  >
-                                    Challenge this →
-                                  </button>
-                                )}
-                                {challengedMessages.has(index) && (
-                                  <div className="text-xs text-green-600 font-medium">
-                                    ✓ Challenged
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))}
+              {messagesWithMemoization}
 
               {isLoading && (
                 <div className="flex justify-start">
