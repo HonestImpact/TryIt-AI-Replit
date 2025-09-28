@@ -139,6 +139,7 @@ class AnalyticsService {
           sessionId,
           messageSequence,
           role,
+          content,  // CRITICAL: Include actual content!
           contentLength: content.length,
           wordCount: this.countWords(content),
           messageType: this.inferMessageType(content, role),
@@ -188,6 +189,7 @@ class AnalyticsService {
           messageId,
           toolHash,
           title,
+          content,  // CRITICAL: Include actual content!
           contentLength: content.length,
           toolType: this.inferToolType(title, content),
           toolCategory: this.inferToolCategory(title, content),

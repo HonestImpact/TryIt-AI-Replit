@@ -524,29 +524,27 @@ async function noahChatHandler(req: NextRequest, context: LoggingContext): Promi
 }
 
 /**
- * Fast path for simple questions - skip all the complex overhead
+ * Fast path for simple questions - Noah can handle both simple questions AND tool creation directly
  */
 function isSimpleQuestion(content: string): boolean {
   const contentLower = content.toLowerCase();
   
-  // Explicitly exclude tool creation requests
-  const toolRequests = [
-    'create', 'build', 'make', 'generate', 'develop', 'calculator', 
-    'timer', 'converter', 'form', 'tracker', 'tool', 'app'
-  ];
-  
-  if (toolRequests.some(pattern => contentLower.includes(pattern))) {
-    return false; // Always route tool requests to complex path
-  }
-  
-  const simple = [
+  // Simple factual questions
+  const simpleFactual = [
     'what is', 'who is', 'when is', 'where is', 'how many', 'what are',
     'capital of', 'population of', 'currency of', 'language of',
     'definition of', 'meaning of', 'explain', 'define'
   ];
   
-  return simple.some(pattern => contentLower.includes(pattern)) && 
-         content.length < 100; // Short questions only
+  // Simple tool creation requests Noah can handle directly 
+  const simpleTools = [
+    'create', 'build', 'make', 'calculator', 'timer', 'converter'
+  ];
+  
+  const isFactual = simpleFactual.some(pattern => contentLower.includes(pattern)) && content.length < 100;
+  const isSimpleTool = simpleTools.some(pattern => contentLower.includes(pattern)) && content.length < 50;
+  
+  return isFactual || isSimpleTool;
 }
 
 /**
@@ -641,7 +639,7 @@ async function noahStreamingChatHandler(req: NextRequest, context: LoggingContex
         })),
         system: AI_CONFIG.CHAT_SYSTEM_PROMPT,
         temperature: 0.3, // Lower temperature for factual questions
-        maxTokens: 150,   // Limit response length
+        maxTokens: 2000,  // Allow full tool creation
         onFinish: async (completion) => {
           const responseTime = Date.now() - startTime;
           logger.info('✅ Noah fast path completed', {
