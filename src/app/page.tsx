@@ -23,13 +23,15 @@ const MessageComponent = React.memo(({
   index, 
   onChallenge, 
   isAlreadyChallenged,
-  isLoading 
+  isLoading,
+  interfaceLocked
 }: {
   message: Message;
   index: number;
   onChallenge: (index: number) => void;
   isAlreadyChallenged: boolean;
   isLoading: boolean;
+  interfaceLocked: boolean;
 }) => {
   const handleChallenge = useCallback(() => onChallenge(index), [onChallenge, index]);
 
@@ -49,7 +51,7 @@ const MessageComponent = React.memo(({
       ) : (
         <div className="flex justify-start">
           <div className="max-w-2xl">
-            <div className="bg-white border border-slate-200 px-6 py-4 rounded-2xl rounded-bl-md shadow-sm hover:shadow-md transition-shadow duration-200">
+            <div className={`bg-white border border-slate-200 px-6 py-4 rounded-2xl rounded-bl-md shadow-sm transition-shadow duration-200 ${interfaceLocked ? 'opacity-50 pointer-events-none' : 'hover:shadow-md'}`}>
               <div className="flex items-start space-x-3">
                 <div className="w-8 h-8 bg-gradient-to-br from-slate-100 to-slate-200 rounded-full flex items-center justify-center flex-shrink-0">
                   <span className="text-sm font-semibold text-slate-600">N</span>
@@ -60,7 +62,7 @@ const MessageComponent = React.memo(({
                     <div className="text-xs text-slate-500">
                       {new Date(message.timestamp!).toLocaleTimeString()}
                     </div>
-                    {!isAlreadyChallenged && !isLoading && (
+                    {!isAlreadyChallenged && !isLoading && !interfaceLocked && (
                       <button
                         onClick={handleChallenge}
                         className="text-xs text-blue-600 hover:text-blue-700 font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-200"
@@ -105,6 +107,7 @@ export default function TrustRecoveryProtocol() {
   const [trustLevel, setTrustLevel] = useState(50);
   const [challengedMessages, setChallengedMessages] = useState<Set<number>>(new Set());
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
+  const [interfaceLocked, setInterfaceLocked] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -145,7 +148,7 @@ export default function TrustRecoveryProtocol() {
 
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!input.trim() || isLoading) return;
+    if (!input.trim() || isLoading || interfaceLocked) return;
 
     const userMessage = input.trim();
     setInput('');
@@ -200,9 +203,15 @@ export default function TrustRecoveryProtocol() {
         // Handle non-streaming JSON response for tool creation
         const data = await response.json();
         
-        // Handle radio silence - Noah chose not to respond
-        if (data.status === 'radio_silence') {
-          // Don't add any message - Noah goes silent
+        // Handle interface lockdown - Noah locks all interactions  
+        if (data.status === 'interface_locked') {
+          setInterfaceLocked(true);
+          // Add the spaces response to show the lockdown
+          setMessages(prev => [...prev, {
+            role: 'assistant',
+            content: data.content, // Contains spaces
+            timestamp: Date.now()
+          }]);
           return;
         }
         
@@ -305,9 +314,15 @@ export default function TrustRecoveryProtocol() {
         // Fallback to non-streaming if no body
         const data = await response.json();
         
-        // Handle radio silence - Noah chose not to respond
-        if (data.status === 'radio_silence') {
-          // Don't add any message - Noah goes silent
+        // Handle interface lockdown - Noah locks all interactions  
+        if (data.status === 'interface_locked') {
+          setInterfaceLocked(true);
+          // Add the spaces response to show the lockdown
+          setMessages(prev => [...prev, {
+            role: 'assistant',
+            content: data.content, // Contains spaces
+            timestamp: Date.now()
+          }]);
           return;
         }
         
@@ -347,6 +362,7 @@ export default function TrustRecoveryProtocol() {
   };
 
   const downloadArtifact = useCallback(() => {
+    if (interfaceLocked) return;
     logger.debug('Download initiated', { title: artifact?.title });
     if (!artifact) {
       logger.warn('Download attempted with no artifact available');
@@ -371,6 +387,7 @@ export default function TrustRecoveryProtocol() {
     content: string;
     id: string;
   }) => {
+    if (interfaceLocked) return;
     logger.debug('Individual download initiated', { title: sessionArtifact.title, id: sessionArtifact.id });
 
     const content = `${sessionArtifact.title}\n\n${sessionArtifact.content}`;
@@ -387,12 +404,13 @@ export default function TrustRecoveryProtocol() {
   }, []);
 
   const toggleSkepticMode = useCallback(() => {
+    if (interfaceLocked) return;
     setSkepticMode(prev => !prev);
     setTrustLevel(prev => Math.max(0, prev - 10));
-  }, []);
+  }, [interfaceLocked]);
 
   const challengeMessage = useCallback(async (messageIndex: number) => {
-    if (isLoading) return;
+    if (isLoading || interfaceLocked) return;
 
     const message = messages[messageIndex];
     if (message.role !== 'assistant') return;
@@ -489,6 +507,7 @@ export default function TrustRecoveryProtocol() {
         onChallenge={challengeMessage}
         isAlreadyChallenged={challengedMessages.has(index)}
         isLoading={isLoading}
+        interfaceLocked={interfaceLocked}
       />
     ));
   }, [messages, challengedMessages, isLoading, challengeMessage]);
@@ -665,7 +684,7 @@ export default function TrustRecoveryProtocol() {
                     placeholder={skepticMode ? "Question everything. What would you like to test?" : "What would you like to try?"}
                     className="w-full px-4 sm:px-6 py-3 sm:py-4 rounded-xl sm:rounded-2xl border border-slate-300 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 placeholder-slate-500 bg-white shadow-sm text-base"
                     rows={3}
-                    disabled={isLoading}
+                    disabled={isLoading || interfaceLocked}
                   />
                   <div className="absolute bottom-3 sm:bottom-4 right-3 sm:right-4 flex items-center space-x-2">
                     <div className="hidden sm:block text-xs text-slate-400">
@@ -815,6 +834,33 @@ export default function TrustRecoveryProtocol() {
           </div>
         </div>
       </div>
+      
+      {/* Interface Lockdown Banner */}
+      {interfaceLocked && (
+        <div className="fixed bottom-0 left-0 right-0 border-t border-red-200 bg-red-50 backdrop-blur-sm z-50">
+          <div className="max-w-4xl mx-auto px-4 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
+                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-red-800 font-medium text-sm">Interface Locked</p>
+                  <p className="text-red-600 text-xs">Your message violated safety guidelines. Refresh to restore functionality.</p>
+                </div>
+              </div>
+              <button
+                onClick={() => window.location.reload()}
+                className="bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors duration-200"
+              >
+                Refresh Page
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
