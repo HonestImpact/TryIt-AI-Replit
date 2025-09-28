@@ -658,59 +658,7 @@ async function noahStreamingChatHandler(req: NextRequest, context: LoggingContex
       }).toTextStreamResponse();
     }
 
-    if (!messages || !Array.isArray(messages) || messages.length === 0) {
-      const model = AI_CONFIG.getProvider() === 'openai' ? openai(AI_CONFIG.getModel()) : anthropic(AI_CONFIG.getModel());
-      return streamText({
-        model,
-        messages: [{ role: 'assistant', content: "I didn't receive any messages to respond to. Want to try sending me something?" }],
-        temperature: 0.7,
-      }).toTextStreamResponse();
-    }
-
-    const lastMessage = messages[messages.length - 1]?.content || '';
-    logger.info('📝 Processing Noah streaming request', {
-      messageCount: messages.length,
-      messageLength: lastMessage.length,
-      analytics: conversationState.sessionId ? 'enabled' : 'disabled'
-    });
-
-    // 🛡️ SAFETY CHECK - Radio silence for prohibited content (streaming version)
-    const safetyCheck = await NoahSafetyService.checkUserMessage(
-      lastMessage,
-      conversationState.sessionId || undefined,
-      conversationState.conversationId || undefined,
-      messages.slice(0, -1).map(m => m.content)
-    );
-
-    if (safetyCheck.radioSilence) {
-      logger.warn('🔴 Radio silence activated - safety violation detected (streaming)', {
-        violationType: safetyCheck.violation?.type,
-        reason: safetyCheck.violation?.reason,
-        sessionId: conversationState.sessionId?.substring(0, 8) + '...'
-      });
-
-      // Log the attempted violation for Trust Recovery Protocol tracking
-      if (conversationState.conversationId && conversationState.sessionId) {
-        conversationState.messageSequence++;
-        analyticsService.logMessage(
-          conversationState.conversationId,
-          conversationState.sessionId,
-          conversationState.messageSequence,
-          'user',
-          `[SAFETY_VIOLATION] ${safetyCheck.violation?.type}: Content filtered`
-        );
-      }
-
-      // Return empty stream - radio silence for streaming
-      const model = AI_CONFIG.getProvider() === 'openai' ? openai(AI_CONFIG.getModel()) : anthropic(AI_CONFIG.getModel());
-      return streamText({
-        model,
-        messages: [{ role: 'assistant', content: '' }],
-        temperature: 0.7,
-      }).toTextStreamResponse();
-    }
-
-    logger.debug('✅ Safety check passed - proceeding with streaming processing');
+    logger.debug('✅ Safety check passed - proceeding with complex processing');
 
     // Log user message (fire-and-forget, same as existing)
     if (conversationState.conversationId && conversationState.sessionId) {
