@@ -1,6 +1,9 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('trust-recovery-ui');
 
 interface Message {
   role: 'user' | 'assistant';
@@ -187,7 +190,7 @@ export default function TrustRecoveryProtocol() {
 
       // Handle artifact if present in response
       if (data.artifact) {
-        console.log('✅ Artifact received from API:', data.artifact);
+        logger.info('Artifact received from API', { title: data.artifact.title });
 
         // Set artifact state with smooth animation
         setTimeout(() => {
@@ -199,7 +202,7 @@ export default function TrustRecoveryProtocol() {
       }
 
     } catch (error) {
-      console.error('Error:', error);
+      logger.error('Chat request failed', { error: error instanceof Error ? error.message : String(error) });
       setMessages(prev => [...prev, {
         role: 'assistant',
         content: 'Something went wrong on my end. Want to try that again? I learn from failures.',
@@ -211,9 +214,9 @@ export default function TrustRecoveryProtocol() {
   };
 
   const downloadArtifact = useCallback(() => {
-    console.log('Download clicked, artifact:', artifact); // Debug log
+    logger.debug('Download initiated', { title: artifact?.title });
     if (!artifact) {
-      console.log('No artifact to download');
+      logger.warn('Download attempted with no artifact available');
       return;
     }
 
@@ -227,7 +230,7 @@ export default function TrustRecoveryProtocol() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    console.log('Download completed');
+    logger.info('Artifact download completed', { filename: artifact.title });
   }, [artifact]);
 
   const toggleSkepticMode = useCallback(() => {
@@ -288,7 +291,7 @@ export default function TrustRecoveryProtocol() {
 
       // Handle artifact if present in challenge response
       if (data.artifact) {
-        console.log('✅ Challenge artifact received from API:', data.artifact);
+        logger.info('Challenge artifact received', { title: data.artifact.title });
 
         // Set artifact state with smooth animation
         setTimeout(() => {
@@ -300,7 +303,7 @@ export default function TrustRecoveryProtocol() {
       }
 
     } catch (error) {
-      console.error('Error:', error);
+      logger.error('Challenge request failed', { error: error instanceof Error ? error.message : String(error) });
       setMessages(prev => [...prev, {
         role: 'assistant',
         content: 'I appreciate the challenge, but I\'m having trouble responding right now. Want to try that again?',
