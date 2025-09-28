@@ -153,13 +153,25 @@ export default function TrustRecoveryProtocol() {
     setMessages(newMessages);
 
     try {
-      // Call our API route with streaming
+      // Check if this looks like a tool creation request
+      const toolKeywords = ['calculator', 'timer', 'converter', 'form', 'tracker', 'tool', 'widget', 'app', 'create', 'build', 'make'];
+      const isToolRequest = toolKeywords.some(keyword => 
+        userMessage.toLowerCase().includes(keyword.toLowerCase())
+      );
+
+      // Use non-streaming for tool creation to get proper truncation
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      
+      if (!isToolRequest) {
+        headers['x-streaming'] = 'true';
+      }
+
+      // Call our API route 
       const response = await fetch('/api/chat', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-streaming': 'true'
-        },
+        headers,
         body: JSON.stringify({
           messages: newMessages,
           skepticMode: skepticMode
@@ -176,8 +188,36 @@ export default function TrustRecoveryProtocol() {
         throw new Error('Failed to get response');
       }
 
-      // Handle streaming response
-      if (response.body) {
+      // Handle response based on type
+      if (isToolRequest) {
+        // Handle non-streaming JSON response for tool creation
+        const data = await response.json();
+        
+        // Add the assistant message with truncated content
+        setMessages(prev => [...prev, {
+          role: 'assistant',
+          content: data.content,
+          timestamp: Date.now()
+        }]);
+
+        // Handle artifact if present
+        if (data.artifact) {
+          logger.info('Tool artifact received', { title: data.artifact.title });
+          setTimeout(() => {
+            setArtifact({
+              title: data.artifact.title,
+              content: data.artifact.content
+            });
+          }, 800);
+        }
+
+        // Adjust trust level
+        if (data.content.toLowerCase().includes('uncertain') || data.content.toLowerCase().includes('not sure')) {
+          setTrustLevel(prev => Math.min(100, prev + 5));
+        }
+        
+      } else if (response.body) {
+        // Handle streaming response
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let accumulatedContent = '';
