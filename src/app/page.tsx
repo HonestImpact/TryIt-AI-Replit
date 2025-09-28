@@ -92,6 +92,13 @@ export default function TrustRecoveryProtocol() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [artifact, setArtifact] = useState<Artifact | null>(null);
+  const [sessionArtifacts, setSessionArtifacts] = useState<Array<{
+    title: string;
+    content: string;
+    timestamp: number;
+    agent: string;
+    id: string;
+  }>>([]);
   const [showReasoning] = useState(false);
   const [reasoning] = useState('');
   const [skepticMode, setSkepticMode] = useState(false);
@@ -211,6 +218,12 @@ export default function TrustRecoveryProtocol() {
           }, 800);
         }
 
+        // Handle session artifacts for accumulated toolbox
+        if (data.sessionArtifacts) {
+          logger.info('Session artifacts received', { count: data.sessionArtifacts.length });
+          setSessionArtifacts(data.sessionArtifacts);
+        }
+
         // Adjust trust level
         if (data.content.toLowerCase().includes('uncertain') || data.content.toLowerCase().includes('not sure')) {
           setTrustLevel(prev => Math.min(100, prev + 5));
@@ -294,6 +307,12 @@ export default function TrustRecoveryProtocol() {
               content: data.artifact.content
             });
           }, 800);
+        }
+
+        // Handle session artifacts for accumulated toolbox
+        if (data.sessionArtifacts) {
+          logger.info('Session artifacts received', { count: data.sessionArtifacts.length });
+          setSessionArtifacts(data.sessionArtifacts);
         }
       }
 
@@ -396,6 +415,12 @@ export default function TrustRecoveryProtocol() {
             content: data.artifact.content
           });
         }, 800);
+      }
+
+      // Handle session artifacts for accumulated toolbox
+      if (data.sessionArtifacts) {
+        logger.info('Challenge session artifacts received', { count: data.sessionArtifacts.length });
+        setSessionArtifacts(data.sessionArtifacts);
       }
 
     } catch (error) {

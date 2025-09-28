@@ -47,6 +47,15 @@ const NOAH_TIMEOUT = 45000; // 45 seconds for Noah direct responses
 const WANDERER_TIMEOUT = 30000; // 30 seconds for fast research (Haiku)
 const TINKERER_TIMEOUT = 60000; // 60 seconds for deep building (Sonnet 4)
 
+// Session-based artifact storage (simple in-memory for MVP)
+const sessionArtifacts = new Map<string, Array<{
+  title: string;
+  content: string;
+  timestamp: number;
+  agent: string;
+  id: string;
+}>>();
+
 interface ChatResponse {
   content: string;
   status?: string;
@@ -56,6 +65,14 @@ interface ChatResponse {
     title: string;
     content: string;
   };
+  // Session-scoped artifacts for accumulated toolbox
+  sessionArtifacts?: Array<{
+    title: string;
+    content: string;
+    timestamp: number;
+    agent: string;
+    id: string;
+  }>;
 }
 
 interface ConversationState {
@@ -410,6 +427,7 @@ async function noahChatHandler(req: NextRequest, context: LoggingContext): Promi
             content: msg.content
           })),
           system: isToolGeneration ? getToolGenerationPrompt() : AI_CONFIG.CHAT_SYSTEM_PROMPT,
+          model: AI_CONFIG.getModel(),
           temperature: 0.7
         });
         result = await withTimeout(generatePromise, NOAH_TIMEOUT);
@@ -430,6 +448,7 @@ async function noahChatHandler(req: NextRequest, context: LoggingContext): Promi
           content: msg.content
         })),
         system: isToolGeneration ? getToolGenerationPrompt() : AI_CONFIG.CHAT_SYSTEM_PROMPT,
+        model: AI_CONFIG.getModel(),
         temperature: 0.7
       });
       result = await withTimeout(generatePromise, NOAH_TIMEOUT);
@@ -476,32 +495,38 @@ async function noahChatHandler(req: NextRequest, context: LoggingContext): Promi
 
     let noahContent = result.content;
 
-    // If artifact was created, show first 5 lines in chat and redirect to toolbox
-    if (parsed.hasArtifact && parsed.title && parsed.content) {
+    // If artifact was created, add to session storage and update messaging
+    if (parsed.hasArtifact && parsed.title && parsed.content && context.sessionId) {
+      // Add artifact to session storage
+      const artifactId = `${context.sessionId}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const sessionId = context.sessionId;
+      
+      if (!sessionArtifacts.has(sessionId)) {
+        sessionArtifacts.set(sessionId, []);
+      }
+      
+      sessionArtifacts.get(sessionId)!.push({
+        title: parsed.title,
+        content: parsed.content,
+        timestamp: Date.now(),
+        agent: agentUsed,
+        id: artifactId
+      });
+
       const lines = result.content.split('\n');
       const firstFiveLines = lines.slice(0, 5).join('\n');
       const hasMoreContent = lines.length > 5;
 
-      // Agent-specific truncation messages
-      let redirectMessage = '';
-      if (agentUsed === 'wanderer') {
-        redirectMessage = hasMoreContent 
-          ? `\n\n*I've researched this topic for you! Check your toolbox for the complete "${parsed.title}" with all the details and sources.*`
-          : `\n\n*This research has been saved to your toolbox as "${parsed.title}" for easy access.*`;
-      } else if (agentUsed === 'tinkerer') {
-        redirectMessage = hasMoreContent
-          ? `\n\n*I've built this for you! Check your toolbox for the complete "${parsed.title}" with all the implementation details.*`
-          : `\n\n*This tool has been built and saved to your toolbox as "${parsed.title}" for easy access.*`;
-      } else {
-        redirectMessage = hasMoreContent
-          ? `\n\n*I've created a tool for you! Check your toolbox for the complete "${parsed.title}" with all the details.*`
-          : `\n\n*This tool has been saved to your toolbox as "${parsed.title}" for easy access.*`;
-      }
+      // Updated messaging per user request
+      const redirectMessage = `\n\nPlease see the toolbox for the full text. If it's code-based, save the download as an html file and open in a browser.`;
+      
+      // Natural conversation continuation
+      const continuationMessage = `\n\nWhat would you like to build next, or do you have questions about how this works?`;
 
       if (hasMoreContent) {
-        noahContent = `${firstFiveLines}${redirectMessage}`;
+        noahContent = `${firstFiveLines}${redirectMessage}${continuationMessage}`;
       } else {
-        noahContent = `${result.content}${redirectMessage}`;
+        noahContent = `${result.content}${redirectMessage}${continuationMessage}`;
       }
     }
 
@@ -518,6 +543,11 @@ async function noahChatHandler(req: NextRequest, context: LoggingContext): Promi
         title: parsed.title,
         content: parsed.content
       };
+    }
+
+    // Include session artifacts for accumulated toolbox
+    if (context.sessionId && sessionArtifacts.has(context.sessionId)) {
+      response.sessionArtifacts = sessionArtifacts.get(context.sessionId) || [];
     }
 
     return NextResponse.json(response);
