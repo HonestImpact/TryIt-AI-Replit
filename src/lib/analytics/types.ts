@@ -17,6 +17,10 @@ export interface ConversationData {
   userEngagementLevel?: 'low' | 'medium' | 'high' | 'very-high';
   completionStatus: 'active' | 'completed' | 'abandoned' | 'error';
   agentStrategy?: string; // noah_direct, noah_wanderer, noah_tinkerer, noah_wanderer_tinkerer
+  totalMessages?: number;
+  artifactsGenerated?: number;
+  reasoningEnabled?: boolean;
+  challengeCount?: number;
 }
 
 export interface MessageData {
@@ -24,11 +28,16 @@ export interface MessageData {
   sessionId: string;
   messageSequence: number;
   role: 'user' | 'assistant';
+  content: string;  // NOW STORING ACTUAL CONTENT
   contentLength: number;
   wordCount: number;
   messageType?: 'question' | 'request' | 'challenge' | 'feedback' | 'response' | 'tool-generation';
   responseTimeMs?: number;
   agentInvolved?: 'noah' | 'wanderer' | 'tinkerer';
+  trustDelta?: number;
+  reasoning?: string;
+  sentiment?: 'positive' | 'negative' | 'neutral' | 'skeptical';
+  skepticModeActive?: boolean;
 }
 
 export interface GeneratedToolData {
@@ -37,12 +46,16 @@ export interface GeneratedToolData {
   messageId?: string;
   toolHash?: string;
   title: string;
+  content: string;  // NOW STORING ACTUAL CONTENT
   contentLength: number;
+  contentType?: string;
   toolType?: string;
   toolCategory?: string;
   generationTimeMs: number;
   generationAgent: 'noah' | 'wanderer' | 'tinkerer';
   userMessageLength: number;
+  version?: number;
+  downloadCount?: number;
 }
 
 export interface ToolUsageEvent {
@@ -64,4 +77,21 @@ export interface PerformanceMetrics {
   durationMs: number;
   success: boolean;
   error?: string;
+}
+
+// NEW: Trust tracking interfaces for comprehensive Trust Recovery Protocol
+export interface TrustEventData {
+  sessionId: string;
+  conversationId: string;
+  previousLevel: number;
+  newLevel: number;
+  triggerEvent: string;
+  triggerReason?: string;
+}
+
+export interface MessageAnnotationData {
+  messageId: string;
+  annotationType: string;
+  annotationValue: string;
+  confidenceScore?: number;
 }

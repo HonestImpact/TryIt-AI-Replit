@@ -9,7 +9,9 @@ import type {
   MessageData, 
   GeneratedToolData, 
   ToolUsageEvent,
-  PerformanceMetrics
+  PerformanceMetrics,
+  TrustEventData,
+  MessageAnnotationData
 } from './types';
 
 const logger = createLogger('analytics-db');
@@ -127,26 +129,32 @@ class AnalyticsDatabase {
   }
 
   /**
-   * Log message with comprehensive metadata
+   * Log message with comprehensive metadata AND FULL CONTENT
    */
   async logMessage(messageData: MessageData): Promise<string | null> {
     try {
       const result = await this.executeQuery<{ id: string }[]>(
         `INSERT INTO messages (
-          conversation_id, session_id, message_sequence, role, content_length,
-          word_count, message_type, response_time_ms, agent_involved
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
+          conversation_id, session_id, message_sequence, role, content, content_length,
+          word_count, message_type, response_time_ms, agent_involved, trust_delta, 
+          reasoning, sentiment, skeptic_mode_active
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) 
         RETURNING id`,
         [
           messageData.conversationId,
           messageData.sessionId,
           messageData.messageSequence,
           messageData.role,
+          messageData.content, // NOW STORING ACTUAL CONTENT
           messageData.contentLength,
           messageData.wordCount,
           messageData.messageType,
           messageData.responseTimeMs,
-          messageData.agentInvolved
+          messageData.agentInvolved,
+          messageData.trustDelta || 0,
+          messageData.reasoning,
+          messageData.sentiment,
+          messageData.skepticModeActive || false
         ]
       );
 
@@ -162,16 +170,16 @@ class AnalyticsDatabase {
   }
 
   /**
-   * Log generated tool with deduplication support
+   * Log generated tool with deduplication support AND FULL CONTENT
    */
   async logGeneratedTool(toolData: GeneratedToolData): Promise<string | null> {
     try {
       const result = await this.executeQuery<{ id: string }[]>(
         `INSERT INTO generated_tools (
-          conversation_id, session_id, message_id, tool_hash, title,
-          content_length, tool_type, tool_category, generation_time_ms,
-          generation_agent, user_message_length
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) 
+          conversation_id, session_id, message_id, content_hash, title, content,
+          content_type, content_length, tool_type, tool_category, generation_time_ms,
+          generation_agent, user_message_length, version, download_count
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) 
         RETURNING id`,
         [
           toolData.conversationId,
@@ -179,12 +187,16 @@ class AnalyticsDatabase {
           toolData.messageId,
           toolData.toolHash,
           toolData.title,
+          toolData.content, // NOW STORING ACTUAL CONTENT
+          toolData.contentType || 'text/plain',
           toolData.contentLength,
           toolData.toolType,
           toolData.toolCategory,
           toolData.generationTimeMs,
           toolData.generationAgent,
-          toolData.userMessageLength
+          toolData.userMessageLength,
+          toolData.version || 1,
+          toolData.downloadCount || 0
         ]
       );
 
@@ -273,6 +285,67 @@ class AnalyticsDatabase {
         error: error instanceof Error ? error.message : String(error)
       });
       return false;
+    }
+  }
+
+  /**
+   * Log trust level change event for Trust Recovery Protocol
+   */
+  async logTrustEvent(trustEventData: TrustEventData): Promise<string | null> {
+    try {
+      const result = await this.executeQuery<{ id: string }[]>(
+        `INSERT INTO trust_events (
+          session_id, conversation_id, previous_level, new_level, 
+          trigger_event, trigger_reason
+        ) VALUES ($1, $2, $3, $4, $5, $6) 
+        RETURNING id`,
+        [
+          trustEventData.sessionId,
+          trustEventData.conversationId,
+          trustEventData.previousLevel,
+          trustEventData.newLevel,
+          trustEventData.triggerEvent,
+          trustEventData.triggerReason
+        ]
+      );
+
+      return result && result.length > 0 ? result[0].id : null;
+
+    } catch (error) {
+      logger.error('Failed to log trust event', { 
+        error: error instanceof Error ? error.message : String(error),
+        sessionId: trustEventData.sessionId
+      });
+      return null;
+    }
+  }
+
+  /**
+   * Add message annotation for rich metadata tracking
+   */
+  async addMessageAnnotation(annotationData: MessageAnnotationData): Promise<string | null> {
+    try {
+      const result = await this.executeQuery<{ id: string }[]>(
+        `INSERT INTO message_annotations (
+          message_id, annotation_type, annotation_value, confidence_score
+        ) VALUES ($1, $2, $3, $4) 
+        RETURNING id`,
+        [
+          annotationData.messageId,
+          annotationData.annotationType,
+          annotationData.annotationValue,
+          annotationData.confidenceScore
+        ]
+      );
+
+      return result && result.length > 0 ? result[0].id : null;
+
+    } catch (error) {
+      logger.error('Failed to add message annotation', { 
+        error: error instanceof Error ? error.message : String(error),
+        messageId: annotationData.messageId
+      });
+      return null;
     }
   }
 }
