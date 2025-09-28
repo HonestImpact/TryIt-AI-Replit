@@ -11,7 +11,7 @@ const logger = createLogger('noah-safety-service');
 
 export interface SafetyResponse {
   shouldProceed: boolean;
-  radioSilence: boolean;
+  interfaceLocked: boolean;
   violation?: {
     type: string;
     reason: string;
@@ -54,7 +54,7 @@ export class NoahSafetyService {
     );
 
     if (safetyResult.radioSilence) {
-      logger.warn('Radio silence activated', {
+      logger.warn('Interface lockdown activated', {
         violationType: safetyResult.violationType,
         reason: safetyResult.reason,
         confidence: safetyResult.confidence,
@@ -64,7 +64,7 @@ export class NoahSafetyService {
 
       return {
         shouldProceed: false,
-        radioSilence: true,
+        interfaceLocked: true,
         violation: {
           type: safetyResult.violationType!,
           reason: safetyResult.reason!,
@@ -83,7 +83,7 @@ export class NoahSafetyService {
 
     return {
       shouldProceed: true,
-      radioSilence: false,
+      interfaceLocked: false,
       loggedToAnalytics: analyticsLogged
     };
   }
@@ -121,7 +121,7 @@ export class NoahSafetyService {
             isAllowed: safetyResult.isAllowed,
             violationType: safetyResult.violationType,
             confidence: safetyResult.confidence,
-            radioSilence: safetyResult.radioSilence,
+            interfaceLocked: safetyResult.radioSilence,
             checkDurationMs
           }),
           confidenceScore: safetyResult.confidence

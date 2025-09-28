@@ -338,14 +338,14 @@ async function noahChatHandler(req: NextRequest, context: LoggingContext): Promi
       messages.slice(0, -1).map(m => m.content)
     );
 
-    if (safetyCheck.radioSilence) {
-      logger.warn('🔴 Radio silence activated - safety violation detected', {
+    if (safetyCheck.interfaceLocked) {
+      logger.warn('🔒 Interface lockdown activated - safety violation detected', {
         violationType: safetyCheck.violation?.type,
         reason: safetyCheck.violation?.reason,
         sessionId: conversationState.sessionId?.substring(0, 8) + '...'
       });
 
-      // Noah goes radio silent - no response at all
+      // Noah locks the interface - spaces response with all interactions disabled
       // Log the attempted violation for Trust Recovery Protocol tracking
       if (conversationState.conversationId && conversationState.sessionId) {
         conversationState.messageSequence++;
@@ -354,14 +354,14 @@ async function noahChatHandler(req: NextRequest, context: LoggingContext): Promi
           conversationState.sessionId,
           conversationState.messageSequence,
           'user',
-          `[SAFETY_VIOLATION] ${safetyCheck.violation?.type}: Content filtered`
+          `[SAFETY_VIOLATION] ${safetyCheck.violation?.type}: Interface locked`
         );
       }
 
-      // Return empty response - radio silence
+      // Return spaces response - interface lockdown
       return NextResponse.json({
-        content: "",
-        status: 'radio_silence',
+        content: "   ", // Spaces so API doesn't get empty content
+        status: 'interface_locked',
         agent: 'noah'
       });
     }
