@@ -41,6 +41,15 @@ export class ArtifactService {
   ): Promise<ArtifactResult> {
     const startTime = Date.now();
     
+    // DEBUG: Log that we're entering artifact workflow
+    logger.info('🛠️ ArtifactService.handleArtifactWorkflow called', {
+      contentLength: content.length,
+      contentStart: content.substring(0, 100),
+      agentUsed,
+      agentStrategy,
+      sessionId: sessionId?.substring(0, 8) + '...'
+    });
+    
     try {
       // Parse response using structured parser
       const parseResult: ParseResult = StructuredResponseParser.parse(content, agentUsed);
