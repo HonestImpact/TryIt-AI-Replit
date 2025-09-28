@@ -421,6 +421,7 @@ class AnalyticsDatabase {
 
   /**
    * Get trust evolution across all conversations for a session
+   * Fixed: Each trust event now correlates with only the latest message at event time
    */
   async getTrustTimeline(sessionId: string): Promise<any> {
     try {
@@ -428,12 +429,18 @@ class AnalyticsDatabase {
         SELECT 
           te.*,
           c.conversation_sequence,
-          m.content as trigger_message_content,
-          m.role as trigger_message_role
+          latest_msg.content as trigger_message_content,
+          latest_msg.role as trigger_message_role
         FROM trust_events te
         LEFT JOIN conversations c ON te.conversation_id = c.id
-        LEFT JOIN messages m ON te.conversation_id = m.conversation_id 
-          AND m.created_at <= te.created_at
+        LEFT JOIN LATERAL (
+          SELECT m.content, m.role, m.created_at
+          FROM messages m
+          WHERE m.conversation_id = te.conversation_id 
+            AND m.created_at <= te.created_at
+          ORDER BY m.created_at DESC
+          LIMIT 1
+        ) latest_msg ON true
         WHERE te.session_id = $1
         ORDER BY te.created_at ASC
       `, [sessionId]);
