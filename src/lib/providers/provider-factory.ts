@@ -34,9 +34,24 @@ interface ModelConfig {
 function getModelConfigForTask(taskType: TaskType): ModelConfig {
   const taskUpper = taskType.toUpperCase();
   
+  // Debug environment variables
+  const envProvider = process.env[`LLM_${taskUpper}`] || process.env.LLM_DEFAULT || process.env.LLM;
+  const envModel = process.env[`LLM_${taskUpper}_ID`] || process.env.LLM_DEFAULT_ID || process.env.MODEL_ID;
+  
+  logger.debug('🔍 Environment check', { 
+    taskType, 
+    taskUpper,
+    envProvider,
+    envModel,
+    optimalProvider: getOptimalProviderForTask(taskType),
+    optimalModel: getOptimalModelForTask(taskType)
+  });
+  
   // Task-specific configuration with optimized defaults for performance
-  const provider = process.env[`LLM_${taskUpper}`] || process.env.LLM_DEFAULT || process.env.LLM || getOptimalProviderForTask(taskType);
-  const model = process.env[`LLM_${taskUpper}_ID`] || process.env.LLM_DEFAULT_ID || process.env.MODEL_ID || getOptimalModelForTask(taskType);
+  const provider = envProvider || getOptimalProviderForTask(taskType);
+  const model = envModel || getOptimalModelForTask(taskType);
+  
+  logger.debug('🎯 Final config selected', { taskType, provider, model });
   
   return { provider, model };
 }

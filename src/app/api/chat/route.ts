@@ -410,7 +410,6 @@ async function noahChatHandler(req: NextRequest, context: LoggingContext): Promi
             content: msg.content
           })),
           system: isToolGeneration ? getToolGenerationPrompt() : AI_CONFIG.CHAT_SYSTEM_PROMPT,
-          model: AI_CONFIG.getModel(),
           temperature: 0.7
         });
         result = await withTimeout(generatePromise, NOAH_TIMEOUT);
@@ -430,8 +429,7 @@ async function noahChatHandler(req: NextRequest, context: LoggingContext): Promi
           role: msg.role,
           content: msg.content
         })),
-        system: AI_CONFIG.CHAT_SYSTEM_PROMPT,
-        model: AI_CONFIG.getModel(),
+        system: isToolGeneration ? getToolGenerationPrompt() : AI_CONFIG.CHAT_SYSTEM_PROMPT,
         temperature: 0.7
       });
       result = await withTimeout(generatePromise, NOAH_TIMEOUT);
