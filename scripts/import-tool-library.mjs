@@ -39,7 +39,7 @@ async function parseHTMLTool(filePath) {
   const toolName = filename.replace(/_\d+$/, ''); // Remove timestamp
   const category = getToolCategory(toolName);
   
-  // Create structured content for RAG
+  // Create structured content for RAG (optimized for memory - exclude full HTML)
   const structuredContent = `
 TOOL: ${title}
 
@@ -58,8 +58,11 @@ ${extractKeyFeatures(document)}
 USAGE PATTERNS:
 ${getUsagePatterns(toolName)}
 
-FULL HTML CODE:
-${htmlContent}
+TECHNICAL DETAILS:
+- Interactive user interface with HTML, CSS, and JavaScript
+- Responsive design for various screen sizes
+- Self-contained tool requiring no external dependencies
+- Can be used as reference for building similar functionality
   `.trim();
   
   return {
@@ -189,7 +192,7 @@ function getUsagePatterns(toolName) {
 }
 
 async function importToolLibrary(ragSystem) {
-  console.log('Starting tool library import...');
+  console.log('Starting tool library import with streaming approach...');
   
   const toolsDir = path.join(__dirname, '..', 'tools', 'reference-library');
   
@@ -199,16 +202,24 @@ async function importToolLibrary(ragSystem) {
     
     console.log(`Found ${htmlFiles.length} HTML tools to import`);
     
-    // Prepare documents for batch processing
-    const documents = [];
+    let successCount = 0;
+    let errorCount = 0;
     
+    // Initialize RAG system once
+    await ragSystem.initialize();
+    console.log('✅ RAG system initialized');
+    
+    // Process files one by one to avoid memory issues
     for (const file of htmlFiles) {
       try {
+        console.log(`\n🔄 Processing: ${file}`);
+        
         const filePath = path.join(toolsDir, file);
         const { content, metadata } = await parseHTMLTool(filePath);
         
-        documents.push({
-          id: `tool_${metadata.toolName}_${Date.now()}`,
+        // Create single document for streaming processing
+        const document = {
+          id: `tool_${metadata.toolName}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           content,
           metadata: {
             source: `tool_library/${file}`,
@@ -218,25 +229,39 @@ async function importToolLibrary(ragSystem) {
             timestamp: new Date().toISOString(),
             ...metadata
           }
-        });
+        };
         
-        console.log(`📄 Prepared: ${metadata.title}`);
+        // Process one document at a time
+        await ragSystem.addDocuments([document]);
+        
+        console.log(`✅ Successfully imported: ${metadata.title}`);
+        successCount++;
+        
+        // Small delay to allow garbage collection
+        await new Promise(resolve => setTimeout(resolve, 200));
+        
+        // Force garbage collection if available
+        if (global.gc) {
+          global.gc();
+        }
         
       } catch (error) {
-        console.error(`❌ Error parsing ${file}:`, error.message);
+        console.error(`❌ Error importing ${file}:`, error.message);
+        errorCount++;
+        
+        // Continue with next file instead of stopping
+        continue;
       }
     }
     
-    // Add all documents to RAG system
-    if (documents.length > 0) {
-      console.log(`\n🚀 Adding ${documents.length} tools to RAG system...`);
-      await ragSystem.addDocuments(documents);
-      console.log(`✅ Successfully imported ${documents.length} tools to RAG system`);
-    }
-    
     console.log(`\n📊 Import Summary:`);
-    console.log(`✅ Success: ${documents.length} tools`);
+    console.log(`✅ Success: ${successCount} tools`);
+    console.log(`❌ Errors: ${errorCount} tools`);
     console.log(`📚 Total: ${htmlFiles.length} tools processed`);
+    
+    if (successCount > 0) {
+      console.log(`\n🎉 Successfully imported ${successCount} tools to RAG knowledge base!`);
+    }
     
   } catch (error) {
     console.error('❌ Failed to import tool library:', error);
