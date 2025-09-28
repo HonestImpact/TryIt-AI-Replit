@@ -200,6 +200,12 @@ export default function TrustRecoveryProtocol() {
         // Handle non-streaming JSON response for tool creation
         const data = await response.json();
         
+        // Handle radio silence - Noah chose not to respond
+        if (data.status === 'radio_silence') {
+          // Don't add any message - Noah goes silent
+          return;
+        }
+        
         // Add the assistant message with truncated content
         setMessages(prev => [...prev, {
           role: 'assistant',
@@ -298,6 +304,13 @@ export default function TrustRecoveryProtocol() {
       } else {
         // Fallback to non-streaming if no body
         const data = await response.json();
+        
+        // Handle radio silence - Noah chose not to respond
+        if (data.status === 'radio_silence') {
+          // Don't add any message - Noah goes silent
+          return;
+        }
+        
         setMessages(prev => [...prev, {
           role: 'assistant',
           content: data.content,
@@ -416,6 +429,12 @@ export default function TrustRecoveryProtocol() {
       }
 
       const data = await response.json();
+
+      // Handle radio silence - Noah chose not to respond to challenge
+      if (data.status === 'radio_silence') {
+        // Don't add any message - Noah goes silent
+        return;
+      }
 
       // Add the challenge response
       setMessages(prev => [...prev, {
