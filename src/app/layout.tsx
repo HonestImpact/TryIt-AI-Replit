@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   title: "Noah (TryIt-AI)",
   description: "Multi-agent AI system by Honest Impact",
   icons: {
-    icon: "/dragonfly-icon.ico",
+    icon: "/favicon.ico",
   },
 };
 

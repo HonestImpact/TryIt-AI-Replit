@@ -69,7 +69,7 @@ export default function DatabaseViewer() {
     return String(value);
   };
 
-  const formatContent = (content: string): JSX.Element => {
+  const formatContent = (content: string): React.JSX.Element => {
     if (!content || content === '-') return <span>-</span>;
     
     const preview = content.length > 200 ? content.substring(0, 197) + '...' : content;
