@@ -130,16 +130,17 @@ export default function DatabaseViewer() {
 
         {/* Enhanced Database Overview */}
         <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 mb-6">
-          <h2 className="text-xl font-semibold text-slate-900 mb-4">Noah Analytics Database Overview</h2>
+          <h2 className="text-xl font-semibold text-slate-900 mb-4">Noah Analytics Dashboard</h2>
           <p className="text-slate-600 mb-6">
-            Enhanced database with complete conversation content, trust tracking, and artifact storage
+            Custom analytics views with enhanced filtering and analysis. 
+            <span className="font-medium">Note:</span> This is separate from the raw database tables in "My Data".
           </p>
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {counts.map((item) => {
               const tableLabels: Record<string, { label: string; description: string; color: string }> = {
                 'user_sessions': { label: 'User Sessions', description: 'Active user sessions', color: 'bg-blue-50 border-blue-200 text-blue-800' },
                 'conversations': { label: 'Conversations', description: 'Complete conversations with analytics', color: 'bg-green-50 border-green-200 text-green-800' },
-                'messages': { label: 'Messages', description: 'Full message content & metadata', color: 'bg-purple-50 border-purple-200 text-purple-800' },
+                'messages': { label: 'Message Analytics', description: 'Custom message views & analysis', color: 'bg-purple-50 border-purple-200 text-purple-800' },
                 'generated_tools': { label: 'Artifacts', description: 'Generated tools & content', color: 'bg-orange-50 border-orange-200 text-orange-800' },
                 'trust_events': { label: 'Trust Events', description: 'Trust level changes', color: 'bg-red-50 border-red-200 text-red-800' },
                 'message_annotations': { label: 'Annotations', description: 'Message annotations', color: 'bg-yellow-50 border-yellow-200 text-yellow-800' },
