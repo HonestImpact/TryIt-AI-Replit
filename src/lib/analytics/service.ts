@@ -74,7 +74,7 @@ class AnalyticsService {
   }
 
   /**
-   * Start conversation tracking - elegant async implementation
+   * Start conversation tracking with proper sequence calculation
    */
   async startConversation(
     sessionId: string,
@@ -86,10 +86,9 @@ class AnalyticsService {
     // Fire-and-forget conversation creation
     const conversationPromise = (async () => {
       try {
-        // Get conversation sequence number efficiently
         const conversationData: ConversationData = {
           sessionId,
-          conversationSequence: 1, // Will be calculated properly in production
+          conversationSequence: 1, // This will be recalculated properly in the database layer
           initialTrustLevel,
           skepticModeEnabled: skepticMode,
           conversationLength: 0,

@@ -139,10 +139,22 @@ class AnalyticsDatabase {
   }
 
   /**
-   * Create conversation record with elegant data validation
+   * Create conversation record with proper sequence calculation
    */
   async createConversation(conversationData: ConversationData): Promise<string | null> {
     try {
+      // First, get the correct conversation sequence for this session
+      const sequenceResult = await this.executeQuery<{ next_sequence: number }[]>(
+        `SELECT COALESCE(MAX(conversation_sequence), 0) + 1 as next_sequence 
+         FROM conversations 
+         WHERE session_id = $1`,
+        [conversationData.sessionId]
+      );
+
+      const nextSequence = sequenceResult && sequenceResult.length > 0 
+        ? sequenceResult[0].next_sequence 
+        : 1;
+
       const result = await this.executeQuery<{ id: string }[]>(
         `INSERT INTO conversations (
           session_id, conversation_sequence, initial_trust_level, skeptic_mode_enabled,
@@ -152,7 +164,7 @@ class AnalyticsDatabase {
         RETURNING id`,
         [
           conversationData.sessionId,
-          conversationData.conversationSequence,
+          nextSequence, // Use calculated sequence instead of hardcoded value
           conversationData.initialTrustLevel || 50,
           conversationData.skepticModeEnabled,
           conversationData.conversationLength,
@@ -162,6 +174,14 @@ class AnalyticsDatabase {
           conversationData.agentStrategy
         ]
       );
+
+      if (result && result.length > 0) {
+        logger.debug('Conversation created with proper sequence', {
+          conversationId: result[0].id.substring(0, 8) + '...',
+          sessionId: conversationData.sessionId.substring(0, 8) + '...',
+          sequence: nextSequence
+        });
+      }
 
       return result && result.length > 0 ? result[0].id : null;
 

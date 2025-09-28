@@ -4,23 +4,26 @@
 import crypto from 'crypto';
 
 /**
- * Generate privacy-preserving session fingerprint
- * Uses only non-PII data for anonymous user tracking
+ * Generate stable, privacy-preserving session fingerprint
+ * Creates deterministic fingerprint that remains constant for the same user/day
  */
 export function generateSessionFingerprint(
   userAgent?: string,
   ipAddress?: string,
   environment: string = 'development'
 ): string {
-  // Create fingerprint from available non-PII data
+  // Create stable components - no randomness to ensure repeatability
+  const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format for daily granularity
+  const coarseIP = ipAddress ? ipAddress.split('.').slice(0, 3).join('.') + '.0' : 'unknown-ip'; // Privacy-safe IP
+  
   const components = [
     userAgent || 'unknown-ua',
+    coarseIP,
     environment,
-    Date.now().toString().slice(0, -6), // Remove last 6 digits for privacy (hourly granularity)
-    Math.random().toString(36).substring(2, 8) // Add randomness for uniqueness
+    today // Daily granularity for privacy while maintaining session continuity
   ];
 
-  // Hash the components for privacy
+  // Hash the components for privacy - deterministic for same input
   const fingerprint = crypto
     .createHash('sha256')
     .update(components.join('|'))
