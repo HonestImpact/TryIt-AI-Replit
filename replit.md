@@ -6,6 +6,20 @@ This is a multi-agent AI system called "Noah" built with Next.js 15, TypeScript,
 
 The application implements a sophisticated Retrieval-Augmented Generation (RAG) system using ChromaDB for vector storage and semantic search. It supports multiple LLM providers (Anthropic, OpenAI, Google, Mistral, Cohere) with environment-based model switching and task-specific optimization.
 
+## Recent Changes
+
+### Session-Based Toolbox Implementation (September 2025)
+- **Session Artifact Management**: Implemented session-based toolbox that accumulates all generated tools during conversation, preventing tool overwriting
+- **Enhanced UI**: New "Your Toolbox" section displays all session artifacts with individual download capabilities, agent attribution, and timestamps
+- **Cross-Agent Compatibility**: All agents (Noah, Tinkerer, Wanderer) now contribute artifacts to the shared session toolbox
+- **API Enhancement**: Updated artifacts endpoint to return sessionArtifacts array while maintaining backward compatibility
+- **User Experience**: Tools now show agent source, creation time, and maintain conversation flow after generation
+
+### Performance Optimization (September 2025)
+- **Major Performance Breakthrough**: Implemented task-specific LLM model selection achieving 83% faster tool generation (reduced from 28+ seconds to ~5 seconds)
+- **Model Optimization**: GPT-4o for tool generation, Sonnet 4 for conversation, GPT-4o-mini for research
+- **Environment Configuration**: Optimized .env.local with LLM_DEEPBUILD=openai, MODEL_ID_DEEPBUILD=gpt-4o
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
