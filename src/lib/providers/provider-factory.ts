@@ -10,7 +10,7 @@ export interface LLMProvider {
   generateText(params: {
     messages: Array<{ role: string; content: string }>;
     system?: string;
-    model: string;
+    model?: string;
     temperature?: number;
     maxTokens?: number;
   }): Promise<{ content: string }>;
