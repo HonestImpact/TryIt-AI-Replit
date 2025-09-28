@@ -685,7 +685,7 @@ async function noahStreamingChatHandler(req: NextRequest, context: LoggingContex
     }
 
     // Return pre-computed response as a stream
-    const model = AI_CONFIG.LLM_PROVIDER === 'openai' ? openai(AI_CONFIG.getModel()) : anthropic(AI_CONFIG.getModel());
+    const model = AI_CONFIG.getProvider() === 'openai' ? openai(AI_CONFIG.getModel()) : anthropic(AI_CONFIG.getModel());
     return streamText({
       model,
       messages: [{ role: 'assistant', content: finalContent }],
@@ -701,7 +701,7 @@ async function noahStreamingChatHandler(req: NextRequest, context: LoggingContex
       userFriendlyMessage = `I'm taking longer than usual to respond. This might be a good time to tell me to get my act together. The technical issue is: ${errorMessage}`;
     }
 
-    const model = AI_CONFIG.LLM_PROVIDER === 'openai' ? openai(AI_CONFIG.getModel()) : anthropic(AI_CONFIG.getModel());
+    const model = AI_CONFIG.getProvider() === 'openai' ? openai(AI_CONFIG.getModel()) : anthropic(AI_CONFIG.getModel());
     return streamText({
       model,
       messages: [{ role: 'assistant', content: userFriendlyMessage }],

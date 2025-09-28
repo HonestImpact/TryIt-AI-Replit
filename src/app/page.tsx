@@ -153,11 +153,12 @@ export default function TrustRecoveryProtocol() {
     setMessages(newMessages);
 
     try {
-      // Call our API route
+      // Call our API route with streaming
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'x-streaming': 'true'
         },
         body: JSON.stringify({
           messages: newMessages,
@@ -175,31 +176,65 @@ export default function TrustRecoveryProtocol() {
         throw new Error('Failed to get response');
       }
 
-      const data = await response.json();
+      // Handle streaming response
+      if (response.body) {
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let accumulatedContent = '';
 
-      // Add Noah's response
-      setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: data.content,
-        timestamp: Date.now()
-      }]);
+        // Add placeholder message for streaming
+        setMessages(prev => [...prev, {
+          role: 'assistant',
+          content: '',
+          timestamp: Date.now()
+        }]);
 
-      // Adjust trust level based on response quality
-      if (data.content.toLowerCase().includes('uncertain') || data.content.toLowerCase().includes('not sure')) {
-        setTrustLevel(prev => Math.min(100, prev + 5));
-      }
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
 
-      // Handle artifact if present in response
-      if (data.artifact) {
-        logger.info('Artifact received from API', { title: data.artifact.title });
+            const chunk = decoder.decode(value, { stream: true });
+            accumulatedContent += chunk;
 
-        // Set artifact state with smooth animation
-        setTimeout(() => {
-          setArtifact({
-            title: data.artifact.title,
-            content: data.artifact.content
-          });
-        }, 800);
+            // Update the last message with accumulated content
+            setMessages(prev => {
+              const updated = [...prev];
+              updated[updated.length - 1] = {
+                ...updated[updated.length - 1],
+                content: accumulatedContent
+              };
+              return updated;
+            });
+          }
+        } finally {
+          reader.releaseLock();
+        }
+
+        // Adjust trust level based on response quality
+        if (accumulatedContent.toLowerCase().includes('uncertain') || accumulatedContent.toLowerCase().includes('not sure')) {
+          setTrustLevel(prev => Math.min(100, prev + 5));
+        }
+
+        // Note: Artifacts will be handled separately since streaming responses don't include them
+      } else {
+        // Fallback to non-streaming if no body
+        const data = await response.json();
+        setMessages(prev => [...prev, {
+          role: 'assistant',
+          content: data.content,
+          timestamp: Date.now()
+        }]);
+
+        if (data.artifact) {
+          logger.info('Artifact received from API', { title: data.artifact.title });
+          setTimeout(() => {
+            setArtifact({
+              title: data.artifact.title,
+              content: data.artifact.content
+            });
+          }, 800);
+        }
       }
 
     } catch (error) {
