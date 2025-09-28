@@ -114,18 +114,18 @@ export class NoahSafetyService {
         }
 
         // Log the safety check itself as a message annotation
-        analyticsService.logMessageAnnotation(
-          `${conversationId}_safety_check`, // Pseudo message ID for safety checks
-          'safety_check',
-          JSON.stringify({
+        analyticsService.addMessageAnnotation({
+          messageId: `${conversationId}_safety_check`, // Pseudo message ID for safety checks
+          annotationType: 'safety_check',
+          annotationValue: JSON.stringify({
             isAllowed: safetyResult.isAllowed,
             violationType: safetyResult.violationType,
             confidence: safetyResult.confidence,
             radioSilence: safetyResult.radioSilence,
             checkDurationMs
           }),
-          safetyResult.confidence
-        );
+          confidenceScore: safetyResult.confidence
+        });
       }
 
       return true;
