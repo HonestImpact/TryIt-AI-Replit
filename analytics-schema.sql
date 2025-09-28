@@ -6,7 +6,8 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- ====================================
--- PHASE 1: CORE SESSION & CONVERSATION TRACKING
+-- PHASE 1: ESSENTIAL DATA CAPTURE (MESSAGES + ARTIFACTS)
+-- Implement immediately: Sessions, Conversations, Messages, Tools, Tool Usage
 -- ====================================
 
 -- Anonymous user sessions (privacy-first)
