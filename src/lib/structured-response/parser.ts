@@ -310,7 +310,13 @@ export class StructuredResponseParser {
       }
 
       const title = titleMatch[1].trim();
-      const toolContent = toolMatch[1].trim();
+      let toolContent = toolMatch[1].trim();
+      
+      // Handle markdown code blocks (```html ... ```) 
+      const codeBlockMatch = toolContent.match(/^```(?:html|javascript|css|js)?\s*([\s\S]*?)\s*```$/);
+      if (codeBlockMatch) {
+        toolContent = codeBlockMatch[1].trim();
+      }
 
       // Extract reasoning if present
       const reasoningMatch = content.match(/REASONING:\s*([\s\S]+?)$/);
