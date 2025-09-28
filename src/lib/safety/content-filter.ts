@@ -198,14 +198,22 @@ export class NoahContentFilter {
       /ways to.*contact.*minors/,
       /help me.*meet.*kids/,
       /teach me.*groom/,
-      /instructions.*child.*alone/
+      /instructions.*child.*alone/,
+      /help me.*approach.*kids/,
+      /ways to.*approach.*kids/,
+      /approach.*kids.*without.*parents/,
+      /contact.*kids.*without.*parents/,
+      /meet.*children.*without.*supervision/
     ];
 
     const inappropriateContactPatterns = [
       /want to.*meet.*child/,
       /looking for.*young.*kids/,
       /find.*children.*online/,
-      /contact.*kids.*without.*parents/
+      /contact.*kids.*without.*parents/,
+      /approach.*kids.*without.*knowing/,
+      /help me.*approach.*kids.*without/,
+      /ways to.*meet.*kids.*alone/
     ];
 
     for (const pattern of childEndangermentPatterns) {
