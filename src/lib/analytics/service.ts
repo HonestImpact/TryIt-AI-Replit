@@ -173,7 +173,7 @@ class AnalyticsService {
     title: string,
     content: string,
     generationTimeMs: number,
-    generationAgent: 'noah' | 'tinkerer',
+    generationAgent: 'noah' | 'wanderer' | 'tinkerer',
     userMessageLength: number
   ): void {
     if (!this.isEnabled || !conversationId) return;

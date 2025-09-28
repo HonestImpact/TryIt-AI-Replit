@@ -41,7 +41,7 @@ export interface GeneratedToolData {
   toolType?: string;
   toolCategory?: string;
   generationTimeMs: number;
-  generationAgent: 'noah' | 'tinkerer';
+  generationAgent: 'noah' | 'wanderer' | 'tinkerer';
   userMessageLength: number;
 }
 
