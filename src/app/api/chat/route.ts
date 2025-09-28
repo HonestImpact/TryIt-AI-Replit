@@ -12,6 +12,7 @@ import { PracticalAgent } from '@/lib/agents/practical-agent';
 import { sharedResourceManager, type AgentSharedResources } from '@/lib/agents/shared-resources';
 import type { ChatMessage } from '@/lib/agents/types';
 import { analyticsService } from '@/lib/analytics';
+import { NoahSafetyService } from '@/lib/safety';
 
 const logger = createLogger('noah-chat');
 
@@ -322,6 +323,44 @@ async function noahChatHandler(req: NextRequest, context: LoggingContext): Promi
       analytics: conversationState.sessionId ? 'enabled' : 'disabled'
     });
 
+    // 🛡️ SAFETY CHECK - Radio silence for prohibited content
+    const safetyCheck = await NoahSafetyService.checkUserMessage(
+      lastMessage,
+      conversationState.sessionId || undefined,
+      conversationState.conversationId || undefined,
+      messages.slice(0, -1).map(m => m.content)
+    );
+
+    if (safetyCheck.radioSilence) {
+      logger.warn('🔴 Radio silence activated - safety violation detected', {
+        violationType: safetyCheck.violation?.type,
+        reason: safetyCheck.violation?.reason,
+        sessionId: conversationState.sessionId?.substring(0, 8) + '...'
+      });
+
+      // Noah goes radio silent - no response at all
+      // Log the attempted violation for Trust Recovery Protocol tracking
+      if (conversationState.conversationId && conversationState.sessionId) {
+        conversationState.messageSequence++;
+        analyticsService.logMessage(
+          conversationState.conversationId,
+          conversationState.sessionId,
+          conversationState.messageSequence,
+          'user',
+          `[SAFETY_VIOLATION] ${safetyCheck.violation?.type}: Content filtered`
+        );
+      }
+
+      // Return empty response - radio silence
+      return NextResponse.json({
+        content: "",
+        status: 'radio_silence',
+        agent: 'noah'
+      });
+    }
+
+    logger.debug('✅ Safety check passed - proceeding with normal processing');
+
     // Log user message (fire-and-forget, zero performance impact)
     if (conversationState.conversationId && conversationState.sessionId) {
       conversationState.messageSequence++;
@@ -511,6 +550,44 @@ async function noahStreamingChatHandler(req: NextRequest, context: LoggingContex
       messageLength: lastMessage.length,
       analytics: conversationState.sessionId ? 'enabled' : 'disabled'
     });
+
+    // 🛡️ SAFETY CHECK - Radio silence for prohibited content (streaming version)
+    const safetyCheck = await NoahSafetyService.checkUserMessage(
+      lastMessage,
+      conversationState.sessionId || undefined,
+      conversationState.conversationId || undefined,
+      messages.slice(0, -1).map(m => m.content)
+    );
+
+    if (safetyCheck.radioSilence) {
+      logger.warn('🔴 Radio silence activated - safety violation detected (streaming)', {
+        violationType: safetyCheck.violation?.type,
+        reason: safetyCheck.violation?.reason,
+        sessionId: conversationState.sessionId?.substring(0, 8) + '...'
+      });
+
+      // Log the attempted violation for Trust Recovery Protocol tracking
+      if (conversationState.conversationId && conversationState.sessionId) {
+        conversationState.messageSequence++;
+        analyticsService.logMessage(
+          conversationState.conversationId,
+          conversationState.sessionId,
+          conversationState.messageSequence,
+          'user',
+          `[SAFETY_VIOLATION] ${safetyCheck.violation?.type}: Content filtered`
+        );
+      }
+
+      // Return empty stream - radio silence for streaming
+      const model = AI_CONFIG.getProvider() === 'openai' ? openai(AI_CONFIG.getModel()) : anthropic(AI_CONFIG.getModel());
+      return streamText({
+        model,
+        messages: [{ role: 'assistant', content: '' }],
+        temperature: 0.7,
+      }).toTextStreamResponse();
+    }
+
+    logger.debug('✅ Safety check passed - proceeding with streaming processing');
 
     // Log user message (fire-and-forget, same as existing)
     if (conversationState.conversationId && conversationState.sessionId) {
