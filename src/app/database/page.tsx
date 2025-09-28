@@ -189,7 +189,7 @@ export default function DatabaseViewer() {
             </div>
 
             {/* View Selector for Messages Table */}
-            {selectedTable === 'messages' && availableViews.messages && (
+            {tableData.table === 'messages' && (
               <div className="mb-6 p-4 bg-slate-50 rounded-lg border border-slate-200">
                 <h3 className="text-sm font-semibold text-slate-700 mb-3">Select View</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
