@@ -720,7 +720,8 @@ export async function POST(req: NextRequest): Promise<NextResponse | Response> {
   const isStreamingRequest = acceptHeader.includes('text/stream') || req.headers.get('x-streaming') === 'true';
   
   if (isStreamingRequest) {
-    return withLogging(noahStreamingChatHandler)(req);
+    // Streaming handler returns Response directly (not wrapped in withLogging)
+    return noahStreamingChatHandler(req, { sessionId: null });
   } else {
     return withLogging(noahChatHandler)(req);
   }
