@@ -631,7 +631,7 @@ async function noahStreamingChatHandler(req: NextRequest, context: LoggingContex
           role: msg.role as 'user' | 'assistant' | 'system',
           content: msg.content
         })),
-        system: "You are Noah, a helpful AI assistant. Give direct, accurate answers to simple questions.",
+        system: AI_CONFIG.CHAT_SYSTEM_PROMPT,
         temperature: 0.3, // Lower temperature for factual questions
         maxTokens: 150,   // Limit response length
         onFinish: async (completion) => {
