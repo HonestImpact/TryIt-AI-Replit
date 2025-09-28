@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -29,13 +29,17 @@ export default function TrustRecoveryProtocol() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  // Auto-scroll to bottom when messages change (but not on initial load)
+  // Optimized auto-scroll - debounced to prevent performance issues with long conversations
   useEffect(() => {
-    // Only auto-scroll if we have messages and it's not the initial load
     if (messages.length > 0) {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      // Debounce scroll to prevent excessive calls during rapid message updates
+      const scrollTimeout = setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+      
+      return () => clearTimeout(scrollTimeout);
     }
-  }, [messages]);
+  }, [messages.length]); // Only depend on length, not full messages array
 
   // Initialize messages and focus input on page load
   useEffect(() => {
@@ -137,7 +141,7 @@ export default function TrustRecoveryProtocol() {
     setIsLoading(false);
   };
 
-  const downloadArtifact = () => {
+  const downloadArtifact = useCallback(() => {
     console.log('Download clicked, artifact:', artifact); // Debug log
     if (!artifact) {
       console.log('No artifact to download');
@@ -155,14 +159,14 @@ export default function TrustRecoveryProtocol() {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     console.log('Download completed');
-  };
+  }, [artifact]);
 
-  const toggleSkepticMode = () => {
+  const toggleSkepticMode = useCallback(() => {
     setSkepticMode(!skepticMode);
     setTrustLevel(prev => Math.max(0, prev - 10));
-  };
+  }, [skepticMode]);
 
-  const challengeMessage = async (messageIndex: number) => {
+  const challengeMessage = useCallback(async (messageIndex: number) => {
     if (isLoading) return;
 
     const message = messages[messageIndex];
@@ -236,7 +240,7 @@ export default function TrustRecoveryProtocol() {
     }
 
     setIsLoading(false);
-  };
+  }, [messages, trustLevel, skepticMode, isLoading]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
