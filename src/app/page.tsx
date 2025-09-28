@@ -87,6 +87,7 @@ const MessageComponent = React.memo(({
 MessageComponent.displayName = 'MessageComponent';
 
 export default function TrustRecoveryProtocol() {
+  // Trust Recovery Protocol state (preserved)
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -97,7 +98,7 @@ export default function TrustRecoveryProtocol() {
   const [trustLevel, setTrustLevel] = useState(50);
   const [challengedMessages, setChallengedMessages] = useState<Set<number>>(new Set());
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
-
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -118,7 +119,7 @@ export default function TrustRecoveryProtocol() {
     // Ensure page starts at the top
     window.scrollTo(0, 0);
 
-    // Set initial message on client-side to prevent hydration mismatch
+    // Set initial message
     setMessages([
       {
         role: 'assistant',
@@ -135,83 +136,15 @@ export default function TrustRecoveryProtocol() {
 
   // Note: Artifact logging now handled automatically by the chat API
 
-  const handleSubmit = async (e?: React.FormEvent) => {
+  // Enhanced handleSubmit that preserves Trust Recovery Protocol features
+  const handleSubmit = useCallback((e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!input.trim() || isLoading) return;
-
-    const userMessage = input.trim();
-    setInput('');
-    setIsLoading(true);
-
-    // Add user message
-    const newMessages = [...messages, {
-      role: 'user' as const,
-      content: userMessage,
-      timestamp: Date.now()
-    }];
-    setMessages(newMessages);
-
-    try {
-      // Call our API route
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          messages: newMessages,
-          skepticMode: skepticMode
-        }),
-      });
-
-      // Capture session ID from response headers for artifact logging
-      const sessionIdFromResponse = response.headers.get('x-session-id');
-      if (sessionIdFromResponse && !currentSessionId) {
-        setCurrentSessionId(sessionIdFromResponse);
-      }
-
-      if (!response.ok) {
-        throw new Error('Failed to get response');
-      }
-
-      const data = await response.json();
-
-      // Add Noah's response
-      setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: data.content,
-        timestamp: Date.now()
-      }]);
-
-      // Adjust trust level based on response quality
-      if (data.content.toLowerCase().includes('uncertain') || data.content.toLowerCase().includes('not sure')) {
-        setTrustLevel(prev => Math.min(100, prev + 5));
-      }
-
-      // Handle artifact if present in response
-      if (data.artifact) {
-        logger.info('Artifact received from API', { title: data.artifact.title });
-
-        // Set artifact state with smooth animation
-        setTimeout(() => {
-          setArtifact({
-            title: data.artifact.title,
-            content: data.artifact.content
-          });
-        }, 800);
-      }
-
-    } catch (error) {
-      logger.error('Chat request failed', { error: error instanceof Error ? error.message : String(error) });
-      setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: 'Something went wrong on my end. Want to try that again? I learn from failures.',
-        timestamp: Date.now()
-      }]);
-    }
-
-    setIsLoading(false);
-  };
+    
+    // Use the AI SDK's submit with our skeptic mode
+    originalHandleSubmit(e, {
+      body: { skepticMode }
+    });
+  }, [originalHandleSubmit, skepticMode]);
 
   const downloadArtifact = useCallback(() => {
     logger.debug('Download initiated', { title: artifact?.title });
@@ -439,7 +372,7 @@ export default function TrustRecoveryProtocol() {
                   <textarea
                     ref={inputRef}
                     value={input}
-                    onChange={(e) => setInput(e.target.value)}
+                    onChange={handleInputChange}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && !e.shiftKey) {
                         e.preventDefault();

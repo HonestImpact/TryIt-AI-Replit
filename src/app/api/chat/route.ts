@@ -497,7 +497,7 @@ async function noahStreamingChatHandler(req: NextRequest, context: LoggingContex
     const conversationState = await initializeConversationState(req, context, skepticMode || false);
 
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
-      const model = AI_CONFIG.LLM_PROVIDER === 'openai' ? openai(AI_CONFIG.getModel()) : anthropic(AI_CONFIG.getModel());
+      const model = AI_CONFIG.getProvider() === 'openai' ? openai(AI_CONFIG.getModel()) : anthropic(AI_CONFIG.getModel());
       return streamText({
         model,
         messages: [{ role: 'assistant', content: "I didn't receive any messages to respond to. Want to try sending me something?" }],
@@ -561,7 +561,7 @@ async function noahStreamingChatHandler(req: NextRequest, context: LoggingContex
       } else {
         // Noah handles directly with streaming
         logger.info('🦉 Noah handling directly with streaming...');
-        const model = AI_CONFIG.LLM_PROVIDER === 'openai' ? openai(AI_CONFIG.getModel()) : anthropic(AI_CONFIG.getModel());
+        const model = AI_CONFIG.getProvider() === 'openai' ? openai(AI_CONFIG.getModel()) : anthropic(AI_CONFIG.getModel());
         
         return streamText({
           model,
@@ -608,7 +608,7 @@ async function noahStreamingChatHandler(req: NextRequest, context: LoggingContex
       agentStrategy = 'noah_direct_fallback';
       
       // Fallback to Noah Direct streaming
-      const model = AI_CONFIG.LLM_PROVIDER === 'openai' ? openai(AI_CONFIG.getModel()) : anthropic(AI_CONFIG.getModel());
+      const model = AI_CONFIG.getProvider() === 'openai' ? openai(AI_CONFIG.getModel()) : anthropic(AI_CONFIG.getModel());
       return streamText({
         model,
         messages: messages.map((msg: ChatMessage) => ({

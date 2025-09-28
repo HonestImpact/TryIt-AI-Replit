@@ -19,10 +19,7 @@ localPort = 3000
 
 [[ports]]
 localPort = 5000
-externalPort = 5000
-
-[[ports]]
-localPort = 41157
+externalPort = 80
 
 [agent]
 expertMode = true
@@ -43,10 +40,10 @@ args = "Noah Development Server"
 name = "Noah Development Server"
 author = "agent"
 
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "npm run dev"
-waitForPort = 5000
-
 [workflows.workflow.metadata]
 outputType = "webview"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npx next dev --port 5000 --hostname 0.0.0.0"
+waitForPort = 5000
