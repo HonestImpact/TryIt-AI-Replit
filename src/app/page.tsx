@@ -368,8 +368,59 @@ export default function TrustRecoveryProtocol() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
         {/* Header */}
       <header className="border-b border-slate-200/60 backdrop-blur-sm bg-white/80 sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
+          {/* Mobile Layout */}
+          <div className="flex flex-col space-y-3 sm:hidden">
+            {/* Top Row - Logo */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-lg flex items-center justify-center">
+                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                  </svg>
+                </div>
+                <div>
+                  <h1 className="text-lg font-semibold text-slate-900">TryIt-AI Kit</h1>
+                  <p className="text-xs text-slate-500">Trust Recovery Protocol</p>
+                </div>
+              </div>
+              
+              {/* Skeptic Mode Toggle - Mobile */}
+              <button
+                onClick={toggleSkepticMode}
+                className={`inline-flex h-7 w-12 items-center rounded-full transition-colors duration-200 ${
+                  skepticMode ? 'bg-red-500' : 'bg-slate-300'
+                }`}
+              >
+                <span
+                  className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform duration-200 ${
+                    skepticMode ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+            </div>
+            
+            {/* Bottom Row - Trust Level */}
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-slate-600">Trust Level</span>
+              <div className="flex items-center space-x-2">
+                <div className="w-20 h-2 bg-slate-200 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 transition-all duration-1000 ease-out"
+                    style={{ width: `${trustLevel}%` }}
+                  />
+                </div>
+                <span className="text-xs font-mono text-slate-500 w-8">{trustLevel}%</span>
+              </div>
+            </div>
+            
+            <div className="text-xs text-slate-400">
+              {skepticMode ? '🔍 Skeptic Mode: Verify Everything' : '👍 Standard Mode'}
+            </div>
+          </div>
+          
+          {/* Desktop Layout */}
+          <div className="hidden sm:flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-lg flex items-center justify-center">
                 <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -418,12 +469,12 @@ export default function TrustRecoveryProtocol() {
         </div>
       </header>
 
-      <div className="max-w-6xl mx-auto px-6 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-8">
           {/* Main Content */}
           <div className="lg:col-span-3">
             {/* Hero Section */}
-            <div className="mb-12">
+            <div className="mb-8 sm:mb-12">
               <div className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 mb-4">
                 <svg className="w-3 h-3 mr-1.5" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
@@ -431,11 +482,11 @@ export default function TrustRecoveryProtocol() {
                 For people who choose discernment over blind trust
               </div>
 
-              <h1 className="text-4xl lg:text-5xl font-bold text-slate-900 mb-6 leading-tight">
+              <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold text-slate-900 mb-4 sm:mb-6 leading-tight">
                 Your skepticism is <span className="text-blue-600">wisdom</span>
               </h1>
 
-              <p className="text-xl text-slate-600 leading-relaxed max-w-3xl">
+              <p className="text-lg sm:text-xl text-slate-600 leading-relaxed max-w-3xl">
             Most AI tools want your blind trust. This one earns it by letting you help define what good technology looks like.
           </p>
             </div>
