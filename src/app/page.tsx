@@ -136,15 +136,83 @@ export default function TrustRecoveryProtocol() {
 
   // Note: Artifact logging now handled automatically by the chat API
 
-  // Enhanced handleSubmit that preserves Trust Recovery Protocol features
-  const handleSubmit = useCallback((e?: React.FormEvent) => {
+  const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    
-    // Use the AI SDK's submit with our skeptic mode
-    originalHandleSubmit(e, {
-      body: { skepticMode }
-    });
-  }, [originalHandleSubmit, skepticMode]);
+    if (!input.trim() || isLoading) return;
+
+    const userMessage = input.trim();
+    setInput('');
+    setIsLoading(true);
+
+    // Add user message
+    const newMessages = [...messages, {
+      role: 'user' as const,
+      content: userMessage,
+      timestamp: Date.now()
+    }];
+    setMessages(newMessages);
+
+    try {
+      // Call our API route
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messages: newMessages,
+          skepticMode: skepticMode
+        }),
+      });
+
+      // Capture session ID from response headers for artifact logging
+      const sessionIdFromResponse = response.headers.get('x-session-id');
+      if (sessionIdFromResponse && !currentSessionId) {
+        setCurrentSessionId(sessionIdFromResponse);
+      }
+
+      if (!response.ok) {
+        throw new Error('Failed to get response');
+      }
+
+      const data = await response.json();
+
+      // Add Noah's response
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: data.content,
+        timestamp: Date.now()
+      }]);
+
+      // Adjust trust level based on response quality
+      if (data.content.toLowerCase().includes('uncertain') || data.content.toLowerCase().includes('not sure')) {
+        setTrustLevel(prev => Math.min(100, prev + 5));
+      }
+
+      // Handle artifact if present in response
+      if (data.artifact) {
+        logger.info('Artifact received from API', { title: data.artifact.title });
+
+        // Set artifact state with smooth animation
+        setTimeout(() => {
+          setArtifact({
+            title: data.artifact.title,
+            content: data.artifact.content
+          });
+        }, 800);
+      }
+
+    } catch (error) {
+      logger.error('Chat request failed', { error: error instanceof Error ? error.message : String(error) });
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: 'Something went wrong on my end. Want to try that again? I learn from failures.',
+        timestamp: Date.now()
+      }]);
+    }
+
+    setIsLoading(false);
+  };
 
   const downloadArtifact = useCallback(() => {
     logger.debug('Download initiated', { title: artifact?.title });
@@ -372,7 +440,7 @@ export default function TrustRecoveryProtocol() {
                   <textarea
                     ref={inputRef}
                     value={input}
-                    onChange={handleInputChange}
+                    onChange={(e) => setInput(e.target.value)}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && !e.shiftKey) {
                         e.preventDefault();
