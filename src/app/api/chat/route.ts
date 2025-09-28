@@ -229,12 +229,12 @@ async function wandererResearch(messages: ChatMessage[], context: LoggingContext
   }
 
   logger.info('🔬 Using cached Wanderer for research...');
-  const lastMessage = messages[messages.length - 1]?.content || '';
+  const wandererLastMessage = messages[messages.length - 1]?.content || '';
 
   const research = await wandererInstance.processRequest({
     id: `research_${Date.now()}`,
     sessionId: context.sessionId,
-    content: lastMessage,
+    content: wandererLastMessage,
     timestamp: new Date()
   });
 
@@ -252,10 +252,10 @@ async function tinkererBuild(messages: ChatMessage[], research: { content: strin
   }
 
   logger.info('🔧 Using cached Tinkerer for building...');
-  const lastMessage = messages[messages.length - 1]?.content || '';
+  const tinkererLastMessage = messages[messages.length - 1]?.content || '';
   const buildContent = research
-    ? `${lastMessage}\n\nResearch Context:\n${research.content}`
-    : lastMessage;
+    ? `${tinkererLastMessage}\n\nResearch Context:\n${research.content}`
+    : tinkererLastMessage;
 
   const tool = await tinkererInstance.processRequest({
     id: `build_${Date.now()}`,
@@ -575,20 +575,20 @@ async function noahStreamingChatHandler(req: NextRequest, context: LoggingContex
     // Initialize conversation state with analytics (required for all paths)
     const conversationState = await initializeConversationState(req, context, skepticMode || false);
 
-    const lastMessage = messages[messages.length - 1]?.content || '';
+    const streamingLastMessage = messages[messages.length - 1]?.content || '';
     
     // 🛡️ SAFETY CHECK - Required for all paths, including fast path
-    const safetyCheck = await NoahSafetyService.checkUserMessage(
-      lastMessage,
+    const streamingSafetyCheck = await NoahSafetyService.checkUserMessage(
+      streamingLastMessage,
       conversationState.sessionId || undefined,
       conversationState.conversationId || undefined,
       messages.slice(0, -1).map(m => m.content)
     );
 
-    if (safetyCheck.radioSilence) {
+    if (streamingSafetyCheck.radioSilence) {
       logger.warn('🔴 Radio silence activated - safety violation detected', {
-        violationType: safetyCheck.violation?.type,
-        reason: safetyCheck.violation?.reason,
+        violationType: streamingSafetyCheck.violation?.type,
+        reason: streamingSafetyCheck.violation?.reason,
         sessionId: conversationState.sessionId?.substring(0, 8) + '...'
       });
 
@@ -600,7 +600,7 @@ async function noahStreamingChatHandler(req: NextRequest, context: LoggingContex
           conversationState.sessionId,
           conversationState.messageSequence,
           'user',
-          `[SAFETY_VIOLATION] ${safetyCheck.violation?.type}: Content filtered`
+          `[SAFETY_VIOLATION] ${streamingSafetyCheck.violation?.type}: Content filtered`
         );
       }
 
@@ -614,7 +614,7 @@ async function noahStreamingChatHandler(req: NextRequest, context: LoggingContex
     }
 
     // Fast path for simple questions - AFTER safety and analytics
-    if (isSimpleQuestion(lastMessage)) {
+    if (isSimpleQuestion(streamingLastMessage)) {
       logger.info('🚀 Fast path for simple question (post-safety)');
       
       // Log user message (required for analytics)
@@ -625,7 +625,7 @@ async function noahStreamingChatHandler(req: NextRequest, context: LoggingContex
           conversationState.sessionId,
           conversationState.messageSequence,
           'user',
-          lastMessage
+          streamingLastMessage
         );
       }
 
@@ -639,7 +639,6 @@ async function noahStreamingChatHandler(req: NextRequest, context: LoggingContex
         })),
         system: AI_CONFIG.CHAT_SYSTEM_PROMPT,
         temperature: 0.3, // Lower temperature for factual questions
-        maxTokens: 2000,  // Allow full tool creation
         onFinish: async (completion) => {
           const responseTime = Date.now() - startTime;
           logger.info('✅ Noah fast path completed', {
@@ -674,12 +673,12 @@ async function noahStreamingChatHandler(req: NextRequest, context: LoggingContex
         conversationState.sessionId,
         conversationState.messageSequence,
         'user',
-        lastMessage
+        streamingLastMessage
       );
     }
 
     // Noah analyzes and decides internally (same logic as existing)
-    const analysis = analyzeRequest(lastMessage);
+    const analysis = analyzeRequest(streamingLastMessage);
     logger.info('🧠 Noah analysis complete', {
       needsResearch: analysis.needsResearch,
       needsBuilding: analysis.needsBuilding,
@@ -749,7 +748,7 @@ async function noahStreamingChatHandler(req: NextRequest, context: LoggingContex
             // Process artifacts in background (non-blocking)
             ArtifactService.handleArtifactWorkflow(
               completion.text,
-              lastMessage,
+              streamingLastMessage,
               context.sessionId,
               conversationState
             ).catch(error => logger.warn('Artifact processing failed', { error }));
@@ -820,7 +819,7 @@ async function noahStreamingChatHandler(req: NextRequest, context: LoggingContex
     // Process artifacts
     const parsed = await ArtifactService.handleArtifactWorkflow(
       responseContent,
-      lastMessage,
+      streamingLastMessage,
       context.sessionId,
       conversationState
     );
