@@ -92,29 +92,29 @@ export class NoahContentFilter {
       /help me (hurt|harm|kill|attack|fight)/,
       /instructions for (making|building).*(weapon|bomb|explosive)/,
       /guide to (violence|fighting|hurting)/,
-      // CRITICAL: Direct harm method instructions (including kill/murder) - ALL MODAL VARIANTS COMPREHENSIVE
-      /how (to|do i|can i|should i|could i|would i|might i) (kill|murder|hurt|harm|poison|stab|shoot|strangle|choke|burn|beat|torture)/,
-      /how (can|should|could|would|might) i.*(kill|murder|hurt|harm|poison|stab|shoot|strangle|choke|burn|beat|torture)/,
-      /how (can|should|could|would|might) we.*(kill|murder|hurt|harm|poison|stab|shoot|strangle|choke|burn|beat|torture)/,
-      /(best|easiest|fastest|simplest) (way|method) to (kill|murder|hurt|harm|poison|stab|shoot|strangle|choke|burn|beat|torture)/,
-      /ways to (kill|murder|poison|stab|shoot|strangle|choke|burn|beat|torture)/,
-      /teach me (to|how to) (kill|murder|poison|stab|shoot|strangle|choke|burn|beat|torture)/,
-      /show me how to (kill|murder|poison|stab|shoot|strangle|choke|burn|beat|torture)/,
-      /show me.*(kill|murder|poison|stab|shoot|strangle|choke|burn|beat|torture).*(methods|ways|techniques)/,
-      /help me (kill|murder|poison|stab|shoot|strangle|choke|burn|beat|torture)/,
-      /instructions (for|to) (kill|murder|poison|stab|shoot|strangle|choke|burn|beat|torture)/,
-      // CRITICAL: Indirect/oblique violence instruction patterns
-      /get away with (killing|murdering|hurting|harming|poisoning|stabbing|shooting|strangling|choking|burning|beating|torturing)/,
-      /(give me|provide|share) ideas for (killing|murdering|hurting|harming|poisoning|stabbing|shooting|strangling|choking|burning|beating|torturing)/,
-      /(tips|advice) (on|for) (killing|murdering|hurting|harming|poisoning|stabbing|shooting|strangling|choking|burning|beating|torturing)/,
-      /figure out how to (kill|murder|hurt|harm|poison|stab|shoot|strangle|choke|burn|beat|torture)/,
-      /help me think of ways to (kill|murder|hurt|harm|poison|stab|shoot|strangle|choke|burn|beat|torture)/,
-      /suggest ways to (kill|murder|hurt|harm|poison|stab|shoot|strangle|choke|burn|beat|torture)/,
-      /brainstorm.*to (kill|murder|hurt|harm|poison|stab|shoot|strangle|choke|burn|beat|torture)/,
+      // CRITICAL: Direct harm method instructions - ALL MODAL VARIANTS WITH ALL VIOLENCE/INJURY/KIDNAPPING VERBS
+      /how (to|do i|can i|should i|could i|would i|might i) (kill|murder|hurt|harm|poison|stab|shoot|strangle|choke|burn|beat|torture|break|injure|maim|cripple|wound|damage|bruise|cut|slash|slice|punch|kick|slam|crush|fracture|disable|paralyze|kidnap|abduct|snatch|capture|seize|detain|imprison|confine|trap)/,
+      /how (can|should|could|would|might) i.*(kill|murder|hurt|harm|poison|stab|shoot|strangle|choke|burn|beat|torture|break|injure|maim|cripple|wound|damage|bruise|cut|slash|slice|punch|kick|slam|crush|fracture|disable|paralyze|kidnap|abduct|snatch|capture|seize|detain|imprison|confine|trap)/,
+      /how (can|should|could|would|might) we.*(kill|murder|hurt|harm|poison|stab|shoot|strangle|choke|burn|beat|torture|break|injure|maim|cripple|wound|damage|bruise|cut|slash|slice|punch|kick|slam|crush|fracture|disable|paralyze|kidnap|abduct|snatch|capture|seize|detain|imprison|confine|trap)/,
+      /(best|easiest|fastest|simplest) (way|method) to (kill|murder|hurt|harm|poison|stab|shoot|strangle|choke|burn|beat|torture|break|injure|maim|cripple|wound|damage|bruise|cut|slash|slice|punch|kick|slam|crush|fracture|disable|paralyze|kidnap|abduct|snatch|capture|seize|detain|imprison|confine|trap)/,
+      /ways to (kill|murder|poison|stab|shoot|strangle|choke|burn|beat|torture|break|injure|maim|cripple|wound|damage|bruise|cut|slash|slice|punch|kick|slam|crush|fracture|disable|paralyze|kidnap|abduct|snatch|capture|seize|detain|imprison|confine|trap)/,
+      /teach me (to|how to) (kill|murder|poison|stab|shoot|strangle|choke|burn|beat|torture|break|injure|maim|cripple|wound|damage|bruise|cut|slash|slice|punch|kick|slam|crush|fracture|disable|paralyze|kidnap|abduct|snatch|capture|seize|detain|imprison|confine|trap)/,
+      /show me how to (kill|murder|poison|stab|shoot|strangle|choke|burn|beat|torture|break|injure|maim|cripple|wound|damage|bruise|cut|slash|slice|punch|kick|slam|crush|fracture|disable|paralyze|kidnap|abduct|snatch|capture|seize|detain|imprison|confine|trap)/,
+      /show me.*(kill|murder|poison|stab|shoot|strangle|choke|burn|beat|torture|break|injure|maim|cripple|wound|damage|bruise|cut|slash|slice|punch|kick|slam|crush|fracture|disable|paralyze|kidnap|abduct|snatch|capture|seize|detain|imprison|confine|trap).*(methods|ways|techniques)/,
+      /help me (kill|murder|poison|stab|shoot|strangle|choke|burn|beat|torture|break|injure|maim|cripple|wound|damage|bruise|cut|slash|slice|punch|kick|slam|crush|fracture|disable|paralyze|kidnap|abduct|snatch|capture|seize|detain|imprison|confine|trap)/,
+      /instructions (for|to) (kill|murder|poison|stab|shoot|strangle|choke|burn|beat|torture|break|injure|maim|cripple|wound|damage|bruise|cut|slash|slice|punch|kick|slam|crush|fracture|disable|paralyze)/,
+      // CRITICAL: Indirect/oblique violence instruction patterns WITH ALL INJURY VERBS
+      /get away with (killing|murdering|hurting|harming|poisoning|stabbing|shooting|strangling|choking|burning|beating|torturing|breaking|injuring|maiming|crippling|wounding|damaging|bruising|cutting|slashing|slicing|punching|kicking|slamming|crushing|fracturing|disabling|paralyzing)/,
+      /(give me|provide|share) ideas for (killing|murdering|hurting|harming|poisoning|stabbing|shooting|strangling|choking|burning|beating|torturing|breaking|injuring|maiming|crippling|wounding|damaging|bruising|cutting|slashing|slicing|punching|kicking|slamming|crushing|fracturing|disabling|paralyzing)/,
+      /(tips|advice) (on|for) (killing|murdering|hurting|harming|poisoning|stabbing|shooting|strangling|choking|burning|beating|torturing|breaking|injuring|maiming|crippling|wounding|damaging|bruising|cutting|slashing|slicing|punching|kicking|slamming|crushing|fracturing|disabling|paralyzing)/,
+      /figure out how to (kill|murder|hurt|harm|poison|stab|shoot|strangle|choke|burn|beat|torture|break|injure|maim|cripple|wound|damage|bruise|cut|slash|slice|punch|kick|slam|crush|fracture|disable|paralyze)/,
+      /help me think of ways to (kill|murder|hurt|harm|poison|stab|shoot|strangle|choke|burn|beat|torture|break|injure|maim|cripple|wound|damage|bruise|cut|slash|slice|punch|kick|slam|crush|fracture|disable|paralyze)/,
+      /suggest ways to (kill|murder|hurt|harm|poison|stab|shoot|strangle|choke|burn|beat|torture|break|injure|maim|cripple|wound|damage|bruise|cut|slash|slice|punch|kick|slam|crush|fracture|disable|paralyze)/,
+      /brainstorm.*to (kill|murder|hurt|harm|poison|stab|shoot|strangle|choke|burn|beat|torture|break|injure|maim|cripple|wound|damage|bruise|cut|slash|slice|punch|kick|slam|crush|fracture|disable|paralyze)/,
       // CRITICAL: Additional indirect patterns with broader syntax
-      /(help|assistance) to (kill|murder|hurt|harm|poison|stab|shoot|strangle|choke|burn|beat|torture)/,
-      /(advice|tips|ideas) (to|about) (killing|murdering|hurting|harming|poisoning|stabbing|shooting|strangling|choking|burning|beating|torturing)/,
-      /give me.*to (kill|murder|hurt|harm|poison|stab|shoot|strangle|choke|burn|beat|torture)/
+      /(help|assistance) to (kill|murder|hurt|harm|poison|stab|shoot|strangle|choke|burn|beat|torture|break|injure|maim|cripple|wound|damage|bruise|cut|slash|slice|punch|kick|slam|crush|fracture|disable|paralyze)/,
+      /(advice|tips|ideas) (to|about) (killing|murdering|hurting|harming|poisoning|stabbing|shooting|strangling|choking|burning|beating|torturing|breaking|injuring|maiming|crippling|wounding|damaging|bruising|cutting|slashing|slicing|punching|kicking|slamming|crushing|fracturing|disabling|paralyzing)/,
+      /give me.*to (kill|murder|hurt|harm|poison|stab|shoot|strangle|choke|burn|beat|torture|break|injure|maim|cripple|wound|damage|bruise|cut|slash|slice|punch|kick|slam|crush|fracture|disable|paralyze)/
     ];
 
     // Planning violence - intent to cause harm
@@ -134,14 +134,14 @@ export class NoahContentFilter {
       /(kill|murder|poison|stab|shoot|strangle|choke|burn|beat|torture).*(someone|my.*neighbor|my.*roommate|my.*friend|my.*boss|people)/,
       /show me how to.*my.*(neighbor|roommate|friend|boss|family)/,
       /help me (hurt|kill|attack).*my.*(neighbor|roommate|friend|boss|family)/,
-      // CRITICAL: Broad generalized violence planning patterns - ALL SYNTAX VARIANTS
-      /i need (advice|help|ideas) (on|for|to|about) (killing|murdering|hurting|harming)/,
-      /i need help (killing|murdering|hurting|harming)/,
-      /(please|pls) help me (kill|murder|hurt|harm)/,
-      /(please|pls) (give me|provide) (advice|help|tips|ideas) to (kill|murder|hurt|harm)/,
-      /figure out.*to (kill|murder|hurt|harm)/,
-      /get away with (killing|murdering|hurting|harming)/,
-      /(give me|provide|share) (advice|help|tips|ideas) to (kill|murder|hurt|harm)/
+      // CRITICAL: Broad generalized violence planning patterns - ALL SYNTAX VARIANTS WITH ALL INJURY VERBS
+      /i need (advice|help|ideas) (on|for|to|about) (killing|murdering|hurting|harming|breaking|injuring|maiming|crippling|wounding|damaging|bruising|cutting|slashing|slicing|punching|kicking|slamming|crushing|fracturing|disabling|paralyzing)/,
+      /i need help (killing|murdering|hurting|harming|breaking|injuring|maiming|crippling|wounding|damaging|bruising|cutting|slashing|slicing|punching|kicking|slamming|crushing|fracturing|disabling|paralyzing)/,
+      /(please|pls) help me (kill|murder|hurt|harm|break|injure|maim|cripple|wound|damage|bruise|cut|slash|slice|punch|kick|slam|crush|fracture|disable|paralyze)/,
+      /(please|pls) (give me|provide) (advice|help|tips|ideas) to (kill|murder|hurt|harm|break|injure|maim|cripple|wound|damage|bruise|cut|slash|slice|punch|kick|slam|crush|fracture|disable|paralyze)/,
+      /figure out.*to (kill|murder|hurt|harm|break|injure|maim|cripple|wound|damage|bruise|cut|slash|slice|punch|kick|slam|crush|fracture|disable|paralyze)/,
+      /get away with (killing|murdering|hurting|harming|breaking|injuring|maiming|crippling|wounding|damaging|bruising|cutting|slashing|slicing|punching|kicking|slamming|crushing|fracturing|disabling|paralyzing)/,
+      /(give me|provide|share) (advice|help|tips|ideas) to (kill|murder|hurt|harm|break|injure|maim|cripple|wound|damage|bruise|cut|slash|slice|punch|kick|slam|crush|fracture|disable|paralyze)/
     ];
 
     // Glorification and encouragement of violence
