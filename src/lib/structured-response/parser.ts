@@ -40,7 +40,17 @@ export class StructuredResponseParser {
         return extractedResult;
       }
 
-      // Strategy 3: Legacy TITLE:/TOOL: format (for backward compatibility during transition)
+      // Strategy 3: HTML tool detection (catch Noah's HTML tools even without perfect format)
+      const htmlToolResult = this.detectHTMLTool(content, agentUsed);
+      if (htmlToolResult.success) {
+        logger.debug('Successfully detected HTML tool in conversational format', {
+          agentUsed,
+          hasArtifact: !!htmlToolResult.response?.artifact
+        });
+        return htmlToolResult;
+      }
+
+      // Strategy 4: Legacy TITLE:/TOOL: format (for backward compatibility during transition)
       const legacyResult = this.parseLegacyFormat(content, agentUsed);
       if (legacyResult.success) {
         logger.debug('Successfully parsed legacy TITLE:/TOOL: format', {
@@ -50,7 +60,7 @@ export class StructuredResponseParser {
         return legacyResult;
       }
 
-      // Strategy 4: Fallback to conversation response
+      // Strategy 5: Fallback to conversation response
       logger.info('Parsing as conversation response (no artifacts detected)', { agentUsed });
       return {
         success: true,
@@ -128,6 +138,83 @@ export class StructuredResponseParser {
       }
 
       return { success: false };
+
+    } catch (error) {
+      return { success: false };
+    }
+  }
+
+  /**
+   * Detect HTML tools in conversational format (Noah's tool creation)
+   */
+  private static detectHTMLTool(content: string, agentUsed: string): ParseResult {
+    try {
+      // Check if content looks like a tool creation response
+      const toolKeywords = ['calculator', 'timer', 'converter', 'form', 'tracker', 'tool', 'widget', 'app'];
+      const hasToolKeyword = toolKeywords.some(keyword => 
+        content.toLowerCase().includes(keyword.toLowerCase())
+      );
+
+      // Check for HTML patterns
+      const hasHTML = /<!DOCTYPE html|<html|<head|<body|<div|<input|<button/i.test(content);
+      const hasCSS = /<style|\.[\w-]+\s*\{|style\s*=/i.test(content);
+      const hasJS = /<script|function\s+\w+|onclick|addEventListener/i.test(content);
+
+      // Must have HTML and be substantial (>1000 chars for tools)
+      if (!hasHTML || content.length < 1000) {
+        return { success: false };
+      }
+
+      // Extract HTML content (look for the largest HTML block)
+      let htmlContent = content;
+      
+      // Try to extract from code blocks first
+      const codeBlockMatch = content.match(/```html\s*([\s\S]*?)\s*```/i);
+      if (codeBlockMatch) {
+        htmlContent = codeBlockMatch[1].trim();
+      } else {
+        // Look for HTML starting with DOCTYPE or <html>
+        const htmlMatch = content.match(/(<!DOCTYPE html[\s\S]*?<\/html>)/i);
+        if (htmlMatch) {
+          htmlContent = htmlMatch[1].trim();
+        } else {
+          // Look for substantial HTML blocks
+          const bodyMatch = content.match(/(<html[\s\S]*?<\/html>|<body[\s\S]*?<\/body>|<div[\s\S]*?<\/div>)/i);
+          if (bodyMatch && bodyMatch[1].length > 500) {
+            htmlContent = bodyMatch[1].trim();
+          }
+        }
+      }
+
+      // Generate a tool title based on content analysis
+      let title = 'Interactive Tool';
+      if (content.toLowerCase().includes('calculator')) title = 'Calculator';
+      else if (content.toLowerCase().includes('timer')) title = 'Timer';
+      else if (content.toLowerCase().includes('converter')) title = 'Converter';
+      else if (content.toLowerCase().includes('form')) title = 'Form';
+      else if (content.toLowerCase().includes('tracker')) title = 'Tracker';
+      else if (content.toLowerCase().includes('counter')) title = 'Counter';
+      else if (content.toLowerCase().includes('generator')) title = 'Generator';
+
+      // Create artifact from detected HTML tool
+      const artifact: StructuredArtifact = {
+        title,
+        content: htmlContent,
+        type: this.inferToolType(title, htmlContent),
+        category: this.inferToolCategory(title, htmlContent),
+        description: `Generated ${title.toLowerCase()}`,
+        complexity: this.inferComplexity(htmlContent)
+      };
+
+      const response: StructuredResponse = {
+        content: content, // Keep full conversational content
+        artifact,
+        responseType: 'tool-generation',
+        confidence: hasToolKeyword ? 0.8 : 0.6, // Lower confidence for auto-detection
+        agentUsed: agentUsed as 'noah' | 'wanderer' | 'tinkerer'
+      };
+
+      return { success: true, response };
 
     } catch (error) {
       return { success: false };
