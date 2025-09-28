@@ -527,18 +527,26 @@ async function noahChatHandler(req: NextRequest, context: LoggingContext): Promi
  * Fast path for simple questions - skip all the complex overhead
  */
 function isSimpleQuestion(content: string): boolean {
+  const contentLower = content.toLowerCase();
+  
+  // Explicitly exclude tool creation requests
+  const toolRequests = [
+    'create', 'build', 'make', 'generate', 'develop', 'calculator', 
+    'timer', 'converter', 'form', 'tracker', 'tool', 'app'
+  ];
+  
+  if (toolRequests.some(pattern => contentLower.includes(pattern))) {
+    return false; // Always route tool requests to complex path
+  }
+  
   const simple = [
     'what is', 'who is', 'when is', 'where is', 'how many', 'what are',
     'capital of', 'population of', 'currency of', 'language of',
     'definition of', 'meaning of', 'explain', 'define'
   ];
   
-  const contentLower = content.toLowerCase();
   return simple.some(pattern => contentLower.includes(pattern)) && 
-         content.length < 100 && // Short questions only
-         !contentLower.includes('create') && 
-         !contentLower.includes('build') && 
-         !contentLower.includes('make');
+         content.length < 100; // Short questions only
 }
 
 /**
