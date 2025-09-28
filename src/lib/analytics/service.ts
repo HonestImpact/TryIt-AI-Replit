@@ -175,7 +175,8 @@ class AnalyticsService {
     content: string,
     generationTimeMs: number,
     generationAgent: 'noah' | 'wanderer' | 'tinkerer',
-    userMessageLength: number
+    userMessageLength: number,
+    agentStrategy?: string
   ): void {
     if (!this.isEnabled || !conversationId) return;
 
@@ -195,7 +196,8 @@ class AnalyticsService {
           toolCategory: this.inferToolCategory(title, content),
           generationTimeMs,
           generationAgent,
-          userMessageLength
+          userMessageLength,
+          agentStrategy
         };
 
         const toolId = await analyticsDb.logGeneratedTool(toolData);

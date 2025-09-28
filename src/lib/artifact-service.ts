@@ -23,6 +23,7 @@ export interface ArtifactResult {
   category?: string;
   description?: string;
   complexity?: string;
+  agentStrategy?: string;
   structuredResponse?: StructuredResponse;
 }
 
@@ -35,7 +36,8 @@ export class ArtifactService {
     userMessage: string,
     sessionId: string,
     conversationState?: ConversationState,
-    agentUsed: 'noah' | 'wanderer' | 'tinkerer' = 'noah'
+    agentUsed: 'noah' | 'wanderer' | 'tinkerer' = 'noah',
+    agentStrategy?: string
   ): Promise<ArtifactResult> {
     const startTime = Date.now();
     
@@ -82,7 +84,8 @@ export class ArtifactService {
         complexity: artifact.complexity,
         contentLength: artifact.content.length,
         generationTime,
-        agentUsed
+        agentUsed,
+        agentStrategy: agentStrategy || 'noah_direct'
       });
 
       // Log tool generation with analytics integration (fire-and-forget)
@@ -95,7 +98,8 @@ export class ArtifactService {
           artifact.content,
           generationTime,
           agentUsed,
-          userMessage.length
+          userMessage.length,
+          agentStrategy
         );
 
         logger.debug('Structured tool logged to analytics', {
@@ -104,7 +108,8 @@ export class ArtifactService {
           toolLength: artifact.content.length,
           generationTime,
           userMessageLength: userMessage.length,
-          agentUsed
+          agentUsed,
+          agentStrategy: agentStrategy || 'noah_direct'
         });
       }
       
@@ -116,6 +121,7 @@ export class ArtifactService {
         category: artifact.category,
         description: artifact.description,
         complexity: artifact.complexity,
+        agentStrategy: agentStrategy || 'noah_direct',
         structuredResponse
       };
 

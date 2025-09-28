@@ -31,6 +31,7 @@ interface ChatResponse {
   content: string;
   status?: string;
   agent?: string;
+  agentStrategy?: string;
   artifact?: {
     title: string;
     content: string;
@@ -426,6 +427,15 @@ async function noahChatHandler(req: NextRequest, context: LoggingContext): Promi
         responseTime,
         agentUsed
       );
+      
+      // Log agent strategy for transparency in message metadata
+      if (agentStrategy !== 'noah_direct') {
+        logger.info('Agent orchestration completed', {
+          strategy: agentStrategy,
+          finalAgent: agentUsed,
+          responseLength: result.content.length
+        });
+      }
     }
 
     // Process for artifacts using established workflow with analytics integration
@@ -433,7 +443,9 @@ async function noahChatHandler(req: NextRequest, context: LoggingContext): Promi
       result.content,
       lastMessage,
       context.sessionId,
-      conversationState
+      conversationState,
+      agentUsed,
+      agentStrategy
     );
 
     let noahContent = result.content;
@@ -444,17 +456,34 @@ async function noahChatHandler(req: NextRequest, context: LoggingContext): Promi
       const firstFiveLines = lines.slice(0, 5).join('\n');
       const hasMoreContent = lines.length > 5;
 
-      if (hasMoreContent) {
-        noahContent = `${firstFiveLines}\n\n*I've created a tool for you! Check your toolbox for the complete "${parsed.title}" with all the details.*`;
+      // Agent-specific truncation messages
+      let redirectMessage = '';
+      if (agentUsed === 'wanderer') {
+        redirectMessage = hasMoreContent 
+          ? `\n\n*I've researched this topic for you! Check your toolbox for the complete "${parsed.title}" with all the details and sources.*`
+          : `\n\n*This research has been saved to your toolbox as "${parsed.title}" for easy access.*`;
+      } else if (agentUsed === 'tinkerer') {
+        redirectMessage = hasMoreContent
+          ? `\n\n*I've built this for you! Check your toolbox for the complete "${parsed.title}" with all the implementation details.*`
+          : `\n\n*This tool has been built and saved to your toolbox as "${parsed.title}" for easy access.*`;
       } else {
-        noahContent = `${result.content}\n\n*This tool has been saved to your toolbox as "${parsed.title}" for easy access.*`;
+        redirectMessage = hasMoreContent
+          ? `\n\n*I've created a tool for you! Check your toolbox for the complete "${parsed.title}" with all the details.*`
+          : `\n\n*This tool has been saved to your toolbox as "${parsed.title}" for easy access.*`;
+      }
+
+      if (hasMoreContent) {
+        noahContent = `${firstFiveLines}${redirectMessage}`;
+      } else {
+        noahContent = `${result.content}${redirectMessage}`;
       }
     }
 
     const response: ChatResponse = {
       content: noahContent,
       status: 'success',
-      agent: 'noah'
+      agent: agentUsed,
+      agentStrategy: agentStrategy // Show full orchestration path
     };
 
     // Include artifact in response for frontend processing
