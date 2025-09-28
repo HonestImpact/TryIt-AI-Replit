@@ -134,12 +134,14 @@ export class NoahContentFilter {
       /(kill|murder|poison|stab|shoot|strangle|choke|burn|beat|torture).*(someone|my.*neighbor|my.*roommate|my.*friend|my.*boss|people)/,
       /show me how to.*my.*(neighbor|roommate|friend|boss|family)/,
       /help me (hurt|kill|attack).*my.*(neighbor|roommate|friend|boss|family)/,
-      // CRITICAL: Indirect violence planning patterns - EXPANDED TARGETS
-      /i need (advice|help|ideas) (on|for|to|about) (killing|murdering|hurting|harming).*(someone|my.*(neighbor|roommate|friend|boss|wife|husband|family|coworker)|people)/,
-      /i need help (killing|murdering|hurting|harming).*(someone|my.*(neighbor|roommate|friend|boss|wife|husband|family|coworker)|people)/,
-      /figure out.*to (kill|murder|hurt|harm).*(someone|my.*(neighbor|roommate|friend|boss|wife|husband|family|coworker)|people)/,
-      /get away with (killing|murdering|hurting|harming).*(someone|my.*(neighbor|roommate|friend|boss|wife|husband|family|coworker)|people)/,
-      /(give me|please give me) (advice|help|tips|ideas) to (kill|murder|hurt|harm).*(someone|my.*(neighbor|roommate|friend|boss|wife|husband|family|coworker)|people)/
+      // CRITICAL: Broad generalized violence planning patterns - ALL SYNTAX VARIANTS
+      /i need (advice|help|ideas) (on|for|to|about) (killing|murdering|hurting|harming)/,
+      /i need help (killing|murdering|hurting|harming)/,
+      /(please|pls) help me (kill|murder|hurt|harm)/,
+      /(please|pls) (give me|provide) (advice|help|tips|ideas) to (kill|murder|hurt|harm)/,
+      /figure out.*to (kill|murder|hurt|harm)/,
+      /get away with (killing|murdering|hurting|harming)/,
+      /(give me|provide|share) (advice|help|tips|ideas) to (kill|murder|hurt|harm)/
     ];
 
     // Glorification and encouragement of violence
@@ -741,12 +743,36 @@ export class NoahContentFilter {
       /adult.*only/
     ];
 
+    // CRITICAL: Euphemistic and softcore sexual content patterns
+    const euphemisticSexualPatterns = [
+      /intimate.*stories/,
+      /steamy.*stories/,
+      /spicy.*content/,
+      /adult.*stories/,
+      /romantic.*encounters.*sexual/,
+      /sensual.*stories/,
+      /passionate.*stories/,
+      /bedroom.*activities/,
+      /private.*moments.*sexual/,
+      /adult.*roleplay/,
+      /(teach me|show me|help me).*(seduce|pleasure|satisfy).*sexually/,
+      /sexual.*techniques/,
+      /intimate.*techniques/,
+      /bedroom.*skills/,
+      /(make me|help me feel) (turned on|aroused|sexually excited)/,
+      /sexual.*education.*explicit/,
+      /sex.*education.*graphic/,
+      /mature.*content.*sexual/,
+      /erotic.*content/
+    ];
+
     // Combined pattern checking
     const allPatterns = [
       ...pornographyPatterns,
       ...sexualRoleplayPatterns,
       ...explicitSexualRequests,
-      ...adultEntertainmentPatterns
+      ...adultEntertainmentPatterns,
+      ...euphemisticSexualPatterns
     ];
 
     for (const pattern of allPatterns) {
