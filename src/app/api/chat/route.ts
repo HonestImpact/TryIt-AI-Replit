@@ -97,13 +97,15 @@ function analyzeRequest(content: string): {
     'paradigm shift', 'reframe', 'lateral thinking', 'creative solution'
   ];
 
-  // Complex interactive tools that need Tinkerer (RAG components, sophisticated apps)
+  // Complex interactive tools that need Tinkerer (creation intents only)
   const complexInteractive = [
-    'react component', 'vue component', 'angular component', 'component', 'jsx component',
+    'build a react component', 'create a react component', 'make a react component',
+    'build a vue component', 'create a vue component', 'make a vue component',
+    'build a component', 'create a component', 'make a component',
+    'build a ui', 'create a ui', 'make a ui',
     'interactive dashboard', 'data visualization', 'advanced app', 'full application',
     'database integration', 'api integration', 'multi-page', 'complex interface',
-    'sophisticated tool', 'advanced calculator', 'data analysis tool', 'visualization',
-    'user interface', 'ui component', 'frontend component', 'web component'
+    'sophisticated tool', 'advanced calculator', 'data analysis tool', 'visualization'
   ];
 
   // Research indicators - both simple and complex research needs
@@ -126,7 +128,22 @@ function analyzeRequest(content: string): {
 
   // Check if it needs specialized agents
   const needsCreativeThinking = creativeThinking.some(keyword => contentLower.includes(keyword));
-  const needsComplexTool = complexInteractive.some(keyword => contentLower.includes(keyword));
+  
+  // Enhanced component detection: Creation verbs directly connected to component terms
+  const isComponentCreation = /(build|create|make|implement|code|craft|develop|design|construct|compose).+(component|interface|dashboard|ui)/
+    .test(contentLower) ||
+    /(need you to|want to|help me).+(build|create|make|implement|design).+(component|interface)/
+    .test(contentLower);
+  
+  // Exclude prose/discussion and strategy/planning intents that should stay with Noah
+  const isProse = /(write about|explain|document|discuss|describe|tell me about).+(component|interface)/.test(contentLower);
+  const hasStrategyWords = /(strategy|approach|plan|methodology|framework)/.test(contentLower);
+  const hasComponentWords = /(component|interface)/.test(contentLower);
+  const hasCreationVerb = /(build|create|make|implement|code|craft|develop|design|construct|compose)/.test(contentLower);
+  const isStrategy = hasCreationVerb && hasStrategyWords && hasComponentWords;
+  const finalComponentCreation = isComponentCreation && !isProse && !isStrategy;
+  
+  const needsComplexTool = complexInteractive.some(keyword => contentLower.includes(keyword)) || finalComponentCreation;
   const needsGenuineResearch = researchIndicators.some(keyword => contentLower.includes(keyword));
 
   // Decision logic - COMPLEX FIRST, then Noah for simple requests
