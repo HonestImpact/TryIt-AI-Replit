@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { streamText } from 'ai';
+import { anthropic } from '@ai-sdk/anthropic';
+import { openai } from '@ai-sdk/openai';
 import { AI_CONFIG } from '@/lib/ai-config';
 import { createLogger } from '@/lib/logger';
 import { ArtifactService } from '@/lib/artifact-service';
@@ -476,10 +479,251 @@ async function noahChatHandler(req: NextRequest, context: LoggingContext): Promi
 }
 
 /**
- * Main POST handler - processes all chat requests
+ * Streaming Noah chat handler - preserves all existing functionality with streaming responses
  */
-export async function POST(req: NextRequest): Promise<NextResponse> {
-  return withLogging(noahChatHandler)(req);
+async function noahStreamingChatHandler(req: NextRequest, context: LoggingContext) {
+  const startTime = Date.now();
+  logger.info('🦉 Noah processing streaming request');
+
+  try {
+    // Parse request with timeout protection (same as existing)
+    const parsePromise = req.json();
+    const { messages, skepticMode } = await withTimeout(parsePromise, 2000);
+    
+    // Store parsed body in context for logging middleware
+    context.requestBody = { messages, skepticMode };
+
+    // Initialize conversation state with analytics (same as existing)
+    const conversationState = await initializeConversationState(req, context, skepticMode || false);
+
+    if (!messages || !Array.isArray(messages) || messages.length === 0) {
+      const model = AI_CONFIG.LLM_PROVIDER === 'openai' ? openai(AI_CONFIG.getModel()) : anthropic(AI_CONFIG.getModel());
+      return streamText({
+        model,
+        messages: [{ role: 'assistant', content: "I didn't receive any messages to respond to. Want to try sending me something?" }],
+        temperature: 0.7,
+      }).toTextStreamResponse();
+    }
+
+    const lastMessage = messages[messages.length - 1]?.content || '';
+    logger.info('📝 Processing Noah streaming request', {
+      messageCount: messages.length,
+      messageLength: lastMessage.length,
+      analytics: conversationState.sessionId ? 'enabled' : 'disabled'
+    });
+
+    // Log user message (fire-and-forget, same as existing)
+    if (conversationState.conversationId && conversationState.sessionId) {
+      conversationState.messageSequence++;
+      analyticsService.logMessage(
+        conversationState.conversationId,
+        conversationState.sessionId,
+        conversationState.messageSequence,
+        'user',
+        lastMessage
+      );
+    }
+
+    // Noah analyzes and decides internally (same logic as existing)
+    const analysis = analyzeRequest(lastMessage);
+    logger.info('🧠 Noah analysis complete', {
+      needsResearch: analysis.needsResearch,
+      needsBuilding: analysis.needsBuilding,
+      reasoning: analysis.reasoning,
+      confidence: analysis.confidence
+    });
+
+    let agentUsed: 'noah' | 'wanderer' | 'tinkerer' = 'noah';
+    let agentStrategy = 'noah_direct';
+    let responseContent = '';
+
+    try {
+      // Handle multi-agent orchestration (reuse existing logic)
+      if (analysis.needsResearch) {
+        logger.info('🔬 Noah delegating to Wanderer for research...');
+        agentUsed = 'wanderer';
+        agentStrategy = analysis.needsBuilding ? 'noah_wanderer_tinkerer' : 'noah_wanderer';
+        const research = await withTimeout(wandererResearch(messages, context), WANDERER_TIMEOUT);
+        if (analysis.needsBuilding) {
+          logger.info('🔧 Noah chaining to Tinkerer for building...');
+          agentUsed = 'tinkerer';
+          const tool = await withTimeout(tinkererBuild(messages, research, context), TINKERER_TIMEOUT);
+          responseContent = tool.content;
+        } else {
+          responseContent = research.content;
+        }
+      } else if (analysis.needsBuilding) {
+        logger.info('🔧 Noah delegating to Tinkerer for building...');
+        agentUsed = 'tinkerer';
+        agentStrategy = 'noah_tinkerer';
+        const tool = await withTimeout(tinkererBuild(messages, null, context), TINKERER_TIMEOUT);
+        responseContent = tool.content;
+      } else {
+        // Noah handles directly with streaming
+        logger.info('🦉 Noah handling directly with streaming...');
+        const model = AI_CONFIG.LLM_PROVIDER === 'openai' ? openai(AI_CONFIG.getModel()) : anthropic(AI_CONFIG.getModel());
+        
+        return streamText({
+          model,
+          messages: messages.map((msg: ChatMessage) => ({
+            role: msg.role as 'user' | 'assistant' | 'system',
+            content: msg.content
+          })),
+          system: AI_CONFIG.CHAT_SYSTEM_PROMPT,
+          temperature: 0.7,
+          onFinish: async (completion) => {
+            const responseTime = Date.now() - startTime;
+            logger.info('✅ Noah streaming response completed', {
+              responseLength: completion.text.length,
+              responseTime
+            });
+            
+            // Log assistant response (fire-and-forget, same as existing)
+            if (conversationState.conversationId && conversationState.sessionId) {
+              conversationState.messageSequence++;
+              analyticsService.logMessage(
+                conversationState.conversationId,
+                conversationState.sessionId,
+                conversationState.messageSequence,
+                'assistant',
+                completion.text,
+                responseTime,
+                agentUsed
+              );
+            }
+
+            // Process artifacts in background (non-blocking)
+            ArtifactService.handleArtifactWorkflow(
+              completion.text,
+              lastMessage,
+              context.sessionId,
+              conversationState
+            ).catch(error => logger.warn('Artifact processing failed', { error }));
+          }
+        }).toTextStreamResponse();
+      }
+    } catch (agentError) {
+      logger.error('🚨 Agent orchestration failed, Noah streaming directly', { error: agentError });
+      agentUsed = 'noah';
+      agentStrategy = 'noah_direct_fallback';
+      
+      // Fallback to Noah Direct streaming
+      const model = AI_CONFIG.LLM_PROVIDER === 'openai' ? openai(AI_CONFIG.getModel()) : anthropic(AI_CONFIG.getModel());
+      return streamText({
+        model,
+        messages: messages.map((msg: ChatMessage) => ({
+          role: msg.role as 'user' | 'assistant' | 'system',
+          content: msg.content
+        })),
+        system: AI_CONFIG.CHAT_SYSTEM_PROMPT,
+        temperature: 0.7,
+        onFinish: async (completion) => {
+          const responseTime = Date.now() - startTime;
+          logger.info('✅ Noah fallback streaming response completed', {
+            responseLength: completion.text.length,
+            responseTime
+          });
+          
+          // Log response
+          if (conversationState.conversationId && conversationState.sessionId) {
+            conversationState.messageSequence++;
+            analyticsService.logMessage(
+              conversationState.conversationId,
+              conversationState.sessionId,
+              conversationState.messageSequence,
+              'assistant',
+              completion.text,
+              responseTime,
+              agentUsed
+            );
+          }
+        }
+      }).toTextStreamResponse();
+    }
+
+    // For non-streaming agents (Wanderer/Tinkerer), return pre-computed response as stream
+    const responseTime = Date.now() - startTime;
+    logger.info('✅ Noah agent response completed', {
+      responseLength: responseContent.length,
+      responseTime,
+      agent: agentUsed
+    });
+
+    // Log assistant response
+    if (conversationState.conversationId && conversationState.sessionId) {
+      conversationState.messageSequence++;
+      analyticsService.logMessage(
+        conversationState.conversationId,
+        conversationState.sessionId,
+        conversationState.messageSequence,
+        'assistant',
+        responseContent,
+        responseTime,
+        agentUsed
+      );
+    }
+
+    // Process artifacts
+    const parsed = await ArtifactService.handleArtifactWorkflow(
+      responseContent,
+      lastMessage,
+      context.sessionId,
+      conversationState
+    );
+
+    let finalContent = responseContent;
+    if (parsed.hasArtifact && parsed.title && parsed.content) {
+      const lines = responseContent.split('\n');
+      const firstFiveLines = lines.slice(0, 5).join('\n');
+      const hasMoreContent = lines.length > 5;
+
+      if (hasMoreContent) {
+        finalContent = `${firstFiveLines}\n\n*I've created a tool for you! Check your toolbox for the complete "${parsed.title}" with all the details.*`;
+      } else {
+        finalContent = `${responseContent}\n\n*This tool has been saved to your toolbox as "${parsed.title}" for easy access.*`;
+      }
+    }
+
+    // Return pre-computed response as a stream
+    const model = AI_CONFIG.LLM_PROVIDER === 'openai' ? openai(AI_CONFIG.getModel()) : anthropic(AI_CONFIG.getModel());
+    return streamText({
+      model,
+      messages: [{ role: 'assistant', content: finalContent }],
+      temperature: 0,
+    }).toTextStreamResponse();
+
+  } catch (error) {
+    logger.error('💥 Noah streaming handler failed', { error });
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    let userFriendlyMessage = `I'm experiencing technical difficulties. The specific issue: ${errorMessage}`;
+
+    if (errorMessage.includes('timeout')) {
+      userFriendlyMessage = `I'm taking longer than usual to respond. This might be a good time to tell me to get my act together. The technical issue is: ${errorMessage}`;
+    }
+
+    const model = AI_CONFIG.LLM_PROVIDER === 'openai' ? openai(AI_CONFIG.getModel()) : anthropic(AI_CONFIG.getModel());
+    return streamText({
+      model,
+      messages: [{ role: 'assistant', content: userFriendlyMessage }],
+      temperature: 0,
+    }).toTextStreamResponse();
+  }
+}
+
+/**
+ * Main POST handler - processes all chat requests
+ * Supports both streaming and non-streaming based on request headers
+ */
+export async function POST(req: NextRequest): Promise<NextResponse | Response> {
+  // Check if client supports streaming
+  const acceptHeader = req.headers.get('accept') || '';
+  const isStreamingRequest = acceptHeader.includes('text/stream') || req.headers.get('x-streaming') === 'true';
+  
+  if (isStreamingRequest) {
+    return withLogging(noahStreamingChatHandler)(req);
+  } else {
+    return withLogging(noahChatHandler)(req);
+  }
 }
 
 /**
