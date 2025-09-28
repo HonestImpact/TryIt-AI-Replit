@@ -1,102 +1,34 @@
-// Analytics Database Layer - Elegant PostgreSQL integration for Noah
+// Analytics Database Layer - Secure, Pooled PostgreSQL integration for Noah
 // Zero-performance-impact, async-first, error-resilient implementation
 
 import { createLogger } from '@/lib/logger';
+import { analyticsPool, type PooledQueryOptions } from './connection-pool';
 import type { 
   SessionData, 
   ConversationData, 
   MessageData, 
   GeneratedToolData, 
   ToolUsageEvent,
-  AnalyticsQueryOptions,
   PerformanceMetrics
 } from './types';
 
 const logger = createLogger('analytics-db');
 
 class AnalyticsDatabase {
-  private connectionString: string;
-  private retryAttempts = 3;
-  private timeoutMs = 5000;
-
   constructor() {
-    // Use Replit PostgreSQL connection
-    this.connectionString = process.env.DATABASE_URL || 'postgresql://postgres:password@helium/heliumdb';
+    // Connection management now handled by secure connection pool
   }
 
   /**
-   * Execute database query with elegant error handling and performance monitoring
+   * Execute database query using secure connection pool
    */
   private async executeQuery<T = any>(
     query: string, 
     params: any[] = [], 
-    options: AnalyticsQueryOptions = {}
+    options: PooledQueryOptions = {}
   ): Promise<T | null> {
-    const startTime = Date.now();
-    const { timeout = this.timeoutMs, retries = this.retryAttempts, skipOnError = true } = options;
-
-    let lastError: Error | null = null;
-
-    for (let attempt = 1; attempt <= retries; attempt++) {
-      try {
-        // Dynamic import for PostgreSQL client to avoid affecting app startup
-        const { Client } = await import('pg');
-        const client = new Client({ connectionString: this.connectionString });
-
-        // Timeout protection
-        const timeoutPromise = new Promise<never>((_, reject) => {
-          setTimeout(() => reject(new Error(`Database query timeout after ${timeout}ms`)), timeout);
-        });
-
-        const queryPromise = (async () => {
-          await client.connect();
-          try {
-            const result = await client.query(query, params);
-            return result.rows;
-          } finally {
-            await client.end();
-          }
-        })();
-
-        const result = await Promise.race([queryPromise, timeoutPromise]);
-        
-        const duration = Date.now() - startTime;
-        logger.debug('Analytics query executed', { 
-          duration, 
-          attempt, 
-          query: query.substring(0, 100) + '...' 
-        });
-
-        return result as T;
-
-      } catch (error) {
-        lastError = error instanceof Error ? error : new Error(String(error));
-        const duration = Date.now() - startTime;
-        
-        logger.warn(`Analytics query failed (attempt ${attempt}/${retries})`, { 
-          error: lastError.message, 
-          duration,
-          query: query.substring(0, 50) + '...'
-        });
-
-        if (attempt === retries) {
-          if (skipOnError) {
-            logger.error('Analytics query failed after all retries - skipping', { 
-              error: lastError.message,
-              totalDuration: Date.now() - startTime
-            });
-            return null;
-          } else {
-            throw lastError;
-          }
-        }
-
-        // Exponential backoff for retries
-        await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 100));
-      }
-    }
-
-    return null;
+    // Delegate to secure connection pool
+    return analyticsPool.executeQuery<T>(query, params, options);
   }
 
   /**
