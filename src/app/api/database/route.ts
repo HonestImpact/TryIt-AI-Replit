@@ -5,7 +5,7 @@ import { analyticsDb } from '@/lib/analytics/database';
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const table = searchParams.get('table');
-  const limit = parseInt(searchParams.get('limit') || '50');
+  const limit = parseInt(searchParams.get('limit') || '1000'); // Increased for testing
 
   try {
     if (table) {

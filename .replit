@@ -25,10 +25,6 @@ externalPort = 80
 localPort = 43891
 externalPort = 3000
 
-[[ports]]
-localPort = 44467
-externalPort = 3001
-
 [agent]
 expertMode = true
 integrations = ["github:1.0.0"]
