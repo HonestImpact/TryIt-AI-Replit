@@ -17,6 +17,7 @@ interface TableData {
 export default function DatabaseViewer() {
   const [counts, setCounts] = useState<TableCounts[]>([]);
   const [selectedTable, setSelectedTable] = useState<string>('');
+  const [selectedView, setSelectedView] = useState<string>('default');
   const [tableData, setTableData] = useState<TableData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
@@ -42,11 +43,12 @@ export default function DatabaseViewer() {
     }
   };
 
-  const fetchTableData = async (tableName: string) => {
+  const fetchTableData = async (tableName: string, view: string = 'default') => {
     try {
       setLoading(true);
       setSelectedTable(tableName);
-      const response = await fetch(`/api/database?table=${tableName}&limit=100`);
+      setSelectedView(view);
+      const response = await fetch(`/api/database?table=${tableName}&view=${view}&limit=1000`);
       const data = await response.json();
       if (data.error) {
         setError(data.error);
@@ -58,6 +60,14 @@ export default function DatabaseViewer() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const availableViews = {
+    messages: [
+      { id: 'clean', name: 'Clean View', description: 'Your requested columns only' },
+      { id: 'default', name: 'Full View', description: 'All columns with metadata' },
+      { id: 'content', name: 'Content Focus', description: 'Focus on message content' }
+    ]
   };
 
   const formatValue = (value: any): string => {
@@ -177,6 +187,29 @@ export default function DatabaseViewer() {
                 ✕
               </button>
             </div>
+
+            {/* View Selector for Messages Table */}
+            {selectedTable === 'messages' && availableViews.messages && (
+              <div className="mb-6 p-4 bg-slate-50 rounded-lg border border-slate-200">
+                <h3 className="text-sm font-semibold text-slate-700 mb-3">Select View</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  {availableViews.messages.map((view) => (
+                    <button
+                      key={view.id}
+                      onClick={() => fetchTableData('messages', view.id)}
+                      className={`p-3 rounded-lg border text-left transition-colors ${
+                        selectedView === view.id
+                          ? 'border-blue-500 bg-blue-50 text-blue-900'
+                          : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
+                      }`}
+                    >
+                      <div className="font-medium text-sm">{view.name}</div>
+                      <div className="text-xs opacity-75 mt-1">{view.description}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {tableData.data.length === 0 ? (
               <div className="text-center py-8 text-slate-500">

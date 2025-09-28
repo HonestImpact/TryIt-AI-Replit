@@ -5,6 +5,7 @@ import { analyticsDb } from '@/lib/analytics/database';
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const table = searchParams.get('table');
+  const view = searchParams.get('view') || 'default';
   const limit = parseInt(searchParams.get('limit') || '1000'); // Increased for testing
 
   try {
@@ -21,26 +22,60 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ table, data, count: data?.length || 0, enhanced: true });
       }
 
-      // Clean messages view with requested columns
+      // Messages table with multiple view options
       if (table === 'messages') {
-        const data = await analyticsPool.executeQuery(
-          `SELECT 
-            m.conversation_id,
-            m.message_sequence,
-            m.role,
-            m.message_type,
-            m.agent_involved,
-            m.skeptic_mode_active,
-            m.content,
-            m.created_at,
-            m.response_time_ms
-          FROM messages m
-          WHERE m.conversation_id IS NOT NULL
-          ORDER BY m.created_at DESC 
-          LIMIT $1`,
-          [limit]
-        );
-        return NextResponse.json({ table, data, count: data?.length || 0, view: 'clean_messages' });
+        let query = '';
+        let viewName = view;
+
+        switch (view) {
+          case 'clean':
+            query = `SELECT 
+              m.conversation_id,
+              m.message_sequence,
+              m.role,
+              m.message_type,
+              m.agent_involved,
+              m.skeptic_mode_active,
+              m.content,
+              m.created_at,
+              m.response_time_ms
+            FROM messages m
+            WHERE m.conversation_id IS NOT NULL
+            ORDER BY m.created_at DESC 
+            LIMIT $1`;
+            break;
+
+          case 'content':
+            query = `SELECT 
+              m.conversation_id,
+              m.role,
+              m.content,
+              m.created_at,
+              m.response_time_ms,
+              m.agent_involved
+            FROM messages m
+            WHERE m.conversation_id IS NOT NULL
+            ORDER BY m.created_at DESC 
+            LIMIT $1`;
+            break;
+
+          default: // 'default' - full view
+            query = `SELECT 
+              m.*,
+              c.conversation_sequence,
+              CASE WHEN LENGTH(m.content) > 100 
+                THEN LEFT(m.content, 100) || '...' 
+                ELSE m.content 
+              END as content_preview
+            FROM messages m
+            LEFT JOIN conversations c ON m.conversation_id = c.id
+            ORDER BY m.created_at DESC 
+            LIMIT $1`;
+            break;
+        }
+
+        const data = await analyticsPool.executeQuery(query, [limit]);
+        return NextResponse.json({ table, data, count: data?.length || 0, view: viewName });
       }
 
       // Enhanced artifacts view with content
