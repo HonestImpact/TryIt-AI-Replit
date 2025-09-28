@@ -298,17 +298,7 @@ export class StructuredResponseParser {
       const hasTitle = content.includes('TITLE:');
       const hasTool = content.includes('TOOL:');
       
-      // DEBUG: Log what we're trying to parse
-      logger.debug('parseLegacyFormat debug', {
-        hasTitle,
-        hasTool,
-        contentLength: content.length,
-        contentStart: content.substring(0, 200),
-        agentUsed
-      });
-      
       if (!hasTitle || !hasTool) {
-        logger.debug('parseLegacyFormat failed - missing title or tool markers');
         return { success: false };
       }
 
