@@ -882,10 +882,24 @@ async function noahStreamingChatHandler(req: NextRequest, context: LoggingContex
 
 /**
  * Main POST handler - processes all chat requests
- * Supports both streaming and non-streaming based on request headers
+ * Tool creation always uses non-streaming for proper artifact processing
  */
 export async function POST(req: NextRequest): Promise<NextResponse | Response> {
-  // Check if client supports streaming
+  // Check if this is a tool creation request
+  const body = await req.clone().json().catch(() => ({ messages: [] }));
+  const lastMessage = body?.messages?.[body.messages.length - 1]?.content?.toLowerCase() || '';
+  
+  const toolCreationKeywords = [
+    'create', 'build', 'make', 'calculator', 'timer', 'converter', 'tool', 'app', 'component'
+  ];
+  const isToolCreation = toolCreationKeywords.some(keyword => lastMessage.includes(keyword));
+  
+  // Force tool creation to use non-streaming for proper artifact processing
+  if (isToolCreation) {
+    return withLogging(noahChatHandler)(req);
+  }
+  
+  // Check if client supports streaming for other requests
   const acceptHeader = req.headers.get('accept') || '';
   const isStreamingRequest = acceptHeader.includes('text/stream') || req.headers.get('x-streaming') === 'true';
   
