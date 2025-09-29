@@ -54,6 +54,7 @@ export interface GeneratedToolData {
   generationTimeMs: number;
   generationAgent: 'noah' | 'wanderer' | 'tinkerer';
   userMessageLength: number;
+  agentStrategy?: string;  // noah_direct, noah_wanderer, noah_tinkerer, etc.
   version?: number;
   downloadCount?: number;
 }

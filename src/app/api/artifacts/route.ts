@@ -29,9 +29,9 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       title: string; 
       content: string; 
       created_at: string; 
-      agent: string; 
+      generation_agent: string; 
     }>>(
-      'SELECT id, title, content, created_at, agent FROM generated_tools WHERE session_id = $1 ORDER BY created_at DESC',
+      'SELECT id, title, content, created_at, generation_agent FROM generated_tools WHERE session_id = $1 ORDER BY created_at DESC',
       [sessionId]
     );
 
@@ -41,7 +41,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
           title: artifact.title,
           content: artifact.content,
           timestamp: new Date(artifact.created_at).getTime(),
-          agent: artifact.agent || 'noah'
+          agent: artifact.generation_agent || 'noah'
         }));
         
         const latestArtifact = sessionArtifacts[0];
