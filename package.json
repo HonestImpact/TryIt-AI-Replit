@@ -18,6 +18,7 @@
     "@ai-sdk/openai": "^2.0.38",
     "@chroma-core/default-embed": "^0.1.8",
     "@octokit/rest": "^22.0.0",
+    "@replit/object-storage": "^1.0.0",
     "@tailwindcss/postcss": "^4.1.13",
     "@types/node-fetch": "^2.6.13",
     "@types/pg": "^8.15.5",
