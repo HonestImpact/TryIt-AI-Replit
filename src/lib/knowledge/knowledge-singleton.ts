@@ -1,8 +1,6 @@
-// Knowledge Service - RAG implementation for Noah
+// Knowledge Service - Simple implementation for Noah
 import type { KnowledgeResult } from '../agents/types';
-import { vectorStore } from '../../../rag/vector-store';
 import { createLogger } from '../logger';
-import { AI_CONFIG } from '../ai-config';
 
 const logger = createLogger('knowledge-service');
 
@@ -16,7 +14,7 @@ class KnowledgeService {
     if (this.initialized) return;
 
     try {
-      await vectorStore.initialize();
+      // Simple initialization - no external dependencies
       this.initialized = true;
       logger.info('✅ Knowledge service initialized');
     } catch (error) {
@@ -37,8 +35,8 @@ class KnowledgeService {
       await this.initialize();
 
       const {
-        maxResults = AI_CONFIG.RAG_CONTEXT_LIMIT,
-        minRelevanceScore = AI_CONFIG.RAG_RELEVANCE_THRESHOLD,
+        maxResults = 3,
+        minRelevanceScore = 0.7,
         filter = {}
       } = options || {};
 
@@ -48,26 +46,9 @@ class KnowledgeService {
         minRelevanceScore
       });
 
-      const searchResults = await vectorStore.search(query, {
-        maxResults,
-        minRelevanceScore,
-        filter
-      });
-
-      const knowledgeResults: KnowledgeResult[] = searchResults.map((result: {id: string; content: string; score: number; metadata: Record<string, unknown>}) => ({
-        item: {
-          content: result.content,
-          type: String(result.metadata.type || 'knowledge'),
-          metadata: {
-            id: result.id,
-            title: result.metadata.title,
-            category: result.metadata.category,
-            timestamp: result.metadata.timestamp,
-            source: result.metadata.source,
-            relevance: result.score
-          }
-        }
-      }));
+      // Simple implementation - return empty results for now
+      // The real knowledge is handled by ToolKnowledgeService via PostgreSQL
+      const knowledgeResults: KnowledgeResult[] = [];
 
       logger.info('✅ Knowledge search completed', { 
         resultsFound: knowledgeResults.length,
@@ -79,117 +60,8 @@ class KnowledgeService {
     } catch (error) {
       logger.error('💥 Knowledge search failed', { error, query: query.substring(0, 50) });
       
-      // If RAG is not enabled or fails, return empty results
-      if (!AI_CONFIG.RAG_ENABLED) {
-        logger.info('ℹ️ RAG is disabled, returning empty results');
-        return [];
-      }
-      
-      // Return empty results on error to not break the flow
+      // Return empty results on error - don't block the system
       return [];
-    }
-  }
-
-  /**
-   * Add knowledge to the vector store
-   */
-  async addKnowledge(
-    id: string,
-    content: string,
-    metadata: {
-      source: string;
-      type: 'knowledge' | 'artifact' | 'conversation';
-      title?: string;
-      category?: string;
-    }
-  ): Promise<void> {
-    try {
-      await this.initialize();
-
-      await vectorStore.addDocuments([{
-        id,
-        content,
-        metadata: {
-          ...metadata,
-          timestamp: new Date().toISOString()
-        }
-      }]);
-
-      logger.info('✅ Knowledge added', { id, contentLength: content.length });
-
-    } catch (error) {
-      logger.error('💥 Failed to add knowledge', { error, id });
-      throw error;
-    }
-  }
-
-  /**
-   * Update existing knowledge
-   */
-  async updateKnowledge(
-    id: string,
-    content: string,
-    metadata: {
-      source: string;
-      type: 'knowledge' | 'artifact' | 'conversation';
-      title?: string;
-      category?: string;
-    }
-  ): Promise<void> {
-    try {
-      await this.initialize();
-
-      await vectorStore.updateDocument(id, content, {
-        ...metadata,
-        timestamp: new Date().toISOString()
-      });
-
-      logger.info('✅ Knowledge updated', { id });
-
-    } catch (error) {
-      logger.error('💥 Failed to update knowledge', { error, id });
-      throw error;
-    }
-  }
-
-  /**
-   * Remove knowledge from the vector store
-   */
-  async removeKnowledge(ids: string[]): Promise<void> {
-    try {
-      await this.initialize();
-
-      await vectorStore.deleteDocuments(ids);
-
-      logger.info('✅ Knowledge removed', { count: ids.length });
-
-    } catch (error) {
-      logger.error('💥 Failed to remove knowledge', { error, count: ids.length });
-      throw error;
-    }
-  }
-
-  /**
-   * Get knowledge base statistics
-   */
-  async getStats(): Promise<{ documentCount: number; isHealthy: boolean }> {
-    try {
-      await this.initialize();
-
-      const stats = await vectorStore.getStats();
-      const isHealthy = await vectorStore.healthCheck();
-
-      return {
-        documentCount: stats.count,
-        isHealthy
-      };
-
-    } catch (error) {
-      logger.error('💥 Failed to get knowledge stats', { error });
-      return {
-        documentCount: 0,
-        isHealthy: false
-      };
     }
   }
 
@@ -199,7 +71,7 @@ class KnowledgeService {
   async healthCheck(): Promise<boolean> {
     try {
       await this.initialize();
-      return await vectorStore.healthCheck();
+      return this.initialized;
     } catch (error) {
       logger.error('💥 Knowledge service health check failed', { error });
       return false;
@@ -207,5 +79,6 @@ class KnowledgeService {
   }
 }
 
-const KnowledgeServiceSingleton = new KnowledgeService();
-export default KnowledgeServiceSingleton;
+// Export singleton instance
+const knowledgeService = new KnowledgeService();
+export default knowledgeService;

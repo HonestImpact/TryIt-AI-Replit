@@ -12,6 +12,7 @@ const logger = createLogger('noah-safety-service');
 export interface SafetyResponse {
   shouldProceed: boolean;
   interfaceLocked: boolean;
+  radioSilence: boolean;
   violation?: {
     type: string;
     reason: string;
@@ -65,6 +66,7 @@ export class NoahSafetyService {
       return {
         shouldProceed: false,
         interfaceLocked: true,
+        radioSilence: true,
         violation: {
           type: safetyResult.violationType!,
           reason: safetyResult.reason!,
@@ -84,6 +86,7 @@ export class NoahSafetyService {
     return {
       shouldProceed: true,
       interfaceLocked: false,
+      radioSilence: false,
       loggedToAnalytics: analyticsLogged
     };
   }
@@ -103,28 +106,23 @@ export class NoahSafetyService {
       if (sessionId && conversationId) {
         // For violations, log as trust-impacting event
         if (safetyResult.radioSilence) {
-          analyticsService.logTrustEvent(
-            sessionId,
-            conversationId,
-            50, // Previous trust level (default)
-            30, // New trust level (safety violation impact)
-            'safety_violation',
-            `${safetyResult.violationType}: ${safetyResult.reason}`
-          );
+          // Log safety violation (simplified)
+          logger.warn('Safety violation occurred', {
+            sessionId: sessionId.substring(0, 8),
+            conversationId: conversationId.substring(0, 8),
+            violationType: safetyResult.violationType,
+            reason: safetyResult.reason
+          });
         }
 
-        // Log the safety check itself as a message annotation
-        analyticsService.addMessageAnnotation({
-          messageId: `${conversationId}_safety_check`, // Pseudo message ID for safety checks
-          annotationType: 'safety_check',
-          annotationValue: JSON.stringify({
-            isAllowed: safetyResult.isAllowed,
-            violationType: safetyResult.violationType,
-            confidence: safetyResult.confidence,
-            interfaceLocked: safetyResult.radioSilence,
-            checkDurationMs
-          }),
-          confidenceScore: safetyResult.confidence
+        // Log safety check details
+        logger.info('Safety check completed', {
+          messageId: `${conversationId}_safety_check`,
+          isAllowed: safetyResult.isAllowed,
+          violationType: safetyResult.violationType,
+          confidence: safetyResult.confidence,
+          interfaceLocked: safetyResult.radioSilence,
+          checkDurationMs
         });
       }
 
