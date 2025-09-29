@@ -12,6 +12,7 @@ import { PracticalAgent } from '@/lib/agents/practical-agent';
 import { sharedResourceManager, type AgentSharedResources } from '@/lib/agents/shared-resources';
 import type { ChatMessage } from '@/lib/agents/types';
 import { analyticsService } from '@/lib/analytics';
+import { analyticsPool } from '@/lib/analytics/connection-pool';
 import { NoahSafetyService } from '@/lib/safety';
 
 const logger = createLogger('noah-chat');
@@ -543,9 +544,32 @@ async function noahChatHandler(req: NextRequest, context: LoggingContext): Promi
       };
     }
 
-    // Include session artifacts for accumulated toolbox
-    if (context.sessionId && sessionArtifacts.has(context.sessionId)) {
-      response.sessionArtifacts = sessionArtifacts.get(context.sessionId) || [];
+    // Include session artifacts for accumulated toolbox - fetch from database
+    if (context.sessionId) {
+      try {
+        const artifactsResult = await analyticsPool.executeQuery<Array<{ 
+          id: string; 
+          title: string; 
+          content: string; 
+          created_at: string; 
+          generation_agent: string; 
+        }>>(
+          'SELECT id, title, content, created_at, generation_agent FROM generated_tools WHERE session_id = $1 ORDER BY created_at DESC',
+          [context.sessionId]
+        );
+        
+        if (artifactsResult && artifactsResult.length > 0) {
+          response.sessionArtifacts = artifactsResult.map(artifact => ({
+            id: artifact.id,
+            title: artifact.title,
+            content: artifact.content,
+            timestamp: new Date(artifact.created_at).getTime(),
+            agent: artifact.generation_agent || 'noah'
+          }));
+        }
+      } catch (error) {
+        logger.error('Failed to fetch session artifacts for response', { error });
+      }
     }
 
     return NextResponse.json(response);
