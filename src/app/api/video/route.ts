@@ -15,13 +15,39 @@ export async function GET(request: NextRequest) {
     }
 
     const videoBuffer = result.value[0];
+    const fileSize = videoBuffer.length;
+    const range = request.headers.get('range');
 
-    // Return the video with proper headers
-    return new NextResponse(videoBuffer, {
+    // If no range header, return entire file
+    if (!range) {
+      return new NextResponse(videoBuffer, {
+        status: 200,
+        headers: {
+          'Content-Type': 'video/mp4',
+          'Content-Length': fileSize.toString(),
+          'Accept-Ranges': 'bytes',
+          'Cache-Control': 'public, max-age=3600',
+        },
+      });
+    }
+
+    // Parse range header
+    const parts = range.replace(/bytes=/, '').split('-');
+    const start = parseInt(parts[0], 10);
+    const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+    const chunkSize = (end - start) + 1;
+    
+    // Extract the requested chunk
+    const chunk = videoBuffer.slice(start, end + 1);
+
+    return new NextResponse(chunk, {
+      status: 206, // Partial Content
       headers: {
         'Content-Type': 'video/mp4',
-        'Cache-Control': 'public, max-age=3600',
+        'Content-Length': chunkSize.toString(),
+        'Content-Range': `bytes ${start}-${end}/${fileSize}`,
         'Accept-Ranges': 'bytes',
+        'Cache-Control': 'public, max-age=3600',
       },
     });
 
