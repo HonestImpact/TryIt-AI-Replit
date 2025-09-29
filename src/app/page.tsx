@@ -861,6 +861,25 @@ export default function TrustRecoveryProtocol() {
           </div>
         </div>
       )}
+      
+      {/* Demo Video Section */}
+      <div className="max-w-4xl mx-auto px-4 py-8 mt-8">
+        <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+          <div className="p-6">
+            <h3 className="text-lg font-semibold text-slate-800 mb-4">Demo Video</h3>
+            <video
+              controls
+              preload="metadata"
+              className="w-full rounded-lg"
+              style={{ maxHeight: '400px' }}
+            >
+              <source src="/demo-video.mp4" type="video/mp4" />
+              <source src="/demo-video.webm" type="video/webm" />
+              Your browser does not support the video tag.
+            </video>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
