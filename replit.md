@@ -24,6 +24,15 @@ The application implements a sophisticated Retrieval-Augmented Generation (RAG) 
 
 Preferred communication style: Simple, everyday language.
 
+## Development Framework
+
+**MANDATORY**: Before any code changes, follow these protocols:
+1. **Strategic Pause**: Read `.strategic-pause.md` and answer all questions
+2. **Architecture First**: Follow `.architecture-first.md` decision process  
+3. **Code Covenant**: Meet `.code-covenant.md` quality standards
+
+These frameworks ensure we think strategically, not reactively, preserving Noah's integrity and preventing symptom-fixing that breaks existing functionality.
+
 ## System Architecture
 
 ### Frontend Architecture
