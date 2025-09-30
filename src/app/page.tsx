@@ -104,7 +104,7 @@ export default function TrustRecoveryProtocol() {
     agent: string;
     id: string;
   }>>([]);
-  const [showReasoning] = useState(false);
+  const [showReasoning, setShowReasoning] = useState(false);
   const [reasoning] = useState('');
   const [skepticMode, setSkepticMode] = useState(false);
   const [trustLevel, setTrustLevel] = useState(50);
@@ -782,12 +782,31 @@ export default function TrustRecoveryProtocol() {
               </div>
             )}
 
-            {/* Reasoning Display */}
-            {showReasoning && reasoning && (
-              <div className="bg-amber-50 border border-amber-200 rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-sm animate-fade-in-up mt-4 sm:mt-6">
-                <h3 className="text-base sm:text-lg font-semibold text-amber-900 mb-3 sm:mb-4">Reasoning Process</h3>
-                <div className="text-xs sm:text-sm text-amber-800 whitespace-pre-wrap">{reasoning}</div>
-              </div>
+            {/* Reasoning Display - Collapsible */}
+            {reasoning && (
+              <button
+                onClick={() => setShowReasoning(!showReasoning)}
+                className="w-full bg-white/80 backdrop-blur-sm border border-white/50 rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg hover:shadow-xl transition-all duration-200 animate-fade-in-up mt-4 sm:mt-6 text-left"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-base sm:text-lg font-semibold text-slate-900 flex items-center gap-2">
+                    <span>💭</span> Reasoning Process
+                  </h3>
+                  <svg 
+                    className={`w-5 h-5 text-slate-600 transition-transform duration-200 ${showReasoning ? 'rotate-180' : ''}`} 
+                    fill="currentColor" 
+                    viewBox="0 0 20 20"
+                  >
+                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                {!showReasoning && (
+                  <p className="text-xs sm:text-sm text-slate-500">Click to see the reasoning behind responses...</p>
+                )}
+                {showReasoning && (
+                  <div className="text-xs sm:text-sm text-slate-700 whitespace-pre-wrap mt-3 border-t border-slate-200/50 pt-3">{reasoning}</div>
+                )}
+              </button>
             )}
 
             {/* Trust Indicators - Hidden on mobile since it's in header */}
