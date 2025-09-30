@@ -131,7 +131,7 @@ export default function PowerUserInterface() {
           {/* Input */}
           <div className="border-t border-slate-700 p-4">
             <div className="flex items-center space-x-3">
-              <span className="text-green-400 text-sm">></span>
+              <span className="text-green-400 text-sm">{'>'}</span>
               <input
                 type="text"
                 placeholder="Type command or press Cmd+K for palette..."

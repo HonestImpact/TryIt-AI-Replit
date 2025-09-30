@@ -22,6 +22,16 @@ export default function UIDemosIndex() {
             <h2 className="text-xl font-semibold mb-2">3. Command Center (Power User)</h2>
             <p className="text-slate-600">Terminal-like dark theme, technical and efficient</p>
           </Link>
+          
+          <Link href="/ui-demos/cognitive-blueprint" className="block p-6 bg-white rounded-lg shadow hover:shadow-lg transition-shadow border-2 border-transparent hover:border-indigo-500">
+            <h2 className="text-xl font-semibold mb-2">4. Cognitive Blueprint Lab (Enterprise Transparency)</h2>
+            <p className="text-slate-600">Audit trails, compliance dashboards, explainable AI with evidence chains</p>
+          </Link>
+          
+          <Link href="/ui-demos/adaptive-narrative" className="block p-6 bg-white rounded-lg shadow hover:shadow-lg transition-shadow border-2 border-transparent hover:border-purple-500">
+            <h2 className="text-xl font-semibold mb-2">5. Adaptive Narrative Studio (Story-Driven)</h2>
+            <p className="text-slate-600">Branching conversations, persona modes, interactive storytelling interface</p>
+          </Link>
         </div>
         
         <div className="mt-8">
