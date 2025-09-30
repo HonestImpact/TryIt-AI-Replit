@@ -147,7 +147,7 @@ export default function AdaptiveNarrativeInterface() {
                 <button
                   key={persona.id}
                   onClick={() => setCurrentPersona(persona.id)}
-                  className={`px-4 py-2 rounded-xl text-sm font-medium transition-all border-2 shadow-md ${
+                  className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 border-2 shadow-md ${
                     currentPersona === persona.id
                       ? persona.activeClass
                       : 'bg-white/60 text-slate-600 border-slate-200 hover:bg-white'
@@ -162,10 +162,10 @@ export default function AdaptiveNarrativeInterface() {
         </div>
       </header>
 
-      <div className="max-w-6xl mx-auto px-6 py-6">
-        <div className="grid grid-cols-3 gap-6">
+      <div className="max-w-6xl mx-auto px-6 py-8">
+        <div className="grid grid-cols-3 gap-8">
           {/* Main Conversation Canvas */}
-          <div className="col-span-2 space-y-6">
+          <div className="col-span-2 space-y-8">
             {/* Story Timeline */}
             <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 overflow-hidden">
               <div className="bg-gradient-to-r from-indigo-500 to-purple-500 p-4 text-white">
@@ -177,7 +177,7 @@ export default function AdaptiveNarrativeInterface() {
                 </h2>
               </div>
               
-              <div className="p-6 space-y-6">
+              <div className="p-8 space-y-8">
                 {/* Chapter 1: User's Request */}
                 <div className="relative">
                   <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-indigo-300 to-purple-300 rounded-full"></div>
@@ -294,7 +294,7 @@ export default function AdaptiveNarrativeInterface() {
             </div>
 
             {/* Input Area */}
-            <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-4">
+            <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-4 transition-all">
               <div className="flex items-center space-x-3">
                 <div className="flex-1">
                   <input
@@ -303,7 +303,7 @@ export default function AdaptiveNarrativeInterface() {
                     className="w-full bg-white/50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-300 focus:border-transparent transition-all"
                   />
                 </div>
-                <button className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-xl px-6 py-3 font-medium hover:from-indigo-600 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl">
+                <button className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-xl px-6 py-3 font-medium hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105">
                   Send
                 </button>
               </div>
@@ -327,7 +327,7 @@ export default function AdaptiveNarrativeInterface() {
           </div>
 
           {/* Artifact Gallery Sidebar */}
-          <div className="space-y-6">
+          <div className="space-y-8">
             {/* Collaboration Progress */}
             <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-4">
               <h3 className="font-semibold text-slate-900 mb-4 flex items-center">
