@@ -1,0 +1,46 @@
+Revise this adaptive-narrative UI with these comprehensive changes:
+
+CORE FRAMING:
+- Change "Your Story" to "Our Collaboration" throughout
+- All language should treat user as intelligent equal, not consumer
+- Replace any "we'll help you" phrasing with "let's explore together"
+
+TRACK RECORD DISPLAY:
+- Rename "Trust Meter" to "Trust (Soon)"
+- Add explanatory tooltip: "This will track our collaboration quality based on your feedback and challenges - feature in development"
+- Keep visual placeholder (use neutral gray color, not active gradient)
+- Position prominently but don't show fake/random data
+
+VERIFICATION STATUS:
+- Rename "Confidence Level" to "Verification (Soon)"
+- Add tooltip: "This will show source strength and evidence quality for each response - feature in development"
+- Show placeholder text instead of percentage: "Verification tracking coming"
+- Make it clear this is a planned feature, not current data
+
+CHALLENGE & VERIFY:
+- Make "Challenge Response" button prominent - primary action, not hidden
+- Add inviting text: "Something seem off? Your challenges improve the system"
+- When reasoning collapsed, show preview: "See the reasoning behind this response..."
+- Challenge button should feel like partnership invitation
+
+SKEPTICISM MODE:
+- When active, show brief explanation: "Requesting additional verification and showing more sources"
+- Make mode change visible throughout interface (subtle indicator)
+
+ICONS & VISUAL LANGUAGE:
+- Use icons suggesting collaboration: handshake, partnership imagery (not meters/gauges)
+- Challenge icon: thoughtful question mark or dialogue (not warning symbol)
+
+POLISH:
+- Consistent 8px spacing grid throughout
+- Smooth transitions for mode changes and expansions
+- Typography hierarchy: conversation primary, controls accessible but subordinate
+- Loading states that show thinking, not frozen
+
+ARCHITECTURE:
+Keep the three-column layout - it works well.
+Left: Context and history
+Center: Conversation (primary focus)
+Right: Artifacts and actions
+
+Goal: Professional placeholder approach that signals future sophistication without showing fake data.

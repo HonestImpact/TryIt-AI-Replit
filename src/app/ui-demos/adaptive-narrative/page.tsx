@@ -4,10 +4,13 @@
 import React, { useState } from 'react';
 
 export default function AdaptiveNarrativeInterface() {
-  const [trustLevel, setTrustLevel] = useState(78);
   const [currentPersona, setCurrentPersona] = useState('creative');
   const [showArtifactGallery, setShowArtifactGallery] = useState(true);
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
+  const [showReasoning, setShowReasoning] = useState(false);
+  const [skepticMode, setSkepticMode] = useState(false);
+  const [showTrustTooltip, setShowTrustTooltip] = useState(false);
+  const [showVerificationTooltip, setShowVerificationTooltip] = useState(false);
   
   const personas = [
     { id: 'creative', name: 'Creative Partner', icon: '🎨', activeClass: 'bg-purple-100 text-purple-700 border-purple-300' },
@@ -17,9 +20,9 @@ export default function AdaptiveNarrativeInterface() {
   ];
 
   const conversationPaths = [
-    { id: 'explain', label: 'Explain the concept', icon: '💡' },
+    { id: 'explain', label: 'Let\'s explore the concept', icon: '💡' },
     { id: 'show', label: 'Show me examples', icon: '🔍' },
-    { id: 'build', label: 'Help me build it', icon: '🔨' },
+    { id: 'build', label: 'Let\'s build it together', icon: '🔨' },
     { id: 'explore', label: 'Explore alternatives', icon: '🌟' }
   ];
 
@@ -67,39 +70,77 @@ export default function AdaptiveNarrativeInterface() {
                 <h1 className="text-2xl font-semibold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
                   Noah's Adaptive Narrative Studio
                 </h1>
-                <p className="text-sm text-slate-600">Your journey, your way</p>
+                <p className="text-sm text-slate-600">Our collaboration, our way</p>
               </div>
             </div>
             
-            {/* Trust Blossom Visualization */}
-            <div className="flex items-center space-x-8">
-              <div className="text-center">
-                <div className="relative w-24 h-24">
-                  {/* Flower petals representing trust */}
-                  <svg className="w-full h-full" viewBox="0 0 100 100">
-                    {[0, 60, 120, 180, 240, 300].map((angle, i) => (
-                      <ellipse
-                        key={i}
-                        cx="50"
-                        cy="50"
-                        rx="15"
-                        ry="25"
-                        fill={`hsl(${250 + i * 20}, 70%, ${60 + trustLevel / 5}%)`}
-                        transform={`rotate(${angle} 50 50)`}
-                        opacity={trustLevel > 50 ? 0.8 : 0.4}
-                      />
-                    ))}
-                    {/* Center */}
-                    <circle cx="50" cy="50" r="12" fill="#FCD34D" />
+            {/* Trust & Verification Status */}
+            <div className="flex items-center gap-8">
+              {/* Trust (Soon) */}
+              <div 
+                className="relative text-center cursor-help"
+                onMouseEnter={() => setShowTrustTooltip(true)}
+                onMouseLeave={() => setShowTrustTooltip(false)}
+              >
+                <div className="relative w-16 h-16">
+                  {/* Partnership handshake icon */}
+                  <svg className="w-full h-full text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 00-3 0m-6-3V11m0-5.5v-1a1.5 1.5 0 013 0v1m0 0V11m0-5.5a1.5 1.5 0 013 0v3m0 0V11" />
                   </svg>
                 </div>
-                <div className="text-sm font-medium text-slate-700 mt-1">Trust: {trustLevel}%</div>
+                <div className="text-sm font-medium text-slate-500 mt-1">Trust (Soon)</div>
+                {showTrustTooltip && (
+                  <div className="absolute z-10 w-64 p-3 bg-slate-800 text-white text-xs rounded-lg shadow-xl -left-24 top-20">
+                    <div className="font-semibold mb-1">Trust Tracking - In Development</div>
+                    <div className="text-slate-300">This will track our collaboration quality based on your feedback and challenges</div>
+                  </div>
+                )}
+              </div>
+
+              {/* Verification (Soon) */}
+              <div 
+                className="relative text-center cursor-help"
+                onMouseEnter={() => setShowVerificationTooltip(true)}
+                onMouseLeave={() => setShowVerificationTooltip(false)}
+              >
+                <div className="relative w-16 h-16">
+                  {/* Shield/verification icon */}
+                  <svg className="w-full h-full text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  </svg>
+                </div>
+                <div className="text-sm font-medium text-slate-500 mt-1">Verification (Soon)</div>
+                {showVerificationTooltip && (
+                  <div className="absolute z-10 w-64 p-3 bg-slate-800 text-white text-xs rounded-lg shadow-xl -left-24 top-20">
+                    <div className="font-semibold mb-1">Source Verification - In Development</div>
+                    <div className="text-slate-300">This will show source strength and evidence quality for each response</div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
 
           {/* Persona Selector */}
-          <div className="mt-6 flex items-center space-x-3">
+          {/* Skeptic Mode Indicator */}
+          {skepticMode && (
+            <div className="mt-8 bg-amber-50 border border-amber-200 rounded-lg px-4 py-2 flex items-center gap-2">
+              <svg className="w-5 h-5 text-amber-600" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+              <span className="text-sm text-amber-800">Skeptic mode active - requesting additional verification and showing more sources</span>
+              <button 
+                onClick={() => setSkepticMode(false)}
+                className="ml-auto text-amber-600 hover:text-amber-800"
+              >
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </button>
+            </div>
+          )}
+
+          {/* Persona Selector */}
+          <div className="mt-8 flex items-center gap-3">
             <span className="text-sm text-slate-600 font-medium">Noah's Role:</span>
             <div className="flex space-x-2">
               {personas.map(persona => (
@@ -132,7 +173,7 @@ export default function AdaptiveNarrativeInterface() {
                   <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
                   </svg>
-                  Your Story So Far
+                  Our Collaboration So Far
                 </h2>
               </div>
               
@@ -145,7 +186,7 @@ export default function AdaptiveNarrativeInterface() {
                       <div className="w-6 h-6 bg-gradient-to-br from-indigo-400 to-purple-400 rounded-full flex items-center justify-center text-white text-xs font-bold">
                         1
                       </div>
-                      <h3 className="font-semibold text-slate-900">Your Vision</h3>
+                      <h3 className="font-semibold text-slate-900">Your Goal</h3>
                     </div>
                     <div className="bg-indigo-50 rounded-xl p-4 border border-indigo-100">
                       <p className="text-sm text-slate-700">
@@ -163,22 +204,47 @@ export default function AdaptiveNarrativeInterface() {
                       <div className="w-6 h-6 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center text-white text-xs font-bold">
                         2
                       </div>
-                      <h3 className="font-semibold text-slate-900">Noah's Understanding</h3>
+                      <h3 className="font-semibold text-slate-900">Working Together</h3>
                     </div>
                     <div className="bg-purple-50 rounded-xl p-4 border border-purple-100">
                       <p className="text-sm text-slate-700 mb-3">
-                        I can help you create something special! Let me understand your style preferences first. 
-                        I'm thinking about modern, clean designs with smooth animations.
+                        Let's explore what would work best for your portfolio. I'm thinking modern, clean designs with smooth animations could showcase your work effectively.
                       </p>
                       
-                      {/* Reasoning in story form */}
-                      <div className="bg-white/50 rounded-lg p-3">
-                        <div className="text-xs font-semibold text-purple-700 mb-2">💭 My Thought Process</div>
-                        <p className="text-xs text-slate-600">
-                          You mentioned "beautiful" and "showcases" - I'm sensing you value visual appeal and 
-                          want your work to stand out. I'll focus on responsive design and elegant interactions.
-                        </p>
-                      </div>
+                      {/* Reasoning - Collapsible */}
+                      <button 
+                        onClick={() => setShowReasoning(!showReasoning)}
+                        className="w-full bg-white/50 rounded-lg p-3 text-left hover:bg-white/70 transition-colors"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="text-xs font-semibold text-purple-700">💭 Reasoning</div>
+                          <svg 
+                            className={`w-4 h-4 text-purple-700 transition-transform ${showReasoning ? 'rotate-180' : ''}`} 
+                            fill="currentColor" 
+                            viewBox="0 0 20 20"
+                          >
+                            <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                        {!showReasoning && (
+                          <p className="text-xs text-slate-500 mt-1">See the reasoning behind this response...</p>
+                        )}
+                        {showReasoning && (
+                          <p className="text-xs text-slate-600 mt-2">
+                            You mentioned "beautiful" and "showcases" - this suggests visual appeal is important. 
+                            Let's focus on responsive design and elegant interactions that make your work stand out.
+                          </p>
+                        )}
+                      </button>
+                      
+                      {/* Challenge Response - Prominent */}
+                      <button className="w-full mt-3 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>Something seem off? Challenge this response</span>
+                      </button>
+                      <p className="text-xs text-center text-slate-500 mt-2">Your challenges help improve our collaboration</p>
                     </div>
                   </div>
                 </div>
@@ -190,7 +256,7 @@ export default function AdaptiveNarrativeInterface() {
                       <div className="w-6 h-6 bg-gradient-to-br from-pink-400 to-rose-400 rounded-full flex items-center justify-center text-white text-xs font-bold">
                         3
                       </div>
-                      <h3 className="font-semibold text-slate-900">Choose Your Path</h3>
+                      <h3 className="font-semibold text-slate-900">Choose Our Next Step</h3>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       {conversationPaths.map(path => (
@@ -216,10 +282,10 @@ export default function AdaptiveNarrativeInterface() {
                   <div className="pl-6 animate-fadeIn">
                     <div className="bg-gradient-to-br from-pink-50 to-rose-50 rounded-xl p-4 border border-pink-200">
                       <p className="text-sm text-slate-700">
-                        {selectedPath === 'explain' && "Great choice! Let me break down how modern portfolio sites work..."}
-                        {selectedPath === 'show' && "Perfect! Here are some inspiring examples I can adapt for you..."}
-                        {selectedPath === 'build' && "Excellent! Let's start building together. First, we'll set up the foundation..."}
-                        {selectedPath === 'explore' && "I love your curiosity! Let's explore different creative directions..."}
+                        {selectedPath === 'explain' && "Let's break down how modern portfolio sites work together..."}
+                        {selectedPath === 'show' && "Here are some inspiring examples we can explore..."}
+                        {selectedPath === 'build' && "Let's start building together. We'll set up the foundation first..."}
+                        {selectedPath === 'explore' && "Let's explore different creative directions together..."}
                       </p>
                     </div>
                   </div>
@@ -233,8 +299,8 @@ export default function AdaptiveNarrativeInterface() {
                 <div className="flex-1">
                   <input
                     type="text"
-                    placeholder="Continue your story..."
-                    className="w-full bg-white/50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-300 focus:border-transparent"
+                    placeholder="Let's continue our collaboration..."
+                    className="w-full bg-white/50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-300 focus:border-transparent transition-all"
                   />
                 </div>
                 <button className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-xl px-6 py-3 font-medium hover:from-indigo-600 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl">
@@ -242,34 +308,42 @@ export default function AdaptiveNarrativeInterface() {
                 </button>
               </div>
               <div className="mt-2 flex items-center justify-between text-xs text-slate-500">
-                <span>✨ Tip: Ask follow-up questions to explore deeper</span>
-                <span>Current persona: {personas.find(p => p.id === currentPersona)?.name}</span>
+                <div className="flex items-center gap-4">
+                  <button 
+                    onClick={() => setSkepticMode(!skepticMode)}
+                    className={`px-3 py-1 rounded-md transition-all ${
+                      skepticMode 
+                        ? 'bg-amber-100 text-amber-700 border border-amber-300' 
+                        : 'bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200'
+                    }`}
+                  >
+                    {skepticMode ? '🔍 Skeptic mode ON' : '🔍 Skeptic mode'}
+                  </button>
+                  <span>Persona: {personas.find(p => p.id === currentPersona)?.name}</span>
+                </div>
+                <span>✨ Ask follow-up questions to explore deeper</span>
               </div>
             </div>
           </div>
 
           {/* Artifact Gallery Sidebar */}
           <div className="space-y-6">
-            {/* Journey Progress */}
+            {/* Collaboration Progress */}
             <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-4">
               <h3 className="font-semibold text-slate-900 mb-4 flex items-center">
-                <svg className="w-5 h-5 mr-2 text-purple-500" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
+                <svg className="w-5 h-5 mr-2 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
-                Journey Progress
+                Collaboration Progress
               </h3>
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-slate-600">Steps Taken</span>
+                  <span className="text-sm text-slate-600">Steps Together</span>
                   <span className="text-lg font-semibold text-purple-600">3</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-slate-600">Artifacts Created</span>
                   <span className="text-lg font-semibold text-indigo-600">{artifacts.length}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-slate-600">Trust Growth</span>
-                  <span className="text-lg font-semibold text-green-600">+13%</span>
                 </div>
               </div>
             </div>
@@ -315,7 +389,7 @@ export default function AdaptiveNarrativeInterface() {
                 Quick Tip
               </h4>
               <p className="text-sm text-purple-800">
-                You can switch Noah's persona anytime to get different perspectives on your project!
+                Switch Noah's persona anytime to explore different perspectives together!
               </p>
             </div>
           </div>
