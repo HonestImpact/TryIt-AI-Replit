@@ -682,14 +682,16 @@ export default function TrustRecoveryProtocol() {
         {/* Video Section at Bottom */}
         <div className="mt-8 bg-white/70 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-6">
           <h3 className="font-semibold text-slate-900 mb-4">Introduction Video</h3>
-          <video 
-            className="w-full rounded-lg shadow-md"
-            controls
-            preload="metadata"
-            src="/api/video?file=intro-video.mp4"
-          >
-            Your browser does not support the video tag.
-          </video>
+          <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+            <iframe 
+              className="absolute top-0 left-0 w-full h-full rounded-lg shadow-md"
+              src="https://www.youtube.com/embed/0cNj_QXbkks"
+              title="Introduction Video"
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
+            />
+          </div>
         </div>
       </div>
 
