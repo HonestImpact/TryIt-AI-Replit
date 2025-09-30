@@ -107,7 +107,11 @@ export default function TrustRecoveryProtocol() {
         setCurrentSessionId(sessionIdFromResponse);
       }
 
-      if (response.body) {
+      // Check if response is streaming (SSE) or JSON
+      const contentType = response.headers.get('Content-Type') || '';
+      const isStreaming = contentType.includes('text/event-stream');
+
+      if (isStreaming && response.body) {
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let accumulatedContent = '';
@@ -520,7 +524,7 @@ export default function TrustRecoveryProtocol() {
                         handleSubmit();
                       }
                     }}
-                    placeholder="What would you like to try?"
+                    placeholder="What would you like to ask or say?"
                     className="w-full px-4 py-3 rounded-xl border border-slate-200 resize-none focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-purple-400 text-slate-900 placeholder-slate-500 bg-white/70 backdrop-blur-sm"
                     rows={2}
                     disabled={isLoading || interfaceLocked}

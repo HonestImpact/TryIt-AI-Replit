@@ -907,7 +907,7 @@ async function noahStreamingChatHandler(req: NextRequest, context: LoggingContex
       }
     }
 
-    // Return pre-computed response with proper chunk-based streaming
+    // Return pre-computed response with SSE format for frontend compatibility
     return new Response(
       new ReadableStream({
         start(controller) {
@@ -918,12 +918,16 @@ async function noahStreamingChatHandler(req: NextRequest, context: LoggingContex
           const streamChunk = () => {
             if (index < finalContent.length) {
               const chunk = finalContent.slice(index, index + chunkSize);
-              controller.enqueue(encoder.encode(chunk));
+              // Format as SSE: data: {"content": "chunk"}\n
+              const sseChunk = `data: ${JSON.stringify({ content: chunk })}\n`;
+              controller.enqueue(encoder.encode(sseChunk));
               index += chunkSize;
               
               // Add small delay for natural streaming effect
               setTimeout(streamChunk, 30); // 30ms delay between chunks
             } else {
+              // Send done signal
+              controller.enqueue(encoder.encode('data: [DONE]\n'));
               controller.close();
             }
           };
@@ -933,8 +937,9 @@ async function noahStreamingChatHandler(req: NextRequest, context: LoggingContex
       }),
       {
         headers: {
-          'Content-Type': 'text/plain; charset=utf-8',
-          'Transfer-Encoding': 'chunked',
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive',
           'x-session-id': conversationState.sessionId || 'unknown'
         }
       }
