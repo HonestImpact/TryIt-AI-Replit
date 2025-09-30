@@ -8,6 +8,17 @@ The application implements a sophisticated Retrieval-Augmented Generation (RAG) 
 
 ## Recent Changes
 
+### Visual Design Enhancement - Demo-Inspired Hybrid (September 2025)
+- **Beautiful Visual Polish**: Applied Adaptive Narrative demo's elegant design to main app while preserving all functionality
+- **Gradient Background**: Soft indigo-purple-pink gradient replacing previous slate gradients
+- **Frosted Glass Effects**: Enhanced cards and message bubbles with backdrop-blur-sm and white/80 transparency
+- **Prominent Challenge Button**: Now an always-visible indigo gradient button with icon (previously hover-only)
+- **Enhanced Interactions**: Smooth transitions (duration-200) on all interactive elements
+- **8px Spacing Grid**: Consistent spacing system applied throughout (gap-8, space-y-8)
+- **Gradient Buttons**: Purple gradient send button and enhanced UI controls
+- **Collapsible Reasoning**: Infrastructure added for future reasoning display feature
+- **Core Preservation**: All functionality intact - trust system, skeptic mode, challenges, streaming, artifacts, and Noah's direct personality
+
 ### Session-Based Toolbox Implementation (September 2025)
 - **Session Artifact Management**: Implemented session-based toolbox that accumulates all generated tools during conversation, preventing tool overwriting
 - **Enhanced UI**: New "Your Toolbox" section displays all session artifacts with individual download capabilities, agent attribution, and timestamps
