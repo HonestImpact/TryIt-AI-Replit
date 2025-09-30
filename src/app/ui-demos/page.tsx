@@ -32,6 +32,11 @@ export default function UIDemosIndex() {
             <h2 className="text-xl font-semibold mb-2">5. Adaptive Narrative Studio (Story-Driven)</h2>
             <p className="text-slate-600">Branching conversations, persona modes, interactive storytelling interface</p>
           </Link>
+          
+          <Link href="/ui-demos/noah-final-design" className="block p-6 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg shadow-lg hover:shadow-xl transition-shadow border-2 border-white">
+            <h2 className="text-xl font-semibold mb-2">✨ Noah Final Design (Confirmation Demo)</h2>
+            <p className="text-white/90">Your specified design: Collaborative Partner active, scrollable timeline, artifacts sidebar, video at bottom</p>
+          </Link>
         </div>
         
         <div className="mt-8">
