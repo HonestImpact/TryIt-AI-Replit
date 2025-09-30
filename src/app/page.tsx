@@ -56,17 +56,7 @@ export default function TrustRecoveryProtocol() {
     { id: 'engineer', name: 'Tech Expert', icon: '⚙️', active: false }
   ];
 
-  // Auto-scroll
-  useEffect(() => {
-    if (messages.length > 0) {
-      const scrollTimeout = setTimeout(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-      }, 100);
-      return () => clearTimeout(scrollTimeout);
-    }
-  }, [messages]);
-
-  // Focus input on mount and update timestamp
+  // Focus input on mount and update timestamp (no auto-scroll)
   useEffect(() => {
     if (inputRef.current) {
       inputRef.current.focus();
@@ -166,29 +156,6 @@ export default function TrustRecoveryProtocol() {
 
         if (accumulatedContent.toLowerCase().includes('uncertain') || accumulatedContent.toLowerCase().includes('not sure')) {
           setTrustLevel(prev => Math.min(100, prev + 5));
-        }
-
-        try {
-          if (currentSessionId || sessionIdFromResponse) {
-            const sessionId = sessionIdFromResponse || currentSessionId;
-            const artifactResponse = await fetch(`/api/artifacts?sessionId=${sessionId}`);
-            if (artifactResponse.ok) {
-              const artifactData = await artifactResponse.json();
-              if (artifactData.artifact) {
-                setTimeout(() => {
-                  setArtifact({
-                    title: artifactData.artifact.title,
-                    content: artifactData.artifact.content
-                  });
-                }, 800);
-              }
-              if (artifactData.sessionArtifacts) {
-                setSessionArtifacts(artifactData.sessionArtifacts);
-              }
-            }
-          }
-        } catch (artifactError) {
-          logger.warn('Failed to fetch artifacts', { error: artifactError });
         }
       } else {
         const data = await response.json();
