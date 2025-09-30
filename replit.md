@@ -8,16 +8,20 @@ The application implements a sophisticated Retrieval-Augmented Generation (RAG) 
 
 ## Recent Changes
 
-### Visual Design Enhancement - Demo-Inspired Hybrid (September 2025)
-- **Beautiful Visual Polish**: Applied Adaptive Narrative demo's elegant design to main app while preserving all functionality
-- **Gradient Background**: Soft indigo-purple-pink gradient replacing previous slate gradients
-- **Frosted Glass Effects**: Enhanced cards and message bubbles with backdrop-blur-sm and white/80 transparency
-- **Prominent Challenge Button**: Now an always-visible indigo gradient button with icon (previously hover-only)
-- **Enhanced Interactions**: Smooth transitions (duration-200) on all interactive elements
-- **8px Spacing Grid**: Consistent spacing system applied throughout (gap-8, space-y-8)
-- **Gradient Buttons**: Purple gradient send button and enhanced UI controls
-- **Collapsible Reasoning**: Infrastructure added for future reasoning display feature
-- **Core Preservation**: All functionality intact - trust system, skeptic mode, challenges, streaming, artifacts, and Noah's direct personality
+### Adaptive Narrative Structure Implementation (September 2025)
+- **Complete UI Transformation**: Restructured entire interface to match Adaptive Narrative demo's story-driven layout and visual design
+- **Header Design**: "Our collaboration, your way" tagline, Feedback/Skeptics Welcome icons with tooltips, functional Skeptic Mode toggle
+- **Persona Selector**: ✨Collaborative Partner (active), Patient Teacher/Data Analyst/Tech Expert (disabled) - story-driven approach
+- **Story Timeline Layout**: 2/3 width main area with unique sequential chapter numbering (Chapter 1, 2, 3...) for every message
+- **Timeline Features**: Scrollable message history, gradient-coded user/assistant messages, integrated challenge buttons, embedded chat input
+- **Collaboration Progress Sidebar**: Real-time Steps Together counter, Artifacts Created tracker, always-visible metrics
+- **Artifacts Gallery**: Session-based toolbox displays all generated artifacts with individual downloads, agent attribution, timestamps
+- **Data Visualizer**: Always-visible component showing most recent artifact code preview (first 500 chars) or fallback message
+- **Placeholder Sections**: API Integration and Quick Tips (Coming Soon) for future features
+- **Video Component**: Introduction video at bottom with controls, no autoplay
+- **Visual Polish**: Indigo-purple-pink gradient background, frosted glass cards (backdrop-blur-sm), smooth transitions, 8px spacing grid
+- **Hydration Fix**: Resolved SSR/client mismatch by initializing messages in state with static timestamp, updated on mount
+- **Core Preservation**: ALL existing functionality intact - trust tracking, skeptic mode, challenges, streaming, artifacts, Noah's direct personality
 
 ### Session-Based Toolbox Implementation (September 2025)
 - **Session Artifact Management**: Implemented session-based toolbox that accumulates all generated tools during conversation, preventing tool overwriting

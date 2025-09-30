@@ -17,83 +17,15 @@ interface Artifact {
   content: string;
 }
 
-// Memoized individual message component for performance
-const MessageComponent = React.memo(({ 
-  message, 
-  index, 
-  onChallenge, 
-  isAlreadyChallenged,
-  isLoading,
-  interfaceLocked
-}: {
-  message: Message;
-  index: number;
-  onChallenge: (index: number) => void;
-  isAlreadyChallenged: boolean;
-  isLoading: boolean;
-  interfaceLocked: boolean;
-}) => {
-  const handleChallenge = useCallback(() => onChallenge(index), [onChallenge, index]);
-
-  return (
-    <div className="group">
-      {message.role === 'user' ? (
-        <div className="flex justify-end">
-          <div className="max-w-2xl">
-            <div className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-6 py-4 rounded-2xl rounded-br-md shadow-lg transition-all duration-200 hover:shadow-xl">
-              <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
-            </div>
-            <div className="text-xs text-slate-500 mt-2 text-right">
-              {new Date(message.timestamp!).toLocaleTimeString()}
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div className="flex justify-start">
-          <div className="max-w-2xl">
-            <div className={`bg-white/80 backdrop-blur-sm border border-white/50 px-6 py-4 rounded-2xl rounded-bl-md shadow-lg transition-all duration-200 ${interfaceLocked ? 'opacity-50 pointer-events-none' : 'hover:shadow-xl'}`}>
-              <div className="flex items-start space-x-3">
-                <div className="w-8 h-8 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm">
-                  <span className="text-sm font-semibold text-indigo-600">N</span>
-                </div>
-                <div className="flex-1">
-                  <p className="text-slate-800 leading-relaxed whitespace-pre-wrap">{message.content}</p>
-                  <div className="flex items-center justify-between mt-3">
-                    <div className="text-xs text-slate-500">
-                      {new Date(message.timestamp!).toLocaleTimeString()}
-                    </div>
-                    {!isAlreadyChallenged && !isLoading && !interfaceLocked && (
-                      <button
-                        onClick={handleChallenge}
-                        className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded-lg transition-all duration-200 shadow-md hover:shadow-lg flex items-center gap-1.5"
-                      >
-                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <span>Challenge this</span>
-                      </button>
-                    )}
-                    {isAlreadyChallenged && (
-                      <div className="text-xs text-green-600 font-medium">
-                        ✓ Challenged
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-});
-
-MessageComponent.displayName = 'MessageComponent';
-
 export default function TrustRecoveryProtocol() {
-  // Trust Recovery Protocol state (preserved)
-  const [messages, setMessages] = useState<Message[]>([]);
+  // State - Initialize with Noah's greeting to avoid hydration issues
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      role: 'assistant',
+      content: "Hi, I'm Noah. I don't know why you're here or what you expect. Most AI tools oversell and underdeliver. This one's different, but you'll have to see for yourself. Want to test it with something small?",
+      timestamp: 0 // Will be set to actual timestamp on client
+    }
+  ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [artifact, setArtifact] = useState<Artifact | null>(null);
@@ -111,43 +43,42 @@ export default function TrustRecoveryProtocol() {
   const [challengedMessages, setChallengedMessages] = useState<Set<number>>(new Set());
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [interfaceLocked, setInterfaceLocked] = useState(false);
+  const [showFeedbackTooltip, setShowFeedbackTooltip] = useState(false);
+  const [showSkepticsTooltip, setShowSkepticsTooltip] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  // Optimized auto-scroll - debounced to prevent performance issues with long conversations
+  const personas = [
+    { id: 'collaborative', name: 'Collaborative Partner', icon: '✨', active: true },
+    { id: 'teacher', name: 'Patient Teacher', icon: '📚', active: false },
+    { id: 'analyst', name: 'Data Analyst', icon: '📊', active: false },
+    { id: 'engineer', name: 'Tech Expert', icon: '⚙️', active: false }
+  ];
+
+  // Auto-scroll
   useEffect(() => {
     if (messages.length > 0) {
-      // Debounce scroll to prevent excessive calls during rapid message updates
       const scrollTimeout = setTimeout(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
       }, 100);
-      
       return () => clearTimeout(scrollTimeout);
     }
-  }, [messages.length]); // Only depend on length, not full messages array
+  }, [messages]);
 
-  // Initialize messages and focus input on page load
+  // Focus input on mount and update timestamp
   useEffect(() => {
-    // Ensure page starts at the top
-    window.scrollTo(0, 0);
-
-    // Set initial message
-    setMessages([
-      {
-        role: 'assistant',
-        content: "Hi, I'm Noah. I don't know why you're here or what you expect. Most AI tools oversell and underdeliver. This one's different, but you'll have to see for yourself. Want to test it with something small?",
-        timestamp: Date.now()
-      }
-    ]);
-
-    // Focus the input field
     if (inputRef.current) {
       inputRef.current.focus();
     }
+    // Update timestamp for initial message on client
+    if (messages.length === 1 && messages[0].timestamp === 0) {
+      setMessages(prev => [{
+        ...prev[0],
+        timestamp: Date.now()
+      }]);
+    }
   }, []);
-
-  // Note: Artifact logging now handled automatically by the chat API
 
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -155,105 +86,42 @@ export default function TrustRecoveryProtocol() {
 
     const userMessage = input.trim();
     setInput('');
-    setIsLoading(true);
-
-    // Add user message
-    const newMessages = [...messages, {
-      role: 'user' as const,
+    setMessages(prev => [...prev, {
+      role: 'user',
       content: userMessage,
       timestamp: Date.now()
-    }];
-    setMessages(newMessages);
+    }]);
+
+    setIsLoading(true);
 
     try {
-      // Check if this looks like a tool creation request
-      const toolKeywords = ['calculator', 'timer', 'converter', 'form', 'tracker', 'tool', 'widget', 'app', 'create', 'build', 'make'];
-      const isToolRequest = toolKeywords.some(keyword => 
-        userMessage.toLowerCase().includes(keyword.toLowerCase())
-      );
-
-      // Use non-streaming for tool creation to get proper truncation
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-      };
-      
-      if (!isToolRequest) {
-        headers['x-streaming'] = 'true';
-      }
-
-      // Call our API route 
       const response = await fetch('/api/chat', {
         method: 'POST',
-        headers,
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
-          messages: newMessages,
-          skepticMode: skepticMode
+          messages: [...messages, { role: 'user', content: userMessage }],
+          trustLevel,
+          skepticMode,
+          sessionId: currentSessionId
         }),
       });
-
-      // Capture session ID from response headers for artifact logging
-      const sessionIdFromResponse = response.headers.get('x-session-id');
-      if (sessionIdFromResponse && !currentSessionId) {
-        setCurrentSessionId(sessionIdFromResponse);
-      }
 
       if (!response.ok) {
         throw new Error('Failed to get response');
       }
 
-      // Handle response based on type
-      if (isToolRequest) {
-        // Handle non-streaming JSON response for tool creation
-        const data = await response.json();
-        
-        // Handle interface lockdown - Noah locks all interactions  
-        if (data.status === 'interface_locked') {
-          setInterfaceLocked(true);
-          // Add the spaces response to show the lockdown
-          setMessages(prev => [...prev, {
-            role: 'assistant',
-            content: data.content, // Contains spaces
-            timestamp: Date.now()
-          }]);
-          return;
-        }
-        
-        // Add the assistant message with truncated content
-        setMessages(prev => [...prev, {
-          role: 'assistant',
-          content: data.content,
-          timestamp: Date.now()
-        }]);
+      const sessionIdFromResponse = response.headers.get('X-Session-Id');
+      if (sessionIdFromResponse && !currentSessionId) {
+        setCurrentSessionId(sessionIdFromResponse);
+      }
 
-        // Handle artifact if present
-        if (data.artifact) {
-          logger.info('Tool artifact received', { title: data.artifact.title });
-          setTimeout(() => {
-            setArtifact({
-              title: data.artifact.title,
-              content: data.artifact.content
-            });
-          }, 800);
-        }
-
-        // Handle session artifacts for accumulated toolbox
-        if (data.sessionArtifacts) {
-          logger.info('Session artifacts received', { count: data.sessionArtifacts.length });
-          setSessionArtifacts(data.sessionArtifacts);
-        }
-
-        // Adjust trust level
-        if (data.content.toLowerCase().includes('uncertain') || data.content.toLowerCase().includes('not sure')) {
-          setTrustLevel(prev => Math.min(100, prev + 5));
-        }
-        
-      } else if (response.body) {
-        // Handle streaming response
+      if (response.body) {
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let accumulatedContent = '';
 
-        // Add placeholder message for streaming
         setMessages(prev => [...prev, {
           role: 'assistant',
           content: '',
@@ -266,28 +134,40 @@ export default function TrustRecoveryProtocol() {
             if (done) break;
 
             const chunk = decoder.decode(value, { stream: true });
-            accumulatedContent += chunk;
+            const lines = chunk.split('\n');
 
-            // Update the last message with accumulated content
-            setMessages(prev => {
-              const updated = [...prev];
-              updated[updated.length - 1] = {
-                ...updated[updated.length - 1],
-                content: accumulatedContent
-              };
-              return updated;
-            });
+            for (const line of lines) {
+              if (line.startsWith('data: ')) {
+                const data = line.slice(6);
+                if (data === '[DONE]') continue;
+
+                try {
+                  const parsed = JSON.parse(data);
+                  if (parsed.content) {
+                    accumulatedContent += parsed.content;
+                    setMessages(prev => {
+                      const updated = [...prev];
+                      updated[updated.length - 1] = {
+                        ...updated[updated.length - 1],
+                        content: accumulatedContent
+                      };
+                      return updated;
+                    });
+                  }
+                } catch (e) {
+                  // Skip invalid JSON
+                }
+              }
+            }
           }
         } finally {
           reader.releaseLock();
         }
 
-        // Adjust trust level based on response quality
         if (accumulatedContent.toLowerCase().includes('uncertain') || accumulatedContent.toLowerCase().includes('not sure')) {
           setTrustLevel(prev => Math.min(100, prev + 5));
         }
 
-        // Check for artifacts after streaming completes
         try {
           if (currentSessionId || sessionIdFromResponse) {
             const sessionId = sessionIdFromResponse || currentSessionId;
@@ -295,7 +175,6 @@ export default function TrustRecoveryProtocol() {
             if (artifactResponse.ok) {
               const artifactData = await artifactResponse.json();
               if (artifactData.artifact) {
-                logger.info('Artifact received after streaming', { title: artifactData.artifact.title });
                 setTimeout(() => {
                   setArtifact({
                     title: artifactData.artifact.title,
@@ -303,9 +182,7 @@ export default function TrustRecoveryProtocol() {
                   });
                 }, 800);
               }
-              // Handle session artifacts for accumulated toolbox
               if (artifactData.sessionArtifacts) {
-                logger.info('Session artifacts received after streaming', { count: artifactData.sessionArtifacts.length });
                 setSessionArtifacts(artifactData.sessionArtifacts);
               }
             }
@@ -314,16 +191,13 @@ export default function TrustRecoveryProtocol() {
           logger.warn('Failed to fetch artifacts', { error: artifactError });
         }
       } else {
-        // Fallback to non-streaming if no body
         const data = await response.json();
         
-        // Handle interface lockdown - Noah locks all interactions  
         if (data.status === 'interface_locked') {
           setInterfaceLocked(true);
-          // Add the spaces response to show the lockdown
           setMessages(prev => [...prev, {
             role: 'assistant',
-            content: data.content, // Contains spaces
+            content: data.content,
             timestamp: Date.now()
           }]);
           return;
@@ -336,7 +210,6 @@ export default function TrustRecoveryProtocol() {
         }]);
 
         if (data.artifact) {
-          logger.info('Artifact received from API', { title: data.artifact.title });
           setTimeout(() => {
             setArtifact({
               title: data.artifact.title,
@@ -345,9 +218,7 @@ export default function TrustRecoveryProtocol() {
           }, 800);
         }
 
-        // Handle session artifacts for accumulated toolbox
         if (data.sessionArtifacts) {
-          logger.info('Session artifacts received', { count: data.sessionArtifacts.length });
           setSessionArtifacts(data.sessionArtifacts);
         }
       }
@@ -364,35 +235,12 @@ export default function TrustRecoveryProtocol() {
     setIsLoading(false);
   };
 
-  const downloadArtifact = useCallback(() => {
-    if (interfaceLocked) return;
-    logger.debug('Download initiated', { title: artifact?.title });
-    if (!artifact) {
-      logger.warn('Download attempted with no artifact available');
-      return;
-    }
-
-    const content = `${artifact.title}\n\n${artifact.content}`;
-    const blob = new Blob([content], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${artifact.title.toLowerCase().replace(/\s+/g, '-')}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    logger.info('Artifact download completed', { filename: artifact.title });
-  }, [artifact]);
-
   const downloadIndividualArtifact = useCallback((sessionArtifact: {
     title: string;
     content: string;
     id: string;
   }) => {
     if (interfaceLocked) return;
-    logger.debug('Individual download initiated', { title: sessionArtifact.title, id: sessionArtifact.id });
-
     const content = `${sessionArtifact.title}\n\n${sessionArtifact.content}`;
     const blob = new Blob([content], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
@@ -403,7 +251,6 @@ export default function TrustRecoveryProtocol() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    logger.info('Individual artifact download completed', { filename: sessionArtifact.title, id: sessionArtifact.id });
   }, []);
 
   const toggleSkepticMode = useCallback(() => {
@@ -418,10 +265,7 @@ export default function TrustRecoveryProtocol() {
     const message = messages[messageIndex];
     if (message.role !== 'assistant') return;
 
-    // Mark as challenged
     setChallengedMessages(prev => new Set(prev).add(messageIndex));
-
-    // Increase trust level for challenging (shows the system respects skepticism)
     setTrustLevel(prev => Math.min(100, prev + 3));
 
     setIsLoading(true);
@@ -451,29 +295,21 @@ export default function TrustRecoveryProtocol() {
 
       const data = await response.json();
 
-      // Handle radio silence - Noah chose not to respond to challenge
       if (data.status === 'radio_silence') {
-        // Don't add any message - Noah goes silent
         return;
       }
 
-      // Add the challenge response
       setMessages(prev => [...prev, {
         role: 'assistant',
         content: data.content,
         timestamp: Date.now()
       }]);
 
-      // Adjust trust level based on response quality
       if (data.content.toLowerCase().includes('uncertain') || data.content.toLowerCase().includes('not sure')) {
         setTrustLevel(prev => Math.min(100, prev + 5));
       }
 
-      // Handle artifact if present in challenge response
       if (data.artifact) {
-        logger.info('Challenge artifact received', { title: data.artifact.title });
-
-        // Set artifact state with smooth animation
         setTimeout(() => {
           setArtifact({
             title: data.artifact.title,
@@ -482,14 +318,12 @@ export default function TrustRecoveryProtocol() {
         }, 800);
       }
 
-      // Handle session artifacts for accumulated toolbox
       if (data.sessionArtifacts) {
-        logger.info('Challenge session artifacts received', { count: data.sessionArtifacts.length });
         setSessionArtifacts(data.sessionArtifacts);
       }
 
     } catch (error) {
-      logger.error('Challenge request failed', { error: error instanceof Error ? error.message : String(error) });
+      logger.error('Challenge request failed', { error });
       setMessages(prev => [...prev, {
         role: 'assistant',
         content: 'I appreciate the challenge, but I\'m having trouble responding right now. Want to try that again?',
@@ -500,180 +334,215 @@ export default function TrustRecoveryProtocol() {
     setIsLoading(false);
   }, [messages, trustLevel, skepticMode, isLoading]);
 
-  // Memoized message list to prevent unnecessary re-renders
-  const messagesWithMemoization = useMemo(() => {
-    return messages.map((message, index) => (
-      <MessageComponent
-        key={`${index}-${message.timestamp}`} // Better key for memoization
-        message={message}
-        index={index}
-        onChallenge={challengeMessage}
-        isAlreadyChallenged={challengedMessages.has(index)}
-        isLoading={isLoading}
-        interfaceLocked={interfaceLocked}
-      />
-    ));
-  }, [messages, challengedMessages, isLoading, challengeMessage]);
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
-        {/* Header */}
-      <header className="border-b border-white/50 backdrop-blur-sm bg-white/70 sticky top-0 z-50 shadow-sm">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
-          {/* Mobile Layout */}
-          <div className="flex flex-col space-y-3 sm:hidden">
-            {/* Top Row - Logo */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-md">
-                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+      {/* Header */}
+      <header className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-indigo-600/10 via-purple-600/10 to-pink-600/10 backdrop-blur-sm"></div>
+        <div className="relative max-w-7xl mx-auto px-6 py-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="relative">
+                <div className="w-14 h-14 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
+                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                   </svg>
                 </div>
-                <div>
-                  <h1 className="text-lg font-semibold text-slate-900">TryIt-AI Kit</h1>
-                  <p className="text-xs text-slate-500">Trust Recovery Protocol</p>
-                </div>
+                <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-400 border-2 border-white rounded-full"></div>
               </div>
-              
-              {/* Skeptic Mode Toggle - Mobile */}
+              <div>
+                <h1 className="text-2xl font-semibold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                  TryIt-AI Kit
+                </h1>
+                <p className="text-sm text-slate-600">Our collaboration, your way</p>
+              </div>
+            </div>
+            
+            {/* Feedback & Skeptics Welcome */}
+            <div className="flex items-center gap-8">
+              {/* Feedback */}
+              <div 
+                className="relative text-center cursor-help"
+                onMouseEnter={() => setShowFeedbackTooltip(true)}
+                onMouseLeave={() => setShowFeedbackTooltip(false)}
+              >
+                <div className="relative w-16 h-16">
+                  <svg className="w-full h-full text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 00-3 0m-6-3V11m0-5.5v-1a1.5 1.5 0 013 0v1m0 0V11m0-5.5a1.5 1.5 0 013 0v3m0 0V11" />
+                  </svg>
+                </div>
+                <div className="text-sm font-medium text-slate-500 mt-1">Feedback</div>
+                {showFeedbackTooltip && (
+                  <div className="absolute z-10 w-64 p-3 bg-slate-800 text-white text-xs rounded-lg shadow-xl -left-24 top-20">
+                    <div className="font-semibold mb-1">Trust Tracking - In Development</div>
+                    <div className="text-slate-300">This will track our collaboration quality based on your feedback and challenges</div>
+                  </div>
+                )}
+              </div>
+
+              {/* Skeptics Welcome */}
+              <div 
+                className="relative text-center cursor-help"
+                onMouseEnter={() => setShowSkepticsTooltip(true)}
+                onMouseLeave={() => setShowSkepticsTooltip(false)}
+              >
+                <div className="relative w-16 h-16">
+                  <svg className="w-full h-full text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  </svg>
+                </div>
+                <div className="text-sm font-medium text-slate-500 mt-1">Skeptics Welcome</div>
+                {showSkepticsTooltip && (
+                  <div className="absolute z-10 w-64 p-3 bg-slate-800 text-white text-xs rounded-lg shadow-xl -left-24 top-20">
+                    <div className="font-semibold mb-1">Source Verification - In Development</div>
+                    <div className="text-slate-300">This will show source strength and evidence quality for each response</div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Skeptic Mode Indicator */}
+          {skepticMode && (
+            <div className="mt-8 bg-amber-50 border border-amber-200 rounded-lg px-4 py-2 flex items-center gap-2">
+              <svg className="w-5 h-5 text-amber-600" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+              <span className="text-sm text-amber-800">Skeptic mode active - requesting additional verification and showing more sources</span>
+              <button 
+                onClick={() => setSkepticMode(false)}
+                className="ml-auto text-amber-600 hover:text-amber-800"
+              >
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </button>
+            </div>
+          )}
+
+          {/* Persona Selector & Skeptic Mode */}
+          <div className="mt-8 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-slate-600 font-medium">Noah's Role:</span>
+              <div className="flex space-x-2">
+                {personas.map(persona => (
+                  <button
+                    key={persona.id}
+                    disabled={!persona.active}
+                    className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 border-2 shadow-md ${
+                      persona.active
+                        ? 'bg-purple-100 text-purple-700 border-purple-300'
+                        : 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed opacity-60'
+                    }`}
+                  >
+                    <span className="mr-2">{persona.icon}</span>
+                    {persona.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+            
+            {/* Skeptic Mode Toggle */}
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-slate-600 font-medium">Skeptic Mode</span>
               <button
                 onClick={toggleSkepticMode}
-                className={`inline-flex h-7 w-12 items-center rounded-full transition-colors duration-200 ${
-                  skepticMode ? 'bg-red-500' : 'bg-slate-300'
-                }`}
+                disabled={interfaceLocked}
+                className={`inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ${
+                  skepticMode ? 'bg-amber-500' : 'bg-slate-300'
+                } ${interfaceLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 <span
-                  className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform duration-200 ${
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ${
                     skepticMode ? 'translate-x-6' : 'translate-x-1'
                   }`}
                 />
               </button>
-            </div>
-            
-            {/* Bottom Row - Trust Level */}
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-slate-600">Trust Level</span>
-              <div className="flex items-center space-x-2">
-                <div className="w-20 h-2 bg-slate-200 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 transition-all duration-1000 ease-out"
-                    style={{ width: `${trustLevel}%` }}
-                  />
-                </div>
-                <span className="text-xs font-mono text-slate-500 w-8">{trustLevel}%</span>
-              </div>
-            </div>
-            
-            <div className="text-xs text-slate-400">
-              {skepticMode ? '🔍 Skeptic Mode: Verify Everything' : '👍 Standard Mode'}
-            </div>
-          </div>
-          
-          {/* Desktop Layout */}
-          <div className="hidden sm:flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-md">
-                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                </svg>
-              </div>
-              <div>
-                <h1 className="text-xl font-semibold text-slate-900">TryIt-AI Kit</h1>
-                <p className="text-sm text-slate-500">Trust Recovery Protocol</p>
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-6">
-              {/* Trust Level Indicator */}
-              <div className="flex items-center space-x-3">
-                <span className="text-sm font-medium text-slate-600">Trust Level</span>
-                <div className="w-24 h-2 bg-slate-200 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 transition-all duration-1000 ease-out"
-                    style={{ width: `${trustLevel}%` }}
-                  />
-                </div>
-                <span className="text-sm font-mono text-slate-500 w-8">{trustLevel}%</span>
-              </div>
-
-              {/* Skeptic Mode Toggle */}
-              <div className="flex items-center space-x-3">
-                <button
-                  onClick={toggleSkepticMode}
-                  className={`inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ${
-                    skepticMode ? 'bg-red-500' : 'bg-slate-300'
-                  }`}
-                >
-                  <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ${
-                      skepticMode ? 'translate-x-6' : 'translate-x-1'
-                    }`}
-                  />
-                </button>
-                <span className="text-sm font-medium text-slate-600">
-                  {skepticMode ? 'Skeptic Mode ON' : 'Skeptic Mode OFF'}
-                </span>
-              </div>
+              <span className="text-xs text-slate-500">
+                {skepticMode ? 'ON' : 'OFF'}
+              </span>
             </div>
           </div>
         </div>
       </header>
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 sm:gap-8">
-          {/* Main Content */}
-          <div className="lg:col-span-3">
-            {/* Hero Section */}
-            <div className="mb-8 sm:mb-12">
-              <div className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-200 mb-4 shadow-sm">
-                <svg className="w-3 h-3 mr-1.5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-                For people who choose discernment over blind trust
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="grid grid-cols-3 gap-8">
+          {/* Main Conversation Canvas - 2/3 width */}
+          <div className="col-span-2 space-y-8">
+            {/* Story Timeline */}
+            <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 overflow-hidden">
+              <div className="bg-gradient-to-r from-indigo-500 to-purple-500 p-4 text-white">
+                <h2 className="font-semibold flex items-center">
+                  <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
+                  </svg>
+                  Our Collaboration So Far
+                </h2>
               </div>
-
-              <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold text-slate-900 mb-4 sm:mb-6 leading-tight">
-                Your skepticism is <span className="text-indigo-600">wisdom</span>
-              </h1>
-
-              <p className="text-lg sm:text-xl text-slate-600 leading-relaxed max-w-3xl">
-            Most AI tools want your blind trust. This one earns it by letting you help define what good technology looks like.
-          </p>
-            </div>
-
-            {/* Conversation */}
-            <div className="space-y-8">
-              {messagesWithMemoization}
-
-              {isLoading && (
-                <div className="flex justify-start">
-                  <div className="max-w-full sm:max-w-2xl">
-                    <div className="bg-white/80 backdrop-blur-sm border border-white/50 px-4 sm:px-6 py-3 sm:py-4 rounded-xl sm:rounded-2xl rounded-bl-md shadow-lg">
-                      <div className="flex items-start space-x-3">
-                        <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm">
-                          <span className="text-xs sm:text-sm font-semibold text-indigo-600">N</span>
+              
+              <div className="p-8 space-y-8 max-h-[600px] overflow-y-auto">
+                {messages.map((message, index) => {
+                  const chapterNumber = index + 1;
+                  const isUser = message.role === 'user';
+                  
+                  return (
+                    <div key={`${index}-${message.timestamp}`} className="relative">
+                      <div className={`absolute left-0 top-0 bottom-0 w-1 ${isUser ? 'bg-gradient-to-b from-indigo-300 to-purple-300' : 'bg-gradient-to-b from-purple-300 to-pink-300'} rounded-full`}></div>
+                      <div className="pl-6">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <div className={`w-6 h-6 ${isUser ? 'bg-gradient-to-br from-indigo-400 to-purple-400' : 'bg-gradient-to-br from-purple-400 to-pink-400'} rounded-full flex items-center justify-center text-white text-xs font-bold`}>
+                            {chapterNumber}
+                          </div>
+                          <h3 className="font-semibold text-slate-900">{isUser ? 'Your Goal' : 'Working Together'}</h3>
                         </div>
-                        <div className="flex-1">
+                        <div className={`${isUser ? 'bg-indigo-50 border-indigo-100' : 'bg-purple-50 border-purple-100'} rounded-xl p-4 border`}>
+                          <p className="text-sm text-slate-700 whitespace-pre-wrap">{message.content}</p>
+                          
+                          {!isUser && !challengedMessages.has(index) && !isLoading && !interfaceLocked && (
+                            <button 
+                              onClick={() => challengeMessage(index)}
+                              className="mt-3 w-full bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-lg px-4 py-2 text-sm font-medium hover:from-indigo-600 hover:to-purple-600 transition-all duration-200 flex items-center justify-center gap-2"
+                            >
+                              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                              </svg>
+                              Something seem off? Challenge this response
+                            </button>
+                          )}
+                          {challengedMessages.has(index) && (
+                            <div className="mt-3 text-xs text-green-600 font-medium">✓ Challenged</div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {isLoading && (
+                  <div className="relative">
+                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-purple-300 to-pink-300 rounded-full"></div>
+                    <div className="pl-6">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <div className="w-6 h-6 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center">
                           <div className="loading-dots">
                             <span></span>
                             <span></span>
                             <span></span>
                           </div>
                         </div>
+                        <h3 className="font-semibold text-slate-900">Thinking...</h3>
                       </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              <div ref={messagesEndRef} />
-            </div>
+                <div ref={messagesEndRef} />
+              </div>
 
-            {/* Input Section */}
-            <div className="mt-8 sm:mt-8 border-t border-white/30 pt-8 sm:pt-8">
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="relative">
+              {/* Chat Input at Bottom of Timeline */}
+              <div className="border-t border-slate-200 p-4 bg-white/50">
+                <form onSubmit={handleSubmit} className="space-y-2">
                   <textarea
                     ref={inputRef}
                     value={input}
@@ -684,179 +553,136 @@ export default function TrustRecoveryProtocol() {
                         handleSubmit();
                       }
                     }}
-                    placeholder={skepticMode ? "Question everything. What would you like to test?" : "What would you like to try?"}
-                    className="w-full px-4 sm:px-6 py-3 sm:py-4 rounded-xl sm:rounded-2xl border border-slate-200 resize-none focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-purple-400 text-slate-900 placeholder-slate-500 bg-white/70 backdrop-blur-sm shadow-lg transition-all duration-200 text-base"
-                    rows={3}
+                    placeholder="What would you like to try?"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 resize-none focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-purple-400 text-slate-900 placeholder-slate-500 bg-white/70 backdrop-blur-sm"
+                    rows={2}
                     disabled={isLoading || interfaceLocked}
                   />
-                  <div className="absolute bottom-3 sm:bottom-4 right-3 sm:right-4 flex items-center space-x-2">
-                    <div className="hidden sm:block text-xs text-slate-400">
-                      Press Enter to send
-                    </div>
+                  <div className="flex justify-end">
                     <button
                       type="submit"
                       disabled={!input.trim() || isLoading}
-                      className="p-2 sm:p-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg hover:from-indigo-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 min-h-[44px] min-w-[44px] flex items-center justify-center shadow-md hover:shadow-lg"
+                      className="px-6 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg hover:from-indigo-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md hover:shadow-lg flex items-center gap-2"
                     >
-                      <svg className="w-5 h-5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <span>Send</span>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                       </svg>
                     </button>
                   </div>
-                </div>
-              </form>
+                </form>
+              </div>
             </div>
           </div>
 
-          {/* Sidebar */}
-          <div className="lg:col-span-1 mt-6 lg:mt-0">
-            {/* Artifact Display */}
-            {artifact && (
-              <div className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-xl animate-fade-in-up">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-base sm:text-lg font-semibold text-slate-900">Latest Tool</h3>
-                  <button
-                    onClick={downloadArtifact}
-                    className="text-indigo-600 hover:text-indigo-700 transition-all duration-200 min-h-[44px] min-w-[44px] flex items-center justify-center hover:scale-110"
-                    title="Download artifact"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                  </button>
-                </div>
-                <div className="space-y-3">
-                  <h4 className="font-medium text-slate-800 text-sm sm:text-base">{artifact.title}</h4>
-                  <div className="bg-slate-50/50 backdrop-blur-sm rounded-lg p-3 sm:p-4 max-h-80 sm:max-h-96 overflow-y-auto border border-slate-200/50">
-                    <pre className="text-xs sm:text-sm text-slate-700 whitespace-pre-wrap font-mono">{artifact.content}</pre>
-                  </div>
-                </div>
+          {/* Right Sidebar - 1/3 width */}
+          <div className="col-span-1 space-y-6">
+            {/* Collaboration Progress */}
+            <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <svg className="w-5 h-5 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" />
+                </svg>
+                <h3 className="font-semibold text-slate-900">Collaboration Progress</h3>
               </div>
-            )}
-
-            {/* Session Toolbox - All Generated Tools */}
-            {sessionArtifacts && sessionArtifacts.length > 0 && (
-              <div className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-xl animate-fade-in-up">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-base sm:text-lg font-semibold text-slate-900">
-                    Your Toolbox ({sessionArtifacts.length})
-                  </h3>
-                  <div className="text-xs text-slate-500">
-                    All conversation tools
-                  </div>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-slate-600">Steps Together</span>
+                  <span className="text-2xl font-bold text-indigo-600">{messages.length}</span>
                 </div>
-                <div className="space-y-3">
-                  {sessionArtifacts.map((sessionArtifact, index) => (
-                    <div key={sessionArtifact.id} className="border border-slate-100 rounded-lg p-3">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-2 mb-2">
-                            <h5 className="font-medium text-slate-800 text-sm">{sessionArtifact.title}</h5>
-                            <span className="text-xs px-2 py-1 bg-slate-100 text-slate-600 rounded-full">
-                              {sessionArtifact.agent}
-                            </span>
-                          </div>
-                          <div className="text-xs text-slate-500 mb-3">
-                            {new Date(sessionArtifact.timestamp).toLocaleString()}
-                          </div>
-                          <div className="bg-slate-50 rounded p-2 max-h-32 overflow-y-auto">
-                            <pre className="text-xs text-slate-600 whitespace-pre-wrap font-mono">
-                              {sessionArtifact.content.substring(0, 200)}
-                              {sessionArtifact.content.length > 200 ? '...' : ''}
-                            </pre>
-                          </div>
-                        </div>
-                        <button
-                          onClick={() => downloadIndividualArtifact(sessionArtifact)}
-                          className="ml-3 text-blue-600 hover:text-blue-700 transition-colors duration-200 min-h-[32px] min-w-[32px] flex items-center justify-center"
-                          title={`Download ${sessionArtifact.title}`}
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                          </svg>
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Reasoning Display - Collapsible */}
-            {reasoning && (
-              <button
-                onClick={() => setShowReasoning(!showReasoning)}
-                className="w-full bg-white/80 backdrop-blur-sm border border-white/50 rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg hover:shadow-xl transition-all duration-200 animate-fade-in-up mt-4 sm:mt-6 text-left"
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-base sm:text-lg font-semibold text-slate-900 flex items-center gap-2">
-                    <span>💭</span> Reasoning Process
-                  </h3>
-                  <svg 
-                    className={`w-5 h-5 text-slate-600 transition-transform duration-200 ${showReasoning ? 'rotate-180' : ''}`} 
-                    fill="currentColor" 
-                    viewBox="0 0 20 20"
-                  >
-                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                {!showReasoning && (
-                  <p className="text-xs sm:text-sm text-slate-500">Click to see the reasoning behind responses...</p>
-                )}
-                {showReasoning && (
-                  <div className="text-xs sm:text-sm text-slate-700 whitespace-pre-wrap mt-3 border-t border-slate-200/50 pt-3">{reasoning}</div>
-                )}
-              </button>
-            )}
-
-            {/* Trust Indicators - Hidden on mobile since it's in header */}
-            <div className="hidden lg:block bg-white border border-slate-200 rounded-2xl p-6 shadow-sm mt-6">
-              <h3 className="text-lg font-semibold text-slate-900 mb-4">System Health</h3>
-              <div className="space-y-4">
-                <div>
-                  <div className="flex justify-between text-sm mb-2">
-                    <span className="text-slate-600">Trust Recovery</span>
-                    <span className="font-mono text-slate-500">{trustLevel}%</span>
-                  </div>
-                  <div className="w-full bg-slate-200 rounded-full h-2">
-                    <div
-                      className="bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 h-2 rounded-full transition-all duration-1000"
-                      style={{ width: `${trustLevel}%` }}
-                    />
-                  </div>
-                </div>
-                <div className="text-xs text-slate-500">
-                  {skepticMode ? '🔍 Skeptic mode enables deeper verification' : '👍 Standard interaction mode'}
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-slate-600">Artifacts Created</span>
+                  <span className="text-2xl font-bold text-purple-600">{sessionArtifacts.length}</span>
                 </div>
               </div>
             </div>
 
-            {/* Instructions */}
-            <div className="bg-slate-50 border border-slate-200 rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-sm mt-4 sm:mt-6">
-              <h3 className="text-base sm:text-lg font-semibold text-slate-900 mb-3 sm:mb-4">How This Works</h3>
-              <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm text-slate-600">
-                <div className="flex items-start space-x-2">
-                  <span className="text-blue-600 font-semibold text-sm sm:text-base">1.</span>
-                  <span>Ask for anything you&apos;d like built or tested</span>
-                </div>
-                <div className="flex items-start space-x-2">
-                  <span className="text-blue-600 font-semibold text-sm sm:text-base">2.</span>
-                  <span>Challenge responses if they seem off</span>
-                </div>
-                <div className="flex items-start space-x-2">
-                  <span className="text-blue-600 font-semibold">3.</span>
-                  <span>Enable skeptic mode for stricter verification</span>
-                </div>
-                <div className="flex items-start space-x-2">
-                  <span className="text-blue-600 font-semibold">4.</span>
-                  <span>Trust level adjusts based on system reliability</span>
+            {/* Created Artifacts */}
+            {sessionArtifacts.length > 0 && (
+              <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-6">
+                <h3 className="font-semibold text-slate-900 mb-4">Created Artifacts</h3>
+                <div className="space-y-3 max-h-80 overflow-y-auto">
+                  {sessionArtifacts.map((sessionArtifact, idx) => {
+                    const colors = [
+                      'from-blue-400 to-blue-600',
+                      'from-purple-400 to-purple-600',
+                      'from-green-400 to-green-600',
+                      'from-orange-400 to-orange-600',
+                      'from-pink-400 to-pink-600'
+                    ];
+                    const color = colors[idx % colors.length];
+                    
+                    return (
+                      <div key={sessionArtifact.id} className={`bg-gradient-to-br ${color} rounded-xl p-4 text-white`}>
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex-1">
+                            <h4 className="font-semibold text-sm">{sessionArtifact.title}</h4>
+                            <p className="text-xs opacity-90">{sessionArtifact.agent}</p>
+                          </div>
+                          <button 
+                            onClick={() => downloadIndividualArtifact(sessionArtifact)}
+                            className="text-white/80 hover:text-white transition-colors"
+                          >
+                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+                            </svg>
+                          </button>
+                        </div>
+                        <p className="text-xs opacity-75">{new Date(sessionArtifact.timestamp).toLocaleTimeString()}</p>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
+            )}
+
+            {/* Data Visualizer */}
+            <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-6">
+              <h3 className="font-semibold text-slate-900 mb-4">Data Visualizer</h3>
+              {sessionArtifacts.length > 0 ? (
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-slate-600">Most Recent Artifact:</p>
+                  <p className="text-xs font-semibold text-purple-600">{sessionArtifacts[sessionArtifacts.length - 1].title}</p>
+                  <div className="bg-slate-900 rounded-lg p-4 max-h-48 overflow-y-auto">
+                    <pre className="text-xs text-green-400 font-mono whitespace-pre-wrap">
+                      {sessionArtifacts[sessionArtifacts.length - 1].content.substring(0, 500)}
+                      {sessionArtifacts[sessionArtifacts.length - 1].content.length > 500 ? '\n\n... (see full code in Created Artifacts)' : ''}
+                    </pre>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-xs text-slate-500">No artifacts generated yet</p>
+              )}
+            </div>
+
+            {/* API Integration - Placeholder */}
+            <div className="bg-slate-100 backdrop-blur-sm rounded-2xl shadow-xl border border-slate-200 p-6 opacity-60">
+              <h3 className="font-semibold text-slate-500 mb-2">API Integration</h3>
+              <p className="text-xs text-slate-400">Coming Soon</p>
+            </div>
+
+            {/* Quick Tips - Placeholder */}
+            <div className="bg-slate-100 backdrop-blur-sm rounded-2xl shadow-xl border border-slate-200 p-6 opacity-60">
+              <h3 className="font-semibold text-slate-500 mb-2">Quick Tips</h3>
+              <p className="text-xs text-slate-400">Coming Soon</p>
             </div>
           </div>
         </div>
+
+        {/* Video Section at Bottom */}
+        <div className="mt-8 bg-white/70 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-6">
+          <h3 className="font-semibold text-slate-900 mb-4">Introduction Video</h3>
+          <video 
+            className="w-full rounded-lg shadow-md"
+            controls
+            preload="metadata"
+            src="/api/video?file=intro-video.mp4"
+          >
+            Your browser does not support the video tag.
+          </video>
+        </div>
       </div>
-      
+
       {/* Interface Lockdown Banner */}
       {interfaceLocked && (
         <div className="fixed bottom-0 left-0 right-0 border-t border-red-200 bg-red-50 backdrop-blur-sm z-50">
@@ -883,24 +709,6 @@ export default function TrustRecoveryProtocol() {
           </div>
         </div>
       )}
-      
-      {/* Demo Video Section */}
-      <div className="max-w-4xl mx-auto px-4 py-8 mt-8">
-        <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
-          <div className="p-6">
-            <h3 className="text-lg font-semibold text-slate-800 mb-4">Intro Video</h3>
-            <video
-              controls
-              preload="metadata"
-              className="w-full rounded-lg"
-              style={{ maxHeight: '400px' }}
-            >
-              <source src="/api/video?file=intro-video.mp4" type="video/mp4" />
-              Your browser does not support the video tag.
-            </video>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
