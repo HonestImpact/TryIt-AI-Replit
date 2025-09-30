@@ -36,6 +36,10 @@ export default function TrustRecoveryProtocol() {
     agent: string;
     id: string;
   }>>([]);
+  const [viewingArtifact, setViewingArtifact] = useState<{
+    title: string;
+    content: string;
+  } | null>(null);
   const [showReasoning, setShowReasoning] = useState(false);
   const [reasoning] = useState('');
   const [skepticMode, setSkepticMode] = useState(false);
@@ -181,11 +185,22 @@ export default function TrustRecoveryProtocol() {
         }]);
 
         if (data.artifact) {
+          const newArtifact = {
+            id: `artifact_${Date.now()}`,
+            title: data.artifact.title,
+            content: data.artifact.content,
+            agent: data.agent || 'noah',
+            timestamp: Date.now()
+          };
+          
           setTimeout(() => {
             setArtifact({
               title: data.artifact.title,
               content: data.artifact.content
             });
+            
+            // Add to session artifacts
+            setSessionArtifacts(prev => [...prev, newArtifact]);
           }, 800);
         }
 
@@ -281,11 +296,22 @@ export default function TrustRecoveryProtocol() {
       }
 
       if (data.artifact) {
+        const newArtifact = {
+          id: `artifact_${Date.now()}`,
+          title: data.artifact.title,
+          content: data.artifact.content,
+          agent: data.agent || 'noah',
+          timestamp: Date.now()
+        };
+        
         setTimeout(() => {
           setArtifact({
             title: data.artifact.title,
             content: data.artifact.content
           });
+          
+          // Add to session artifacts
+          setSessionArtifacts(prev => [...prev, newArtifact]);
         }, 800);
       }
 
@@ -590,16 +616,29 @@ export default function TrustRecoveryProtocol() {
                             <h4 className="font-semibold text-sm">{sessionArtifact.title}</h4>
                             <p className="text-xs opacity-90">{sessionArtifact.agent}</p>
                           </div>
+                        </div>
+                        <p className="text-xs opacity-75 mb-3">{new Date(sessionArtifact.timestamp).toLocaleTimeString()}</p>
+                        <div className="flex gap-2">
+                          <button 
+                            onClick={() => setViewingArtifact({ title: sessionArtifact.title, content: sessionArtifact.content })}
+                            className="flex-1 bg-white/20 hover:bg-white/30 text-white rounded-lg px-3 py-1.5 text-xs font-medium transition-colors flex items-center justify-center gap-1"
+                          >
+                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                              <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                              <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                            </svg>
+                            View Code
+                          </button>
                           <button 
                             onClick={() => downloadIndividualArtifact(sessionArtifact)}
-                            className="text-white/80 hover:text-white transition-colors"
+                            className="flex-1 bg-white/20 hover:bg-white/30 text-white rounded-lg px-3 py-1.5 text-xs font-medium transition-colors flex items-center justify-center gap-1"
                           >
-                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
                             </svg>
+                            Download
                           </button>
                         </div>
-                        <p className="text-xs opacity-75">{new Date(sessionArtifact.timestamp).toLocaleTimeString()}</p>
                       </div>
                     );
                   })}
@@ -653,6 +692,53 @@ export default function TrustRecoveryProtocol() {
           </video>
         </div>
       </div>
+
+      {/* Code Viewing Modal */}
+      {viewingArtifact && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[80vh] overflow-hidden">
+            <div className="bg-gradient-to-r from-indigo-500 to-purple-500 p-4 text-white flex items-center justify-between">
+              <h3 className="font-semibold">{viewingArtifact.title}</h3>
+              <button 
+                onClick={() => setViewingArtifact(null)}
+                className="text-white/80 hover:text-white transition-colors"
+              >
+                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </button>
+            </div>
+            <div className="p-6 overflow-y-auto max-h-[calc(80vh-80px)]">
+              <div className="bg-slate-900 rounded-lg p-6">
+                <pre className="text-sm text-green-400 font-mono whitespace-pre-wrap overflow-x-auto">
+                  {viewingArtifact.content}
+                </pre>
+              </div>
+              <div className="mt-4 flex justify-end">
+                <button
+                  onClick={() => {
+                    const blob = new Blob([viewingArtifact.content], { type: 'text/html' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `${viewingArtifact.title.toLowerCase().replace(/\s+/g, '-')}.html`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                  }}
+                  className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg px-4 py-2 text-sm font-medium hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 flex items-center gap-2"
+                >
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                  Download File
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Interface Lockdown Banner */}
       {interfaceLocked && (
