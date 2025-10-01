@@ -1,6 +1,6 @@
 export interface BoutiqueToolIntent {
   detected: boolean;
-  toolName: 'scientific_calculator' | 'pomodoro_timer' | 'unit_converter' | 'assumption_breaker' | 'time_telescope' | null;
+  toolName: 'scientific_calculator' | 'pomodoro_timer' | 'unit_converter' | 'assumption_breaker' | 'time_telescope' | 'energy_archaeology' | null;
   parameters: Record<string, any>;
   confidence: number;
 }
@@ -79,8 +79,23 @@ export class BoutiqueIntentDetector {
       { pattern: /\b(stuck|struggling)\s+(on|with)\s+a\s+(decision|choice)\b/i, confidence: 0.88 }
     ];
     
+    const energyArchaeologyPatterns = [
+      { pattern: /\benergy\s+archaeology\b/i, confidence: 0.95 },
+      { pattern: /\btrack\s+(my\s+)?energy\b/i, confidence: 0.93 },
+      { pattern: /\benergy\s+(tracker|tracking|patterns?)\b/i, confidence: 0.94 },
+      { pattern: /\benergy\s+map\b/i, confidence: 0.93 },
+      { pattern: /\bwhat\s+(gives|drains)\s+(me\s+)?energy\b/i, confidence: 0.92 },
+      { pattern: /\boptimize\s+(my\s+)?(schedule|day)\s+(to|for)\s+energy\b/i, confidence: 0.91 },
+      { pattern: /\bpersonal\s+energy\s+map\b/i, confidence: 0.94 },
+      { pattern: /\b(log|track|monitor)\s+(my\s+)?(energy\s+level|activities)\b/i, confidence: 0.90 },
+      { pattern: /\bwhen\s+(am\s+i|i'm)\s+most\s+(creative|energetic|productive)\b/i, confidence: 0.89 },
+      { pattern: /\benergy\s+(booster|drainer)s?\b/i, confidence: 0.92 },
+      { pattern: /\bpeak\s+energy\s+time\b/i, confidence: 0.91 },
+      { pattern: /\benergy\s+throughout\s+the\s+day\b/i, confidence: 0.90 }
+    ];
+    
     let maxConfidence = 0;
-    let detectedTool: 'scientific_calculator' | 'pomodoro_timer' | 'unit_converter' | 'assumption_breaker' | 'time_telescope' | null = null;
+    let detectedTool: 'scientific_calculator' | 'pomodoro_timer' | 'unit_converter' | 'assumption_breaker' | 'time_telescope' | 'energy_archaeology' | null = null;
     
     for (const { pattern, confidence } of calculatorPatterns) {
       if (pattern.test(lowerMessage) && confidence > maxConfidence) {
@@ -114,6 +129,13 @@ export class BoutiqueIntentDetector {
       if (pattern.test(lowerMessage) && confidence > maxConfidence) {
         maxConfidence = confidence;
         detectedTool = 'time_telescope';
+      }
+    }
+    
+    for (const { pattern, confidence } of energyArchaeologyPatterns) {
+      if (pattern.test(lowerMessage) && confidence > maxConfidence) {
+        maxConfidence = confidence;
+        detectedTool = 'energy_archaeology';
       }
     }
     
@@ -178,6 +200,15 @@ export class BoutiqueIntentDetector {
         detected: true,
         toolName: 'time_telescope',
         parameters: { theme },
+        confidence: maxConfidence
+      };
+    }
+    
+    if (detectedTool === 'energy_archaeology') {
+      return {
+        detected: true,
+        toolName: 'energy_archaeology',
+        parameters: {},
         confidence: maxConfidence
       };
     }
