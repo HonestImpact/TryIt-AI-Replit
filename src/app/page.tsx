@@ -2,6 +2,10 @@
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { createLogger } from '@/lib/logger';
+import FileActivityBanner from './components/FileActivityBanner';
+import FileApprovalDialog from './components/FileApprovalDialog';
+import FilesystemBridge from './components/FilesystemBridge';
+import type { FileOperation } from '@/lib/filesystem/types';
 
 const logger = createLogger('trust-recovery-ui');
 
@@ -49,6 +53,16 @@ export default function TrustRecoveryProtocol() {
   const [interfaceLocked, setInterfaceLocked] = useState(false);
   const [showFeedbackTooltip, setShowFeedbackTooltip] = useState(false);
   const [showSkepticsTooltip, setShowSkepticsTooltip] = useState(false);
+  const [fileOperations, setFileOperations] = useState<FileOperation[]>([]);
+  const [selectedOperation, setSelectedOperation] = useState<FileOperation | null>(null);
+  const [showApprovalDialog, setShowApprovalDialog] = useState(false);
+  const [savedFiles, setSavedFiles] = useState<Array<{
+    name: string;
+    path: string;
+    timestamp: number;
+    size: number;
+    type: string;
+  }>>([]);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -244,6 +258,90 @@ export default function TrustRecoveryProtocol() {
     setSkepticMode(prev => !prev);
     setTrustLevel(prev => Math.max(0, prev - 10));
   }, [interfaceLocked]);
+
+  const handleFileOperationProposed = useCallback((operation: FileOperation) => {
+    logger.info('File operation proposed', { path: operation.path });
+    setFileOperations(prev => [...prev, operation]);
+  }, []);
+
+  const handleApproveFileOperation = useCallback(async (operationId: string, customFileName?: string) => {
+    logger.info('Approving file operation', { operationId: operationId.substring(0, 20) });
+    
+    try {
+      const response = await fetch('/api/filesystem/execute', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ operationId, customFileName })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to execute file operation');
+      }
+
+      const data = await response.json();
+      
+      if (data.success) {
+        setFileOperations(prev => 
+          prev.map(op => 
+            op.path === operationId ? { ...op, status: 'completed' as const } : op
+          )
+        );
+
+        setSavedFiles(prev => [...prev, {
+          name: data.fileName,
+          path: data.filePath,
+          timestamp: Date.now(),
+          size: data.fileSize,
+          type: data.fileType
+        }]);
+
+        logger.info('File operation completed successfully', { path: data.filePath });
+      }
+    } catch (error) {
+      logger.error('Failed to execute file operation', { 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  }, []);
+
+  const handleRejectFileOperation = useCallback(async (operationId: string) => {
+    logger.info('Rejecting file operation', { operationId: operationId.substring(0, 20) });
+    
+    try {
+      const response = await fetch('/api/filesystem/reject', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ operationId })
+      });
+
+      if (response.ok) {
+        setFileOperations(prev => 
+          prev.map(op => 
+            op.path === operationId ? { ...op, status: 'rejected' as const } : op
+          )
+        );
+      }
+    } catch (error) {
+      logger.error('Failed to reject file operation', { 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  }, []);
+
+  const handleRenameFileOperation = useCallback((operationId: string, newName: string) => {
+    logger.info('Renaming file operation', { operationId: operationId.substring(0, 20), newName });
+    
+    setFileOperations(prev => 
+      prev.map(op => {
+        if (op.path === operationId) {
+          const pathParts = op.path.split('/');
+          pathParts[pathParts.length - 1] = newName;
+          return { ...op, path: pathParts.join('/') };
+        }
+        return op;
+      })
+    );
+  }, []);
 
   const challengeMessage = useCallback(async (messageIndex: number) => {
     if (isLoading || interfaceLocked) return;
@@ -463,6 +561,20 @@ export default function TrustRecoveryProtocol() {
         </div>
       </header>
 
+      {/* File Activity Banner */}
+      <FileActivityBanner
+        operations={fileOperations}
+        onApprove={handleApproveFileOperation}
+        onReject={handleRejectFileOperation}
+        onRename={handleRenameFileOperation}
+      />
+
+      {/* Filesystem Bridge (invisible) */}
+      <FilesystemBridge
+        sessionId={currentSessionId}
+        onFileOperationProposed={handleFileOperationProposed}
+      />
+
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="grid grid-cols-3 gap-8">
           {/* Main Conversation Canvas - 2/3 width */}
@@ -594,6 +706,57 @@ export default function TrustRecoveryProtocol() {
                 </div>
               </div>
             </div>
+
+            {/* Files Saved This Session */}
+            {savedFiles.length > 0 && (
+              <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z" />
+                    </svg>
+                    <h3 className="font-semibold text-slate-900">Files Saved</h3>
+                  </div>
+                  <span className="text-xl font-bold text-green-600">{savedFiles.length}</span>
+                </div>
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {savedFiles.map((file, idx) => {
+                    const fileIcon = {
+                      html: '🌐',
+                      js: '⚡',
+                      py: '🐍',
+                      json: '📋',
+                      txt: '📝'
+                    }[file.type] || '📄';
+
+                    return (
+                      <div
+                        key={`${file.path}-${idx}`}
+                        className="flex items-center justify-between p-3 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg hover:shadow-md transition-shadow"
+                      >
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <span className="text-2xl flex-shrink-0">{fileIcon}</span>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-sm text-slate-900 truncate">{file.name}</div>
+                            <div className="text-xs text-slate-500">
+                              {(file.size / 1024).toFixed(1)} KB • {new Date(file.timestamp).toLocaleTimeString()}
+                            </div>
+                          </div>
+                        </div>
+                        <a
+                          href={`/${file.path}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="ml-2 px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded-lg hover:bg-green-700 transition-colors flex-shrink-0"
+                        >
+                          Open
+                        </a>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* Created Artifacts */}
             {sessionArtifacts.length > 0 && (
@@ -742,6 +905,18 @@ export default function TrustRecoveryProtocol() {
           </div>
         </div>
       )}
+
+      {/* File Approval Dialog */}
+      <FileApprovalDialog
+        operation={selectedOperation}
+        isOpen={showApprovalDialog}
+        onApprove={handleApproveFileOperation}
+        onReject={handleRejectFileOperation}
+        onClose={() => {
+          setShowApprovalDialog(false);
+          setSelectedOperation(null);
+        }}
+      />
 
       {/* Interface Lockdown Banner */}
       {interfaceLocked && (
