@@ -110,23 +110,27 @@ export const sharedResourceManager = {
         }
       }
 
-      // Initialize MCP Memory Service (but don't retrieve session-specific context yet)
+      // Initialize MCP Memory Service (TEMPORARILY DISABLED - was blocking server)
+      // TODO: Move to background initialization or lazy loading
       let memoryServiceAvailable = false;
-      try {
-        await mcpMemoryService.initialize();
-        const status = mcpMemoryService.getStatus();
-        memoryServiceAvailable = status.available;
-        
-        if (memoryServiceAvailable) {
-          logger.info('✅ MCP Memory Service initialized successfully');
-        } else {
-          logger.info('⚠️ Memory service unavailable, proceeding without memory');
-        }
-      } catch (error) {
-        logger.warn('Memory service initialization failed, proceeding without memory', {
-          error: error instanceof Error ? error.message : String(error)
-        });
-      }
+      logger.info('⚠️ Memory service initialization temporarily disabled to prevent server blocking');
+      
+      // Uncomment below when we implement non-blocking initialization:
+      // try {
+      //   await mcpMemoryService.initialize();
+      //   const status = mcpMemoryService.getStatus();
+      //   memoryServiceAvailable = status.available;
+      //   
+      //   if (memoryServiceAvailable) {
+      //     logger.info('✅ MCP Memory Service initialized successfully');
+      //   } else {
+      //     logger.info('⚠️ Memory service unavailable, proceeding without memory');
+      //   }
+      // } catch (error) {
+      //   logger.warn('Memory service initialization failed, proceeding without memory', {
+      //     error: error instanceof Error ? error.message : String(error)
+      //   });
+      // }
 
       const resources: AgentSharedResources = {
         knowledgeService,
