@@ -73,6 +73,17 @@ export const boutiqueTools = {
         content: BOUTIQUE_TEMPLATES.timeTelescope(theme || 'dark')
       };
     }
+  }),
+
+  energy_archaeology: tool({
+    description: 'Creates an Energy Archaeology tool that tracks what gives/drains energy throughout the day to create a personal energy map. This is a unique differentiator that helps optimize schedules to energy patterns. Users log activities with energy levels, and the tool creates a Chart.js visualization showing energy curves, pattern analysis (peak times, energy boosters/drainers), and insights about when they are most creative, social, or analytical. Includes 7-day rolling view, quick-logging interface, and pattern detection. Privacy-conscious - all data stays local.',
+    parameters: z.object({}),
+    execute: async () => {
+      return {
+        title: 'Energy Archaeology',
+        content: BOUTIQUE_TEMPLATES.energyArchaeology()
+      };
+    }
   })
 };
 
