@@ -1,6 +1,6 @@
 export interface BoutiqueToolIntent {
   detected: boolean;
-  toolName: 'scientific_calculator' | 'pomodoro_timer' | 'unit_converter' | null;
+  toolName: 'scientific_calculator' | 'pomodoro_timer' | 'unit_converter' | 'assumption_breaker' | null;
   parameters: Record<string, any>;
   confidence: number;
 }
@@ -49,8 +49,23 @@ export class BoutiqueIntentDetector {
       { pattern: /\b(m|ft|km|mi|lb|kg|mph|kph|°c|°f)\s+to\s+(m|ft|km|mi|lb|kg|mph|kph|°c|°f)\b/i, confidence: 0.90 }
     ];
     
+    const assumptionBreakerPatterns = [
+      { pattern: /\bassumption\s+breaker\b/i, confidence: 0.95 },
+      { pattern: /\bchallenge\s+(my\s+)?assumptions?\b/i, confidence: 0.93 },
+      { pattern: /\bbreak\s+(my\s+)?assumptions?\b/i, confidence: 0.93 },
+      { pattern: /\bquestion\s+(my\s+)?assumptions?\b/i, confidence: 0.92 },
+      { pattern: /\btest\s+(my\s+)?assumptions?\b/i, confidence: 0.91 },
+      { pattern: /\bthink\s+differently\b/i, confidence: 0.88 },
+      { pattern: /\breframe\s+(my\s+)?(problem|thinking|perspective)\b/i, confidence: 0.90 },
+      { pattern: /\bwhat\s+am\s+i\s+assuming\b/i, confidence: 0.93 },
+      { pattern: /\bidentify\s+(my\s+)?assumptions?\b/i, confidence: 0.91 },
+      { pattern: /\bblind\s+spots?\b/i, confidence: 0.87 },
+      { pattern: /\bhidden\s+assumptions?\b/i, confidence: 0.92 },
+      { pattern: /\bunconsciou(s|sly)\s+assuming\b/i, confidence: 0.90 }
+    ];
+    
     let maxConfidence = 0;
-    let detectedTool: 'scientific_calculator' | 'pomodoro_timer' | 'unit_converter' | null = null;
+    let detectedTool: 'scientific_calculator' | 'pomodoro_timer' | 'unit_converter' | 'assumption_breaker' | null = null;
     
     for (const { pattern, confidence } of calculatorPatterns) {
       if (pattern.test(lowerMessage) && confidence > maxConfidence) {
@@ -70,6 +85,13 @@ export class BoutiqueIntentDetector {
       if (pattern.test(lowerMessage) && confidence > maxConfidence) {
         maxConfidence = confidence;
         detectedTool = 'unit_converter';
+      }
+    }
+    
+    for (const { pattern, confidence } of assumptionBreakerPatterns) {
+      if (pattern.test(lowerMessage) && confidence > maxConfidence) {
+        maxConfidence = confidence;
+        detectedTool = 'assumption_breaker';
       }
     }
     
@@ -114,6 +136,15 @@ export class BoutiqueIntentDetector {
       return {
         detected: true,
         toolName: 'unit_converter',
+        parameters: {},
+        confidence: maxConfidence
+      };
+    }
+    
+    if (detectedTool === 'assumption_breaker') {
+      return {
+        detected: true,
+        toolName: 'assumption_breaker',
         parameters: {},
         confidence: maxConfidence
       };
