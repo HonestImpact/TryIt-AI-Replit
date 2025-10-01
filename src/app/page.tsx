@@ -804,7 +804,7 @@ export default function TrustRecoveryProtocol() {
                               <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
                               <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
                             </svg>
-                            View Code
+                            View Output
                           </button>
                           <button 
                             onClick={() => downloadIndividualArtifact(sessionArtifact)}
@@ -826,14 +826,20 @@ export default function TrustRecoveryProtocol() {
             {/* Data Visualizer */}
             <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-6">
               <h3 className="font-semibold text-slate-900 mb-4">Data Visualizer</h3>
-              {sessionArtifacts.length > 0 ? (
-                <div className="space-y-2">
-                  <p className="text-xs font-medium text-slate-600">Most Recent Artifact:</p>
-                  <p className="text-xs font-semibold text-purple-600">{sessionArtifacts[sessionArtifacts.length - 1].title}</p>
-                  <div className="bg-slate-900 rounded-lg p-4 max-h-48 overflow-y-auto">
+              {sessionArtifacts && sessionArtifacts.length > 0 ? (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-medium text-slate-600">Most Recent Output</p>
+                    <span className="text-xs font-bold text-purple-600">#{sessionArtifacts.length}</span>
+                  </div>
+                  <div className="bg-gradient-to-br from-purple-500 to-indigo-500 rounded-lg p-3">
+                    <p className="text-sm font-semibold text-white mb-1">{sessionArtifacts[sessionArtifacts.length - 1].title}</p>
+                    <p className="text-xs text-purple-100">{sessionArtifacts[sessionArtifacts.length - 1].agent}</p>
+                  </div>
+                  <div className="bg-slate-900 rounded-lg p-3 max-h-48 overflow-y-auto">
                     <pre className="text-xs text-green-400 font-mono whitespace-pre-wrap">
-                      {sessionArtifacts[sessionArtifacts.length - 1].content.substring(0, 500)}
-                      {sessionArtifacts[sessionArtifacts.length - 1].content.length > 500 ? '\n\n... (see full code in Created Artifacts)' : ''}
+                      {sessionArtifacts[sessionArtifacts.length - 1].content.substring(0, 400)}
+                      {sessionArtifacts[sessionArtifacts.length - 1].content.length > 400 ? '\n\n... (click View Output in Created Artifacts)' : ''}
                     </pre>
                   </div>
                 </div>
