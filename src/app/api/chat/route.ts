@@ -21,6 +21,7 @@ import { FileNamingStrategy } from '@/lib/filesystem/naming-strategy';
 import type { FileOperation } from '@/lib/filesystem/types';
 import { boutiqueTools } from '@/lib/tools/boutique-tools';
 import { BoutiqueIntentDetector } from '@/lib/tools/boutique-intent-detector';
+import { BOUTIQUE_TEMPLATES } from '@/lib/tools/boutique-templates';
 
 const logger = createLogger('noah-chat');
 
@@ -947,8 +948,51 @@ async function noahStreamingChatHandler(req: NextRequest, context: LoggingContex
       });
 
       try {
-        const tool = boutiqueTools[boutiqueIntent.toolName];
-        const toolResult = await tool.execute(boutiqueIntent.parameters);
+        // Call template directly for fast-path (bypass AI SDK tool wrapper)
+        const params = boutiqueIntent.parameters;
+        let toolResult: { title: string; content: string };
+        
+        switch (boutiqueIntent.toolName) {
+          case 'scientific_calculator':
+            toolResult = {
+              title: 'Scientific Calculator',
+              content: BOUTIQUE_TEMPLATES.scientificCalculator(params.theme || 'dark', params.features)
+            };
+            break;
+          case 'pomodoro_timer':
+            toolResult = {
+              title: 'Pomodoro Timer',
+              content: BOUTIQUE_TEMPLATES.pomodoroTimer(params.workMinutes || 25, params.breakMinutes || 5)
+            };
+            break;
+          case 'unit_converter':
+            toolResult = {
+              title: 'Unit Converter',
+              content: BOUTIQUE_TEMPLATES.unitConverter(params.categories)
+            };
+            break;
+          case 'assumption_breaker':
+            toolResult = {
+              title: 'Assumption Breaker',
+              content: BOUTIQUE_TEMPLATES.assumptionBreaker()
+            };
+            break;
+          case 'time_telescope':
+            toolResult = {
+              title: 'Time Telescope',
+              content: BOUTIQUE_TEMPLATES.timeTelescope(params.theme || 'dark')
+            };
+            break;
+          case 'energy_archaeology':
+            toolResult = {
+              title: 'Energy Archaeology',
+              content: BOUTIQUE_TEMPLATES.energyArchaeology()
+            };
+            break;
+          default:
+            throw new Error(`Unknown tool: ${boutiqueIntent.toolName}`);
+        }
+        
         const fastPathTime = Date.now() - fastPathStart;
         
         logger.info('✨ Boutique tool executed via fast-path', {
