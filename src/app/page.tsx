@@ -794,21 +794,21 @@ export default function TrustRecoveryProtocol() {
                             <p className="text-xs opacity-90">{sessionArtifact.agent}</p>
                           </div>
                         </div>
-                        <p className="text-xs opacity-75 mb-3">{new Date(sessionArtifact.timestamp).toLocaleTimeString()}</p>
-                        <div className="flex gap-2">
+                        <p className="text-xs opacity-75 mb-2">{new Date(sessionArtifact.timestamp).toLocaleTimeString()}</p>
+                        <div className="flex flex-col gap-1.5">
                           <button 
                             onClick={() => setViewingArtifact({ title: sessionArtifact.title, content: sessionArtifact.content })}
-                            className="flex-1 bg-white/20 hover:bg-white/30 text-white rounded-lg px-3 py-1.5 text-xs font-medium transition-colors flex items-center justify-center gap-1"
+                            className="w-full bg-white/20 hover:bg-white/30 text-white rounded-lg px-3 py-1 text-xs font-medium transition-colors flex items-center justify-center gap-1"
                           >
                             <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                               <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
                               <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
                             </svg>
-                            View Output
+                            View
                           </button>
                           <button 
                             onClick={() => downloadIndividualArtifact(sessionArtifact)}
-                            className="flex-1 bg-white/20 hover:bg-white/30 text-white rounded-lg px-3 py-1.5 text-xs font-medium transition-colors flex items-center justify-center gap-1"
+                            className="w-full bg-white/20 hover:bg-white/30 text-white rounded-lg px-3 py-1 text-xs font-medium transition-colors flex items-center justify-center gap-1"
                           >
                             <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
