@@ -60,6 +60,19 @@ export const boutiqueTools = {
         content: BOUTIQUE_TEMPLATES.assumptionBreaker()
       };
     }
+  }),
+
+  time_telescope: tool({
+    description: 'Creates a Time Telescope tool that helps view decisions across multiple time horizons (1 day, 1 year, 10 years, 100 years). Perfect for decision paralysis and gaining perspective. Users describe a decision, and the tool generates thoughtful perspectives showing how the decision looks from different time scales. Includes SVG timeline visualization, zoom controls, and perspective cards with psychological insights. Simple but philosophically profound.',
+    parameters: z.object({
+      theme: z.enum(['light', 'dark']).optional().describe('Color theme for the tool. Dark theme is modern and contemplative, light theme is clean and clear.')
+    }),
+    execute: async ({ theme }: { theme?: 'light' | 'dark' }) => {
+      return {
+        title: 'Time Telescope',
+        content: BOUTIQUE_TEMPLATES.timeTelescope(theme || 'dark')
+      };
+    }
   })
 };
 
