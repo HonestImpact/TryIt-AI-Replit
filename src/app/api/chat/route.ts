@@ -15,6 +15,7 @@ import { analyticsService } from '@/lib/analytics';
 import { analyticsPool } from '@/lib/analytics/connection-pool';
 import { NoahSafetyService } from '@/lib/safety';
 import { ContextEnricher } from '@/lib/memory/context-enricher';
+import { ObservationExtractor } from '@/lib/memory/observation-extractor';
 
 const logger = createLogger('noah-chat');
 
@@ -168,6 +169,80 @@ function analyzeRequest(content: string): {
     confidence: 0.9, 
     reasoning 
   };
+}
+
+/**
+ * 🧠 ASYNC MEMORY STORAGE (Fire-and-Forget)
+ * Stores conversation observations asynchronously without blocking responses
+ * 
+ * @param sessionId - Session identifier for memory storage
+ * @param messages - Full conversation history
+ * @param artifactGenerated - Whether an artifact was created
+ * @param artifactId - Optional artifact ID
+ * @param artifactTitle - Optional artifact title
+ */
+function storeConversationMemories(
+  sessionId: string | null,
+  messages: ChatMessage[],
+  artifactGenerated: boolean = false,
+  artifactId?: string,
+  artifactTitle?: string
+): void {
+  if (!sessionId) {
+    return; // No session, skip memory storage
+  }
+
+  // Fire-and-forget: Extract and store observations asynchronously
+  Promise.resolve().then(async () => {
+    try {
+      // Extract all observations from conversation
+      const observations = ObservationExtractor.extractAllObservations(
+        messages,
+        artifactGenerated,
+        artifactId,
+        artifactTitle
+      );
+
+      if (observations.length === 0) {
+        logger.debug('No observations to store', { sessionId: sessionId.substring(0, 8) + '...' });
+        return;
+      }
+
+      logger.debug('📝 Storing conversation observations', {
+        sessionId: sessionId.substring(0, 8) + '...',
+        observationCount: observations.length,
+        types: observations.map(o => o.entityType)
+      });
+
+      // Store each observation via memory service
+      const memoryService = await sharedResourceManager.getMemoryService();
+      
+      for (const obs of observations) {
+        await memoryService.storeObservation(
+          obs.entityName,
+          obs.entityType,
+          obs.observation,
+          sessionId
+        );
+      }
+
+      logger.info('✅ Conversation memories stored successfully', {
+        sessionId: sessionId.substring(0, 8) + '...',
+        storedCount: observations.length
+      });
+    } catch (error) {
+      // Log but don't throw - memory failures should never crash the app
+      logger.warn('Failed to store conversation memories', {
+        sessionId: sessionId?.substring(0, 8) + '...',
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  }).catch(error => {
+    // Ultimate catch-all to ensure no unhandled promise rejections
+    logger.warn('Unhandled error in memory storage', {
+      error: error instanceof Error ? error.message : String(error)
+    });
+  });
 }
 
 /**
@@ -770,6 +845,10 @@ async function noahStreamingChatHandler(req: NextRequest, context: LoggingContex
               'noah'
             );
           }
+
+          // 🧠 Store conversation memories (fire-and-forget)
+          const updatedMessages = [...messages, { role: 'assistant' as const, content: completion.text }];
+          storeConversationMemories(conversationState.sessionId, updatedMessages, false);
         }
       }).toTextStreamResponse();
     }
@@ -863,6 +942,10 @@ async function noahStreamingChatHandler(req: NextRequest, context: LoggingContex
               context.sessionId,
               conversationState
             ).catch(error => logger.warn('Artifact processing failed', { error }));
+
+            // 🧠 Store conversation memories (fire-and-forget)
+            const updatedMessages = [...messages, { role: 'assistant' as const, content: completion.text }];
+            storeConversationMemories(conversationState.sessionId, updatedMessages, false);
           }
         }).toTextStreamResponse();
       }
@@ -901,6 +984,10 @@ async function noahStreamingChatHandler(req: NextRequest, context: LoggingContex
               agentUsed
             );
           }
+
+          // 🧠 Store conversation memories (fire-and-forget)
+          const updatedMessages = [...messages, { role: 'assistant' as const, content: completion.text }];
+          storeConversationMemories(conversationState.sessionId, updatedMessages, false);
         }
       }).toTextStreamResponse();
     }
@@ -933,6 +1020,16 @@ async function noahStreamingChatHandler(req: NextRequest, context: LoggingContex
       streamingLastMessage,
       context.sessionId,
       conversationState
+    );
+
+    // 🧠 Store conversation memories (fire-and-forget)
+    const updatedMessages = [...messages, { role: 'assistant' as const, content: responseContent }];
+    storeConversationMemories(
+      conversationState.sessionId,
+      updatedMessages,
+      parsed.hasArtifact,
+      parsed.hasArtifact ? `artifact_${Date.now()}` : undefined,
+      parsed.title
     );
 
     let finalContent = responseContent;

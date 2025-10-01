@@ -1,0 +1,71 @@
+Objective: Store observations after conversations (fire-and-forget)
+Implement async memory updates that store conversation observations without blocking responses.
+
+CONTEXT:
+
+- Memory writes should be asynchronous (don't slow down responses)
+- Extract observations from completed conversations
+- Update entity confidence scores based on user behavior
+- Memory service from Prompt 1 already has storeObservation() method
+
+REQUIREMENTS:
+
+1. Update src/app/api/chat/route.ts:
+   - After streamText() response completes
+   - Extract observations asynchronously (don't await)
+   - Fire-and-forget pattern using .then() or void promises
+
+2. Observation extraction logic:
+   - conversation_theme: Extract topic from last 3 user messages
+   - tool_result: Store if artifact was generated
+   - challenge_event: Detect if user pushed back/questioned
+   - trust_signal: Detect explicit positive/negative feedback
+   - user_preference: Update if user expresses communication style
+
+3. Implementation pattern:
+
+```typescript
+   // After response streaming completes
+   result.finishPromise.then(async () => {
+     // Extract topic
+     const topic = extractTopicFromMessages(messages);
+     if (topic) {
+       await memoryService.storeObservation(
+         `theme_${Date.now()}`,
+         'conversation_theme',
+         `Discussed: ${topic}`,
+         sessionId
+       );
+     }
+     
+     // Store tool result if created
+     if (artifactGenerated) {
+       await memoryService.storeObservation(
+         `tool_${artifactId}`,
+         'tool_result',
+         `Created: ${artifactTitle}`,
+         sessionId
+       );
+     }
+   }).catch(err => {
+     logger.warn('Memory update failed', { error: err });
+   });
+
+4.	Helper functions:
+o	extractTopicFromMessages(messages): string
+o	detectChallengeEvent(messages): boolean
+o	detectTrustSignal(messages): 'positive' | 'negative' | null
+5.	Testing:
+o	Verify observations stored asynchronously
+o	Confirm no performance impact on response time
+o	Test error handling (memory write failures don't crash)
+
+CRITICAL:
+•	Never block response streaming
+•	Handle errors gracefully (log but don't throw)
+•	Don't store sensitive data (passwords, keys, etc.)
+
+DELIVERABLES:
+•	Updated src/app/api/chat/route.ts with async memory updates
+•	Helper functions for observation extraction
+•	Error handling and logging
