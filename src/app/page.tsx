@@ -836,15 +836,35 @@ export default function TrustRecoveryProtocol() {
                     <p className="text-sm font-semibold text-white mb-1">{sessionArtifacts[sessionArtifacts.length - 1].title}</p>
                     <p className="text-xs text-purple-100">{sessionArtifacts[sessionArtifacts.length - 1].agent}</p>
                   </div>
-                  <div className="relative w-full bg-white rounded-lg overflow-hidden shadow-lg" style={{ minHeight: '200px' }}>
-                    <iframe
-                      srcDoc={sessionArtifacts[sessionArtifacts.length - 1].content}
-                      className="w-full h-full"
-                      style={{ minHeight: '200px', border: 'none' }}
-                      sandbox="allow-scripts"
-                      title="Data Visualizer Preview"
-                    />
-                  </div>
+                  {(() => {
+                    const content = sessionArtifacts[sessionArtifacts.length - 1].content;
+                    const isHTML = content.trim().toLowerCase().startsWith('<!doctype html') || 
+                                   content.trim().toLowerCase().startsWith('<html') ||
+                                   (content.includes('<script') && content.includes('</script>'));
+                    
+                    if (isHTML) {
+                      return (
+                        <div className="relative w-full bg-white rounded-lg overflow-hidden shadow-lg" style={{ minHeight: '200px' }}>
+                          <iframe
+                            srcDoc={content}
+                            className="w-full h-full"
+                            style={{ minHeight: '200px', border: 'none' }}
+                            sandbox="allow-scripts"
+                            title="Data Visualizer Preview"
+                          />
+                        </div>
+                      );
+                    } else {
+                      return (
+                        <div className="relative w-full bg-slate-900 rounded-lg overflow-hidden shadow-lg p-4" style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                          <pre className="text-xs text-green-400 font-mono whitespace-pre-wrap">
+                            {content.substring(0, 500)}
+                            {content.length > 500 && '\n\n...'}
+                          </pre>
+                        </div>
+                      );
+                    }
+                  })()}
                   <button
                     onClick={() => {
                       const latest = sessionArtifacts[sessionArtifacts.length - 1];
