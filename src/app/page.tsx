@@ -832,99 +832,10 @@ export default function TrustRecoveryProtocol() {
                     <p className="text-xs font-medium text-slate-600">Most Recent Output</p>
                     <span className="text-xs font-bold text-purple-600">#{sessionArtifacts.length}</span>
                   </div>
-                  <div className="bg-gradient-to-br from-purple-500 to-indigo-500 rounded-lg p-3">
+                  <div className="bg-gradient-to-br from-purple-500 to-indigo-500 rounded-lg p-3 mb-3">
                     <p className="text-sm font-semibold text-white mb-1">{sessionArtifacts[sessionArtifacts.length - 1].title}</p>
                     <p className="text-xs text-purple-100">{sessionArtifacts[sessionArtifacts.length - 1].agent}</p>
                   </div>
-                  {(() => {
-                    const latest = sessionArtifacts[sessionArtifacts.length - 1];
-                    const content = latest.content;
-                    const trimmedContent = content.trim();
-                    const lowerContent = trimmedContent.toLowerCase();
-                    
-                    // Don't show preview for validators or certain tools
-                    const isValidator = latest.title.toLowerCase().includes('validator');
-                    
-                    if (isValidator) {
-                      return null; // No preview for validators
-                    }
-                    
-                    // Check if it's already HTML
-                    const isHTML = lowerContent.startsWith('<!doctype html') || 
-                                   lowerContent.startsWith('<html') ||
-                                   (content.includes('<script') && content.includes('</script>') && content.includes('<'));
-                    
-                    // Check if it's standalone CSS
-                    const isCSS = (lowerContent.includes('{') && lowerContent.includes('}') && 
-                                   (lowerContent.includes(':') || lowerContent.includes('/*'))) &&
-                                  !lowerContent.includes('<html') && !lowerContent.includes('<!doctype');
-                    
-                    // Check if it's standalone JavaScript
-                    const isJS = (lowerContent.includes('function') || lowerContent.includes('=>') || 
-                                  lowerContent.includes('const') || lowerContent.includes('let') || 
-                                  lowerContent.includes('var') || lowerContent.includes('console.log')) &&
-                                 !lowerContent.includes('<html') && !lowerContent.includes('<!doctype');
-                    
-                    let renderContent = content;
-                    
-                    // Wrap CSS with demo HTML
-                    if (isCSS && !isHTML) {
-                      renderContent = `<!DOCTYPE html>
-<html><head><style>${content}</style></head>
-<body style="margin:20px;font-family:system-ui;">
-<h1>Heading 1</h1><h2>Heading 2</h2><h3>Heading 3</h3>
-<p>This is a paragraph with <a href="#">a link</a> and <strong>bold text</strong>.</p>
-<button>Button</button>
-<div class="demo-box" style="margin-top:10px;padding:10px;border:1px solid #ccc;">Demo Box</div>
-</body></html>`;
-                    }
-                    
-                    // Wrap JavaScript with demo HTML
-                    if (isJS && !isHTML && !isCSS) {
-                      renderContent = `<!DOCTYPE html>
-<html><head></head>
-<body style="margin:20px;font-family:system-ui;">
-<div id="output" style="padding:10px;background:#f0f0f0;border-radius:8px;min-height:100px;"></div>
-<script>
-// Capture console.log output
-const outputDiv = document.getElementById('output');
-const originalLog = console.log;
-console.log = function(...args) {
-  outputDiv.innerHTML += args.join(' ') + '<br>';
-  originalLog.apply(console, args);
-};
-
-// User code
-${content}
-</script>
-</body></html>`;
-                    }
-                    
-                    // If it can be rendered in iframe (HTML, CSS, or JS)
-                    if (isHTML || isCSS || isJS) {
-                      return (
-                        <div className="relative w-full bg-white rounded-lg overflow-hidden shadow-lg" style={{ minHeight: '200px' }}>
-                          <iframe
-                            srcDoc={renderContent}
-                            className="w-full h-full"
-                            style={{ minHeight: '200px', border: 'none' }}
-                            sandbox="allow-scripts"
-                            title="Data Visualizer Preview"
-                          />
-                        </div>
-                      );
-                    } else {
-                      // Show as syntax-highlighted code for other languages
-                      return (
-                        <div className="relative w-full bg-slate-900 rounded-lg overflow-hidden shadow-lg p-4" style={{ maxHeight: '200px', overflowY: 'auto' }}>
-                          <pre className="text-xs text-green-400 font-mono whitespace-pre-wrap">
-                            {content.substring(0, 500)}
-                            {content.length > 500 && '\n\n...'}
-                          </pre>
-                        </div>
-                      );
-                    }
-                  })()}
                   <button
                     onClick={() => {
                       const latest = sessionArtifacts[sessionArtifacts.length - 1];
