@@ -214,22 +214,38 @@ function storeConversationMemories(
         types: observations.map(o => o.entityType)
       });
 
-      // Store each observation via memory service
-      const memoryService = await sharedResourceManager.getMemoryService();
+      // Store each observation via MCP memory service (resilient per-observation error handling)
+      const { mcpMemoryService } = await import('@/lib/memory/mcp-memory-service');
       
+      let successCount = 0;
+      let failureCount = 0;
+
       for (const obs of observations) {
-        await memoryService.storeObservation(
-          obs.entityName,
-          obs.entityType,
-          obs.observation,
-          sessionId
-        );
+        try {
+          await mcpMemoryService.storeObservation(
+            sessionId,
+            obs.entityName,
+            obs.entityType,
+            obs.observation
+          );
+          successCount++;
+        } catch (obsError) {
+          failureCount++;
+          logger.debug('Failed to store individual observation', {
+            entityType: obs.entityType,
+            error: obsError instanceof Error ? obsError.message : String(obsError)
+          });
+        }
       }
 
-      logger.info('✅ Conversation memories stored successfully', {
-        sessionId: sessionId.substring(0, 8) + '...',
-        storedCount: observations.length
-      });
+      if (successCount > 0) {
+        logger.info('✅ Conversation memories stored', {
+          sessionId: sessionId.substring(0, 8) + '...',
+          successCount,
+          failureCount,
+          totalAttempted: observations.length
+        });
+      }
     } catch (error) {
       // Log but don't throw - memory failures should never crash the app
       logger.warn('Failed to store conversation memories', {
