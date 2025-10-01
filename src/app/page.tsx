@@ -837,9 +837,17 @@ export default function TrustRecoveryProtocol() {
                     <p className="text-xs text-purple-100">{sessionArtifacts[sessionArtifacts.length - 1].agent}</p>
                   </div>
                   {(() => {
-                    const content = sessionArtifacts[sessionArtifacts.length - 1].content;
+                    const latest = sessionArtifacts[sessionArtifacts.length - 1];
+                    const content = latest.content;
                     const trimmedContent = content.trim();
                     const lowerContent = trimmedContent.toLowerCase();
+                    
+                    // Don't show preview for validators or certain tools
+                    const isValidator = latest.title.toLowerCase().includes('validator');
+                    
+                    if (isValidator) {
+                      return null; // No preview for validators
+                    }
                     
                     // Check if it's already HTML
                     const isHTML = lowerContent.startsWith('<!doctype html') || 
