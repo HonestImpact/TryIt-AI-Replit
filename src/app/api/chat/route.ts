@@ -974,50 +974,52 @@ async function noahStreamingChatHandler(req: NextRequest, context: LoggingContex
           });
         }
 
-        // Propose file save operation
-        try {
-          const filesystemStatus = mcpFilesystemService.getStatus();
-          if (filesystemStatus.available && context.sessionId) {
-            const fileType = FileNamingStrategy.determineFileType(toolResult.title, toolResult.content);
-            const filePath = FileNamingStrategy.generateFilePath({
-              title: toolResult.title,
-              category: 'tool',
-              fileType,
-              timestamp
-            });
-
-            const fileOperation: FileOperation = {
-              type: 'save_artifact',
-              path: filePath,
-              content: toolResult.content,
-              metadata: {
-                agent: 'noah',
-                timestamp,
-                sessionId: context.sessionId,
-                artifactId,
-                description: `Save ${toolResult.title}`,
-                fileSize: new TextEncoder().encode(toolResult.content).length,
+        // Propose file save operation (fire-and-forget for <100ms performance)
+        Promise.resolve().then(async () => {
+          try {
+            const filesystemStatus = mcpFilesystemService.getStatus();
+            if (filesystemStatus.available && context.sessionId) {
+              const fileType = FileNamingStrategy.determineFileType(toolResult.title, toolResult.content);
+              const filePath = FileNamingStrategy.generateFilePath({
+                title: toolResult.title,
+                category: 'tool',
                 fileType,
-                category: 'tool'
-              },
-              status: 'pending',
-              userApprovalRequired: true
-            };
+                timestamp
+              });
 
-            mcpFilesystemService.proposeFileOperation(fileOperation);
-            logger.info('📋 File save operation proposed for fast-path tool', {
-              toolName: boutiqueIntent.toolName,
-              title: toolResult.title,
-              filePath
+              const fileOperation: FileOperation = {
+                type: 'save_artifact',
+                path: filePath,
+                content: toolResult.content,
+                metadata: {
+                  agent: 'noah',
+                  timestamp,
+                  sessionId: context.sessionId,
+                  artifactId,
+                  description: `Save ${toolResult.title}`,
+                  fileSize: new TextEncoder().encode(toolResult.content).length,
+                  fileType,
+                  category: 'tool'
+                },
+                status: 'pending',
+                userApprovalRequired: true
+              };
+
+              mcpFilesystemService.proposeFileOperation(fileOperation);
+              logger.info('📋 File save operation proposed for fast-path tool', {
+                toolName: boutiqueIntent.toolName,
+                title: toolResult.title,
+                filePath
+              });
+            }
+          } catch (error) {
+            logger.warn('Failed to propose file operation for fast-path tool', {
+              error: error instanceof Error ? error.message : String(error)
             });
           }
-        } catch (error) {
-          logger.warn('Failed to propose file operation for fast-path tool', {
-            error: error instanceof Error ? error.message : String(error)
-          });
-        }
+        }).catch(error => logger.error('File operation promise rejected', { error }));
 
-        // Store tool result in memory
+        // Store tool result in memory (fire-and-forget)
         const updatedMessages = [...messages, {
           role: 'assistant' as const,
           content: `I've created a ${toolResult.title} for you! It's ready to use right now.`
