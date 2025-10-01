@@ -681,6 +681,21 @@ export default function TrustRecoveryProtocol() {
                 </form>
               </div>
             </div>
+
+            {/* Introduction Video */}
+            <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-6">
+              <h3 className="font-semibold text-slate-900 mb-4">Introduction Video</h3>
+              <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+                <iframe 
+                  className="absolute top-0 left-0 w-full h-full rounded-lg shadow-md"
+                  src="https://www.youtube.com/embed/0cNj_QXbkks"
+                  title="Introduction Video"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                />
+              </div>
+            </div>
           </div>
 
           {/* Right Sidebar - 1/3 width */}
@@ -838,21 +853,6 @@ export default function TrustRecoveryProtocol() {
               <h3 className="font-semibold text-slate-500 mb-2">Quick Tips</h3>
               <p className="text-xs text-slate-400">Coming Soon</p>
             </div>
-          </div>
-        </div>
-
-        {/* Video Section at Bottom */}
-        <div className="mt-8 bg-white/70 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-6">
-          <h3 className="font-semibold text-slate-900 mb-4">Introduction Video</h3>
-          <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
-            <iframe 
-              className="absolute top-0 left-0 w-full h-full rounded-lg shadow-md"
-              src="https://www.youtube.com/embed/0cNj_QXbkks"
-              title="Introduction Video"
-              frameBorder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              allowFullScreen
-            />
           </div>
         </div>
       </div>
