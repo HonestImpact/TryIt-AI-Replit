@@ -1,0 +1,104 @@
+Objective: Direct tool functions using AI SDK tool calling
+
+Implement boutique creative tools as first-class Noah capabilities using AI SDK's native tool calling.
+
+CONTEXT:
+•	Use Direct Agent Tools, not RAG
+•	Tools are pre-built templates invoked instantly
+•	AI SDK's tool() function handles invocation
+•	Tools should feel like Noah's superpowers
+
+REQUIREMENTS:
+1.	Create src/lib/tools/boutique-tools.ts:
+o	Define tools using AI SDK tool() function
+o	Each tool has: description, parameters (zod schema), execute function
+o	Execute returns pre-built HTML from template library
+o	Start with 3 tools: scientific_calculator, pomodoro_timer, unit_converter
+2.	Tool definition pattern:
+
+import { tool } from 'ai';
+   import { z } from 'zod';
+   import { BOUTIQUE_TEMPLATES } from './boutique-templates';
+   
+   export const boutiqueTools = {
+     scientific_calculator: tool({
+       description: 'Instantly creates a scientific calculator with trigonometric functions',
+       parameters: z.object({
+         theme: z.enum(['light', 'dark']).optional(),
+         features: z.array(z.string()).optional()
+       }),
+       execute: async ({ theme, features }) => ({
+         title: 'Scientific Calculator',
+         content: BOUTIQUE_TEMPLATES.scientificCalculator(theme, features)
+       })
+     }),
+     
+     pomodoro_timer: tool({
+       description: 'Creates a Pomodoro timer with work/break intervals',
+       parameters: z.object({
+         workMinutes: z.number().default(25),
+         breakMinutes: z.number().default(5)
+       }),
+       execute: async ({ workMinutes, breakMinutes }) => ({
+         title: 'Pomodoro Timer',
+         content: BOUTIQUE_TEMPLATES.pomodoroTimer(workMinutes, breakMinutes)
+       })
+     }),
+     
+     unit_converter: tool({
+       description: 'Creates a unit converter for length, weight, temperature, etc.',
+       parameters: z.object({
+         categories: z.array(z.string()).optional()
+       }),
+       execute: async ({ categories }) => ({
+         title: 'Unit Converter',
+         content: BOUTIQUE_TEMPLATES.unitConverter(categories)
+       })
+     })
+   };
+
+3.	Create src/lib/tools/boutique-templates.ts:
+•	Pre-built HTML templates for each tool
+•	Parameterized (accept theme, features, etc.)
+•	Self-contained (HTML + CSS + JS in one file)
+•	Include save/load state functionality via postMessage
+
+4.	Integration into src/app/api/chat/route.ts:
+•	Import boutiqueTools
+•	Add to streamText() configuration:
+
+
+return streamText({
+       model,
+       messages,
+       tools: boutiqueTools,  // Enable tool calling
+       maxSteps: 5,           // Allow multi-step tool use
+       onFinish: async (result) => {
+         // Handle tool results
+         if (result.toolResults.length > 0) {
+           // Store in memory + propose file save
+         }
+       }
+     });
+
+5.	Tool result handling:
+o	When tool invoked, create artifact automatically
+o	Propose file save operation (via Filesystem MCP)
+o	Store tool result in memory (for continuity)
+
+6.	Testing:
+o	Verify tools invoke in <100ms
+o	Test parameter validation (zod schemas)
+o	Confirm artifacts created correctly
+o	Test file save integration
+CRITICAL:
+•	Tools must be instant (<100ms response)
+•	Pre-built templates, not generated code
+•	Noah should feel like he "has" these tools
+•	Streaming still works during tool execution
+
+DELIVERABLES:
+•	src/lib/tools/boutique-tools.ts (new file)
+•	src/lib/tools/boutique-templates.ts (new file)
+•	Updated src/app/api/chat/route.ts with tool integration
+•	3 working tools ready to use
