@@ -832,34 +832,31 @@ export default function TrustRecoveryProtocol() {
                     <p className="text-xs font-medium text-slate-600">Most Recent Output</p>
                     <span className="text-xs font-bold text-purple-600">#{sessionArtifacts.length}</span>
                   </div>
+                  <div className="bg-gradient-to-br from-purple-500 to-indigo-500 rounded-lg p-3">
+                    <p className="text-sm font-semibold text-white mb-1">{sessionArtifacts[sessionArtifacts.length - 1].title}</p>
+                    <p className="text-xs text-purple-100">{sessionArtifacts[sessionArtifacts.length - 1].agent}</p>
+                  </div>
+                  <div className="relative w-full bg-white rounded-lg overflow-hidden shadow-lg" style={{ minHeight: '200px' }}>
+                    <iframe
+                      srcDoc={sessionArtifacts[sessionArtifacts.length - 1].content}
+                      className="w-full h-full"
+                      style={{ minHeight: '200px', border: 'none' }}
+                      sandbox="allow-scripts"
+                      title="Data Visualizer Preview"
+                    />
+                  </div>
                   <button
                     onClick={() => {
                       const latest = sessionArtifacts[sessionArtifacts.length - 1];
                       setViewingArtifact({ title: latest.title, content: latest.content });
                     }}
-                    className="w-full text-left transition-all duration-200 hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-purple-400 rounded-lg"
+                    className="w-full bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white rounded-lg px-4 py-2 text-xs font-medium transition-colors flex items-center justify-center gap-2"
                   >
-                    <div className="bg-gradient-to-br from-purple-500 to-indigo-500 rounded-lg p-3 hover:from-purple-600 hover:to-indigo-600 transition-colors">
-                      <p className="text-sm font-semibold text-white mb-1">{sessionArtifacts[sessionArtifacts.length - 1].title}</p>
-                      <p className="text-xs text-purple-100">{sessionArtifacts[sessionArtifacts.length - 1].agent}</p>
-                    </div>
-                    <div className="bg-slate-900 rounded-lg p-3 mt-2 max-h-32 overflow-hidden cursor-pointer hover:bg-slate-800 transition-colors relative">
-                      <pre className="text-xs text-green-400 font-mono whitespace-pre-wrap">
-                        {sessionArtifacts[sessionArtifacts.length - 1].content.substring(0, 300)}
-                        {sessionArtifacts[sessionArtifacts.length - 1].content.length > 300 ? '...' : ''}
-                      </pre>
-                      {sessionArtifacts[sessionArtifacts.length - 1].content.length > 300 && (
-                        <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-slate-900 to-transparent flex items-end justify-center pb-2">
-                          <span className="text-xs text-purple-300 font-medium flex items-center gap-1">
-                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                              <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-                              <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
-                            </svg>
-                            Click to view full content
-                          </span>
-                        </div>
-                      )}
-                    </div>
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                      <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                    </svg>
+                    Open Full View
                   </button>
                 </div>
               ) : (
