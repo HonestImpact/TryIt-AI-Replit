@@ -8,6 +8,15 @@ The application implements a sophisticated Retrieval-Augmented Generation (RAG) 
 
 ## Recent Changes
 
+### Memory MCP Integration (October 2025)
+- **Cross-Session Memory**: Integrated official @modelcontextprotocol/server-memory package for persistent memory across conversations
+- **MCP SDK Client**: Implemented proper MCP SDK client using StdioClientTransport for reliable communication with memory server
+- **Knowledge Graph Storage**: Memories stored as entities with observations in local JSON-based knowledge graph
+- **Session-Specific Context**: Per-session memory retrieval with entity types (user_preference, conversation_theme, tool_result, challenge_event, trust_signal)
+- **Graceful Degradation**: Service operates with fallback behavior if memory server unavailable
+- **Shared Resources Integration**: Memory service initialized once, session context retrieved per-request
+- **Storage Location**: Memories persisted in ./noah-memory-data/memory.json (configurable via MEMORY_FILE_PATH environment variable)
+
 ### Adaptive Narrative Structure Implementation (September 2025)
 - **Complete UI Transformation**: Restructured entire interface to match Adaptive Narrative demo's story-driven layout and visual design
 - **Header Design**: "Our collaboration, your way" tagline, Feedback/Skeptics Welcome icons with tooltips, functional Skeptic Mode toggle
@@ -65,12 +74,14 @@ These frameworks ensure we think strategically, not reactively, preserving Noah'
 - **Agent Orchestration**: Module-level caching and timeout management
 - **Provider Factory**: Dynamic LLM provider selection based on task type
 
-### RAG System
-- **Vector Database**: ChromaDB for persistent vector storage
+### Memory & Knowledge Systems
+- **MCP Memory Service**: Model Context Protocol-based persistent memory using knowledge graph
+- **Memory Storage**: Entity-observation model with session-specific context retrieval
+- **Memory Tools**: create_entities, search_nodes, add_observations for memory management
+- **Vector Database**: ChromaDB for persistent vector storage (stub implementation)
 - **Embeddings**: OpenAI text-embedding-3-small model
-- **Document Processing**: Chunking and metadata handling for knowledge ingestion
-- **Knowledge Service**: Semantic search with relevance scoring
-- **Storage**: Persistent vector data in `/chroma_data` directory
+- **Knowledge Service**: Tool knowledge service via PostgreSQL for design patterns
+- **Storage**: Memory in `./noah-memory-data/`, vectors in `/chroma_data`
 
 ### AI Provider Integration
 - **Primary Provider**: Anthropic Claude models (Sonnet 4, Haiku)
@@ -116,4 +127,11 @@ These frameworks ensure we think strategically, not reactively, preserving Noah'
 - **Model Selection**: LLM, LLM_DEFAULT, LLM_RESEARCH, LLM_DEEPBUILD
 - **Model IDs**: MODEL_ID, LLM_DEFAULT_ID, LLM_RESEARCH_ID, LLM_DEEPBUILD_ID
 - **RAG Configuration**: RAG_ENABLED, CHROMA_URL
+- **Memory Configuration**: MEMORY_FILE_PATH (path to memory.json storage file)
 - **API Keys**: Required for respective AI service providers
+
+### Model Context Protocol (MCP)
+- **Memory Server**: @modelcontextprotocol/server-memory for persistent cross-session memory
+- **MCP SDK**: @modelcontextprotocol/sdk for client-server communication
+- **Transport**: StdioClientTransport for spawning and communicating with memory server
+- **Knowledge Graph**: Entity-relation-observation model for structured memory storage
