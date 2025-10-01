@@ -1,0 +1,60 @@
+Objective: User-visible file operations with approval dialogs
+
+
+Create UI components that make every file operation transparent and controllable.
+CONTEXT:
+•	File operations from Prompt 4 need user-facing UI
+•	Operations appear inline in chat timeline
+•	Real-time banner for active operations
+•	Sidebar showing saved files
+REQUIREMENTS:
+1.	Create src/app/components/FileActivityBanner.tsx:
+o	Fixed position top banner (below header)
+o	Shows currently executing file operations
+o	Animated progress indicators
+o	Success notifications with "Open file" link
+o	Auto-dismiss after 3 seconds
+o	Example UI:
+[💾 Noah wants to save this tool] 
+File: scientific-calculator-v1.html 
+Location: ./noah-tools/calculators/ 
+Size: 2.4 KB 
+[✓ Save] [✏️ Rename] [✗ Dismiss]
+
+2.	Create src/app/components/FileApprovalDialog.tsx:
+o	Modal dialog for file save approval
+o	Shows file details: name, location, size, type
+o	Three actions: Save, Rename, Dismiss
+o	Rename shows input field
+o	Approval triggers executeFileOperation()
+3.	Update Collaboration Progress sidebar:
+o	Add "Files Saved This Session" section
+o	List with icons, names, timestamps
+o	Click to open file
+o	"Export All Files" button at bottom
+4.	Inline timeline integration:
+o	File operations appear as cards in message timeline
+o	Show pending operations with approval UI
+o	Show completed operations with success indicator
+o	Include file metadata (description, size, category)
+5.	FilesystemBridge component (src/app/components/FilesystemBridge.tsx):
+o	Listens for postMessage from tool iframes
+o	Handles NOAH_SAVE_REQUEST and NOAH_LOAD_REQUEST
+o	Creates FileOperation objects
+o	Triggers approval flow
+6.	State management:
+o	pendingFileOperations: FileOperation[]
+o	completedFileOperations: FileOperation[]
+o	savedFiles: { name, path, timestamp, size, type }[]
+CRITICAL:
+•	Every file operation visible before execution
+•	User controls all saves (no auto-save surprises)
+•	Clear visual feedback for all states
+•	Accessible UI (keyboard navigation, ARIA labels)
+DELIVERABLES:
+•	src/app/components/FileActivityBanner.tsx (new file)
+•	src/app/components/FileApprovalDialog.tsx (new file)
+•	src/app/components/FilesystemBridge.tsx (new file)
+•	Updated sidebar with file activity panel
+•	Inline file operation cards in timeline
+
