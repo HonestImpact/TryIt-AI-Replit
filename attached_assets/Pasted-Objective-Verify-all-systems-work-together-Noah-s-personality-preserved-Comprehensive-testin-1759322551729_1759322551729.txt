@@ -1,0 +1,62 @@
+Objective: Verify all systems work together + Noah's personality preserved
+
+
+Comprehensive testing to ensure memory, file system, and boutique tools work together while preserving Noah's personality.
+
+REQUIREMENTS:
+1.	Memory MCP Testing:
+o	Start fresh conversation, make 3 tool requests
+o	Close and restart conversation
+o	Verify Noah references previous tools naturally
+o	Check memory file: ./noah-memory-data/memory.json
+o	Confirm personality unchanged (still conversational, not robotic)
+2.	File System MCP Testing:
+o	Generate artifact, verify save approval dialog appears
+o	Approve save, check file created in noah-tools/
+o	Verify file naming: category/name-YYYY-MM-DD.ext
+o	Test rename functionality
+o	Test dismiss (file not saved)
+o	Verify files appear in sidebar "Files Saved This Session"
+3.	Boutique Tools Testing:
+o	Invoke each tool: "Make me a scientific calculator"
+o	Verify tool appears in < 100ms
+o	Test tool functionality (calculator works, timer works, etc.)
+o	Verify save state via postMessage
+o	Test reload state
+4.	Integration Testing:
+o	Create assumption-breaker tool
+o	Save it via File MCP
+o	Close conversation
+o	Start new conversation
+o	Verify Memory MCP remembers tool creation
+o	Noah says: "Want to revisit that assumption-breaker from last time?"
+5.	Personality Preservation Tests:
+o	Challenge Noah on a tool recommendation
+o	Verify he responds with curiosity, not defensiveness
+o	Ask Noah about limitations
+o	Verify he's transparent, not evasive
+o	Test skeptic mode
+o	Verify safety protocols still active
+6.	Performance Testing:
+o	Measure tool invocation time (should be < 100ms)
+o	Measure memory retrieval time (should be < 50ms)
+o	Verify streaming not blocked by any operations
+o	Test with memory service down (graceful degradation)
+7.	Error Handling:
+o	Kill MCP memory server manually
+o	Verify Noah still works (no memory context)
+o	Kill MCP filesystem server
+o	Verify file operations fail gracefully
+o	Test with invalid tool parameters
+8.	User Experience Testing:
+o	Full conversation flow: greeting → tool request → tool appears → save file → continue conversation → reference previous work
+o	Verify transparency (user knows what's happening)
+o	Verify control (user approves all saves)
+o	Verify continuity (memory enriches conversation)
+DELIVERABLES:
+•	Test report documenting all scenarios
+•	Performance metrics (response times)
+•	Screenshots of key UI states
+•	List of any issues found
+•	Verification that Noah's personality preserved
+•	Sign-off that system ready for user testing with skeptics
