@@ -134,25 +134,26 @@ export const sharedResourceManager = {
       //   });
       // }
 
-      // Initialize MCP Filesystem Service (background initialization)
+      // Initialize MCP Filesystem Service (asynchronous, non-blocking)
       let filesystemServiceAvailable = false;
-      try {
-        await mcpFilesystemService.initialize();
-        const status = mcpFilesystemService.getStatus();
-        filesystemServiceAvailable = status.available;
-        
-        if (filesystemServiceAvailable) {
-          logger.info('✅ MCP Filesystem Service initialized successfully', {
-            allowedDirs: status.allowedDirectories.length
+      
+      // Start filesystem initialization in background (don't await to avoid blocking)
+      mcpFilesystemService.initialize()
+        .then(() => {
+          const status = mcpFilesystemService.getStatus();
+          if (status.available) {
+            logger.info('✅ MCP Filesystem Service initialized successfully', {
+              allowedDirs: status.allowedDirectories.length
+            });
+          } else {
+            logger.info('⚠️ Filesystem service unavailable, file operations disabled');
+          }
+        })
+        .catch((error) => {
+          logger.warn('Filesystem service initialization failed, file operations disabled', {
+            error: error instanceof Error ? error.message : String(error)
           });
-        } else {
-          logger.info('⚠️ Filesystem service unavailable, file operations disabled');
-        }
-      } catch (error) {
-        logger.warn('Filesystem service initialization failed, proceeding without file operations', {
-          error: error instanceof Error ? error.message : String(error)
         });
-      }
 
       const resources: AgentSharedResources = {
         knowledgeService,

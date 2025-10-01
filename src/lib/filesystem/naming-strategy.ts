@@ -111,13 +111,24 @@ export class FileNamingStrategy {
   
   /**
    * Validate file path is within allowed directories
+   * Prevents path traversal attacks by checking relative path doesn't escape
    */
   static isPathAllowed(filePath: string, allowedDirs: string[]): boolean {
-    const normalizedPath = path.normalize(filePath);
+    const absolutePath = path.resolve(filePath);
     
     return allowedDirs.some(allowedDir => {
-      const normalizedAllowed = path.normalize(allowedDir);
-      return normalizedPath.startsWith(normalizedAllowed);
+      const resolvedAllowedDir = path.resolve(allowedDir);
+      
+      // Ensure path is within allowed directory
+      const relativePath = path.relative(resolvedAllowedDir, absolutePath);
+      
+      // Path is allowed if:
+      // 1. It doesn't start with '..' (not escaping upward)
+      // 2. It's not an absolute path (not escaping completely)
+      // 3. It actually starts within the allowed directory
+      return !relativePath.startsWith('..') && 
+             !path.isAbsolute(relativePath) &&
+             absolutePath.startsWith(resolvedAllowedDir + path.sep);
     });
   }
   

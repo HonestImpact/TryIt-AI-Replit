@@ -18,10 +18,9 @@ export class MCPFilesystemService {
   private pendingOperations = new Map<string, FileOperation>();
 
   private constructor() {
-    // Initialize allowed directories
+    // Initialize allowed directories - ONLY Noah-specific directories, NOT entire project
     const projectRoot = process.cwd();
     this.allowedDirectories = [
-      projectRoot,
       path.join(projectRoot, 'noah-tools'),
       path.join(projectRoot, 'noah-thinking'),
       path.join(projectRoot, 'noah-sessions'),
