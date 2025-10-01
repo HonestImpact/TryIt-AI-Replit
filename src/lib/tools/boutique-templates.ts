@@ -2042,5 +2042,942 @@ export const BOUTIQUE_TEMPLATES = {
   </script>
 </body>
 </html>`;
+  },
+
+  /**
+   * Energy Archaeology - track energy patterns throughout the day
+   * Creates personal energy map to optimize schedule
+   */
+  energyArchaeology(): string {
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Energy Archaeology - Your Personal Energy Map</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      color: #eee;
+      padding: 20px;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+    
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    
+    header {
+      text-align: center;
+      margin-bottom: 32px;
+      padding-bottom: 20px;
+      border-bottom: 2px solid #0f3460;
+    }
+    
+    h1 {
+      font-size: 2.5em;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .subtitle {
+      color: #888;
+      font-size: 1.1em;
+    }
+    
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+    
+    .card {
+      background: #16213e;
+      padding: 24px;
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+    
+    .card h2 {
+      margin-bottom: 16px;
+      font-size: 1.5em;
+      color: #667eea;
+    }
+    
+    .log-section {
+      grid-column: 1;
+    }
+    
+    .chart-section {
+      grid-column: 2;
+    }
+    
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #aaa;
+      font-size: 0.9em;
+    }
+    
+    input[type="text"] {
+      width: 100%;
+      padding: 12px;
+      font-size: 1em;
+      border: 2px solid #0f3460;
+      border-radius: 8px;
+      background: #1a1a2e;
+      color: #eee;
+      font-family: inherit;
+    }
+    
+    .energy-slider-container {
+      margin: 20px 0;
+    }
+    
+    .energy-value {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    
+    .energy-number {
+      font-size: 2.5em;
+      font-weight: 700;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .energy-label {
+      font-size: 0.9em;
+      color: #888;
+      font-style: italic;
+    }
+    
+    input[type="range"] {
+      width: 100%;
+      height: 8px;
+      border-radius: 4px;
+      background: linear-gradient(to right, #e74c3c 0%, #f39c12 25%, #f1c40f 50%, #2ecc71 75%, #27ae60 100%);
+      outline: none;
+      -webkit-appearance: none;
+    }
+    
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: white;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    
+    input[type="range"]::-moz-range-thumb {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: white;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      border: none;
+    }
+    
+    .category-buttons {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    
+    .category-btn {
+      padding: 12px 16px;
+      font-size: 0.95em;
+      border: 2px solid #0f3460;
+      border-radius: 8px;
+      background: #1a1a2e;
+      color: #eee;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-weight: 600;
+    }
+    
+    .category-btn.active {
+      border-color: #667eea;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    
+    .category-btn:hover {
+      background: #0f3460;
+    }
+    
+    .btn-log {
+      width: 100%;
+      padding: 16px;
+      font-size: 1.1em;
+      border: none;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+      color: white;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+    
+    .btn-log:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+    }
+    
+    .btn-log:active {
+      transform: translateY(0);
+    }
+    
+    .btn-secondary {
+      width: 100%;
+      padding: 12px;
+      font-size: 0.95em;
+      border: 2px solid #0f3460;
+      border-radius: 8px;
+      background: transparent;
+      color: #eee;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    
+    .btn-secondary:hover {
+      background: #0f3460;
+    }
+    
+    .chart-container {
+      position: relative;
+      height: 300px;
+      margin-bottom: 24px;
+    }
+    
+    .insights-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-top: 24px;
+    }
+    
+    .insight-card {
+      background: linear-gradient(135deg, #0f3460 0%, #1a1a2e 100%);
+      padding: 16px;
+      border-radius: 12px;
+      border-left: 4px solid #667eea;
+    }
+    
+    .insight-label {
+      font-size: 0.85em;
+      color: #888;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    .insight-value {
+      font-size: 1.3em;
+      font-weight: 700;
+      color: #667eea;
+    }
+    
+    .insight-detail {
+      font-size: 0.9em;
+      color: #aaa;
+      margin-top: 4px;
+    }
+    
+    .entries-list {
+      max-height: 300px;
+      overflow-y: auto;
+      margin-top: 16px;
+    }
+    
+    .entry-item {
+      background: #1a1a2e;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      border-left: 3px solid #667eea;
+    }
+    
+    .entry-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+    
+    .entry-time {
+      font-size: 0.85em;
+      color: #888;
+    }
+    
+    .entry-energy {
+      font-weight: 700;
+      font-size: 1.1em;
+    }
+    
+    .entry-activity {
+      font-size: 0.95em;
+      margin-bottom: 4px;
+    }
+    
+    .entry-category {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.8em;
+      font-weight: 600;
+      text-transform: capitalize;
+    }
+    
+    .category-creative { background: #9b59b6; color: white; }
+    .category-social { background: #3498db; color: white; }
+    .category-analytical { background: #e67e22; color: white; }
+    .category-physical { background: #27ae60; color: white; }
+    .category-rest { background: #95a5a6; color: white; }
+    
+    .no-data {
+      text-align: center;
+      padding: 40px;
+      color: #666;
+      font-style: italic;
+    }
+    
+    .stats-row {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    
+    .stat-box {
+      flex: 1;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 16px;
+      border-radius: 12px;
+      text-align: center;
+    }
+    
+    .stat-label {
+      font-size: 0.85em;
+      color: rgba(255,255,255,0.8);
+      margin-bottom: 4px;
+    }
+    
+    .stat-value {
+      font-size: 2em;
+      font-weight: 700;
+      color: white;
+    }
+    
+    @media (max-width: 968px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+      .log-section, .chart-section {
+        grid-column: 1;
+      }
+      .category-buttons {
+        grid-template-columns: 1fr;
+      }
+      .stats-row {
+        flex-direction: column;
+      }
+    }
+    
+    .timestamp {
+      font-size: 0.8em;
+      color: #666;
+      margin-top: 16px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>⚡ Energy Archaeology</h1>
+      <p class="subtitle">Map your energy patterns and optimize your day</p>
+    </header>
+    
+    <div class="stats-row">
+      <div class="stat-box">
+        <div class="stat-label">Total Entries</div>
+        <div class="stat-value" id="totalEntries">0</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Average Energy</div>
+        <div class="stat-value" id="avgEnergy">-</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Days Tracked</div>
+        <div class="stat-value" id="daysTracked">0</div>
+      </div>
+    </div>
+    
+    <div class="grid">
+      <div class="log-section">
+        <div class="card">
+          <h2>Log Entry</h2>
+          
+          <div class="form-group">
+            <label>What are you doing?</label>
+            <input type="text" id="activityInput" placeholder="e.g., Writing code, Meeting with team, Reading..." />
+          </div>
+          
+          <div class="form-group">
+            <label>Category</label>
+            <div class="category-buttons">
+              <button class="category-btn" data-category="creative" onclick="selectCategory('creative')">🎨 Creative</button>
+              <button class="category-btn" data-category="social" onclick="selectCategory('social')">👥 Social</button>
+              <button class="category-btn" data-category="analytical" onclick="selectCategory('analytical')">🧠 Analytical</button>
+              <button class="category-btn" data-category="physical" onclick="selectCategory('physical')">💪 Physical</button>
+              <button class="category-btn" data-category="rest" onclick="selectCategory('rest')">😴 Rest</button>
+            </div>
+          </div>
+          
+          <div class="energy-slider-container">
+            <label>Energy Level</label>
+            <div class="energy-value">
+              <span class="energy-number" id="energyDisplay">5</span>
+              <span class="energy-label" id="energyLabel">Moderate</span>
+            </div>
+            <input type="range" id="energySlider" min="1" max="10" value="5" oninput="updateEnergyDisplay()" />
+          </div>
+          
+          <button class="btn-log" onclick="logEntry()">⚡ Log Entry</button>
+          <button class="btn-secondary" onclick="saveData()">💾 Save Data</button>
+          <button class="btn-secondary" onclick="exportData()">📊 Export CSV</button>
+        </div>
+        
+        <div class="card" style="margin-top: 24px;">
+          <h2>Recent Entries</h2>
+          <div class="entries-list" id="entriesList">
+            <div class="no-data">No entries yet. Start logging!</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="chart-section">
+        <div class="card">
+          <h2>Energy Map (Last 7 Days)</h2>
+          <div class="chart-container">
+            <canvas id="energyChart"></canvas>
+          </div>
+        </div>
+        
+        <div class="card" style="margin-top: 24px;">
+          <h2>Pattern Insights</h2>
+          <div class="insights-grid" id="insightsGrid">
+            <div class="insight-card">
+              <div class="insight-label">Peak Energy Time</div>
+              <div class="insight-value" id="peakTime">-</div>
+              <div class="insight-detail">When you're most energized</div>
+            </div>
+            <div class="insight-card">
+              <div class="insight-label">Best For Creative</div>
+              <div class="insight-value" id="creativeTime">-</div>
+              <div class="insight-detail">Optimal creative work time</div>
+            </div>
+            <div class="insight-card">
+              <div class="insight-label">Energy Booster</div>
+              <div class="insight-value" id="booster">-</div>
+              <div class="insight-detail">Activity that energizes you</div>
+            </div>
+            <div class="insight-card">
+              <div class="insight-label">Energy Drainer</div>
+              <div class="insight-value" id="drainer">-</div>
+              <div class="insight-detail">Activity that depletes you</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="timestamp">Privacy-conscious: All data stays local in your browser</div>
+  </div>
+  
+  <script>
+    let energyEntries = [];
+    let selectedCategory = null;
+    let energyChart = null;
+    
+    // Energy labels
+    const energyLabels = {
+      1: 'Exhausted',
+      2: 'Very Low',
+      3: 'Low',
+      4: 'Below Average',
+      5: 'Moderate',
+      6: 'Above Average',
+      7: 'Good',
+      8: 'High',
+      9: 'Very High',
+      10: 'Peak'
+    };
+    
+    // Load data from localStorage
+    function loadData() {
+      const saved = localStorage.getItem('energyArchaeology');
+      if (saved) {
+        try {
+          energyEntries = JSON.parse(saved);
+          // Convert string dates back to Date objects
+          energyEntries = energyEntries.map(entry => ({
+            ...entry,
+            timestamp: new Date(entry.timestamp)
+          }));
+        } catch (e) {
+          console.error('Failed to load data:', e);
+        }
+      }
+      updateUI();
+    }
+    
+    // Save data to localStorage
+    function persistData() {
+      try {
+        localStorage.setItem('energyArchaeology', JSON.stringify(energyEntries));
+      } catch (e) {
+        console.error('Failed to save data:', e);
+      }
+    }
+    
+    // Update energy display
+    function updateEnergyDisplay() {
+      const slider = document.getElementById('energySlider');
+      const display = document.getElementById('energyDisplay');
+      const label = document.getElementById('energyLabel');
+      
+      display.textContent = slider.value;
+      label.textContent = energyLabels[slider.value];
+    }
+    
+    // Select category
+    function selectCategory(category) {
+      document.querySelectorAll('.category-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      document.querySelector(\`[data-category="\${category}"]\`).classList.add('active');
+      selectedCategory = category;
+    }
+    
+    // Log entry
+    function logEntry() {
+      const activity = document.getElementById('activityInput').value.trim();
+      const energy = parseInt(document.getElementById('energySlider').value);
+      
+      if (!activity) {
+        alert('Please enter an activity');
+        return;
+      }
+      
+      if (!selectedCategory) {
+        alert('Please select a category');
+        return;
+      }
+      
+      const entry = {
+        timestamp: new Date(),
+        activity: activity,
+        category: selectedCategory,
+        energyLevel: energy
+      };
+      
+      energyEntries.push(entry);
+      persistData();
+      
+      // Reset form
+      document.getElementById('activityInput').value = '';
+      document.getElementById('energySlider').value = 5;
+      updateEnergyDisplay();
+      document.querySelectorAll('.category-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      selectedCategory = null;
+      
+      updateUI();
+    }
+    
+    // Update all UI elements
+    function updateUI() {
+      updateStats();
+      updateEntriesList();
+      updateChart();
+      updateInsights();
+    }
+    
+    // Update stats
+    function updateStats() {
+      document.getElementById('totalEntries').textContent = energyEntries.length;
+      
+      if (energyEntries.length > 0) {
+        const avgEnergy = energyEntries.reduce((sum, e) => sum + e.energyLevel, 0) / energyEntries.length;
+        document.getElementById('avgEnergy').textContent = avgEnergy.toFixed(1);
+        
+        const uniqueDays = new Set(energyEntries.map(e => e.timestamp.toDateString())).size;
+        document.getElementById('daysTracked').textContent = uniqueDays;
+      } else {
+        document.getElementById('avgEnergy').textContent = '-';
+        document.getElementById('daysTracked').textContent = '0';
+      }
+    }
+    
+    // Update entries list
+    function updateEntriesList() {
+      const container = document.getElementById('entriesList');
+      
+      if (energyEntries.length === 0) {
+        container.innerHTML = '<div class="no-data">No entries yet. Start logging!</div>';
+        return;
+      }
+      
+      const sorted = [...energyEntries].sort((a, b) => b.timestamp - a.timestamp);
+      const recent = sorted.slice(0, 10);
+      
+      container.innerHTML = recent.map(entry => {
+        const time = entry.timestamp.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+        const date = entry.timestamp.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        
+        return \`
+          <div class="entry-item">
+            <div class="entry-header">
+              <span class="entry-time">\${date} at \${time}</span>
+              <span class="entry-energy">\${entry.energyLevel}/10</span>
+            </div>
+            <div class="entry-activity">\${entry.activity}</div>
+            <span class="entry-category category-\${entry.category}">\${entry.category}</span>
+          </div>
+        \`;
+      }).join('');
+    }
+    
+    // Update chart
+    function updateChart() {
+      const ctx = document.getElementById('energyChart').getContext('2d');
+      
+      // Get last 7 days of data
+      const now = new Date();
+      const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const recentEntries = energyEntries.filter(e => e.timestamp >= sevenDaysAgo);
+      
+      if (recentEntries.length === 0) {
+        if (energyChart) {
+          energyChart.destroy();
+          energyChart = null;
+        }
+        return;
+      }
+      
+      // Sort by timestamp
+      const sorted = [...recentEntries].sort((a, b) => a.timestamp - b.timestamp);
+      
+      // Prepare data
+      const labels = sorted.map(e => {
+        const date = e.timestamp.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        const time = e.timestamp.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+        return \`\${date} \${time}\`;
+      });
+      
+      const data = sorted.map(e => e.energyLevel);
+      
+      // Color points by category
+      const categoryColors = {
+        creative: '#9b59b6',
+        social: '#3498db',
+        analytical: '#e67e22',
+        physical: '#27ae60',
+        rest: '#95a5a6'
+      };
+      
+      const pointColors = sorted.map(e => categoryColors[e.category]);
+      
+      if (energyChart) {
+        energyChart.destroy();
+      }
+      
+      energyChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Energy Level',
+            data: data,
+            borderColor: '#667eea',
+            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+            pointBackgroundColor: pointColors,
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            pointRadius: 6,
+            pointHoverRadius: 8,
+            tension: 0.3,
+            fill: true
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: false
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const entry = sorted[context.dataIndex];
+                  return [
+                    \`Energy: \${entry.energyLevel}/10\`,
+                    \`Activity: \${entry.activity}\`,
+                    \`Category: \${entry.category}\`
+                  ];
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              max: 10,
+              ticks: {
+                color: '#888',
+                stepSize: 2
+              },
+              grid: {
+                color: 'rgba(255, 255, 255, 0.1)'
+              }
+            },
+            x: {
+              ticks: {
+                color: '#888',
+                maxRotation: 45,
+                minRotation: 45
+              },
+              grid: {
+                color: 'rgba(255, 255, 255, 0.1)'
+              }
+            }
+          }
+        }
+      });
+    }
+    
+    // Update insights
+    function updateInsights() {
+      if (energyEntries.length < 3) {
+        document.getElementById('peakTime').textContent = 'Need more data';
+        document.getElementById('creativeTime').textContent = 'Need more data';
+        document.getElementById('booster').textContent = 'Need more data';
+        document.getElementById('drainer').textContent = 'Need more data';
+        return;
+      }
+      
+      // Peak energy time (by hour)
+      const byHour = {};
+      energyEntries.forEach(entry => {
+        const hour = entry.timestamp.getHours();
+        if (!byHour[hour]) byHour[hour] = [];
+        byHour[hour].push(entry.energyLevel);
+      });
+      
+      let peakHour = 0;
+      let peakAvg = 0;
+      for (const [hour, levels] of Object.entries(byHour)) {
+        const avg = levels.reduce((a, b) => a + b, 0) / levels.length;
+        if (avg > peakAvg) {
+          peakAvg = avg;
+          peakHour = parseInt(hour);
+        }
+      }
+      
+      const period = peakHour < 12 ? 'AM' : 'PM';
+      const displayHour = peakHour === 0 ? 12 : peakHour > 12 ? peakHour - 12 : peakHour;
+      document.getElementById('peakTime').textContent = \`\${displayHour}\${period}\`;
+      
+      // Best time for creative work
+      const creativeEntries = energyEntries.filter(e => e.category === 'creative');
+      if (creativeEntries.length > 0) {
+        const creativeByHour = {};
+        creativeEntries.forEach(entry => {
+          const hour = entry.timestamp.getHours();
+          if (!creativeByHour[hour]) creativeByHour[hour] = [];
+          creativeByHour[hour].push(entry.energyLevel);
+        });
+        
+        let bestCreativeHour = 0;
+        let bestCreativeAvg = 0;
+        for (const [hour, levels] of Object.entries(creativeByHour)) {
+          const avg = levels.reduce((a, b) => a + b, 0) / levels.length;
+          if (avg > bestCreativeAvg) {
+            bestCreativeAvg = avg;
+            bestCreativeHour = parseInt(hour);
+          }
+        }
+        
+        const creativePeriod = bestCreativeHour < 12 ? 'AM' : 'PM';
+        const creativeDisplayHour = bestCreativeHour === 0 ? 12 : bestCreativeHour > 12 ? bestCreativeHour - 12 : bestCreativeHour;
+        document.getElementById('creativeTime').textContent = \`\${creativeDisplayHour}\${creativePeriod}\`;
+      } else {
+        document.getElementById('creativeTime').textContent = 'No data';
+      }
+      
+      // Energy booster (activity with highest average)
+      const activityStats = {};
+      energyEntries.forEach(entry => {
+        if (!activityStats[entry.activity]) {
+          activityStats[entry.activity] = { total: 0, count: 0 };
+        }
+        activityStats[entry.activity].total += entry.energyLevel;
+        activityStats[entry.activity].count += 1;
+      });
+      
+      let booster = '';
+      let boosterAvg = 0;
+      for (const [activity, stats] of Object.entries(activityStats)) {
+        if (stats.count < 2) continue; // Need at least 2 entries
+        const avg = stats.total / stats.count;
+        if (avg > boosterAvg) {
+          boosterAvg = avg;
+          booster = activity;
+        }
+      }
+      document.getElementById('booster').textContent = booster || 'Need more data';
+      
+      // Energy drainer (activity with lowest average)
+      let drainer = '';
+      let drainerAvg = 11;
+      for (const [activity, stats] of Object.entries(activityStats)) {
+        if (stats.count < 2) continue;
+        const avg = stats.total / stats.count;
+        if (avg < drainerAvg) {
+          drainerAvg = avg;
+          drainer = activity;
+        }
+      }
+      document.getElementById('drainer').textContent = drainer || 'Need more data';
+    }
+    
+    // Save data via postMessage
+    function saveData() {
+      if (energyEntries.length === 0) {
+        alert('No data to save');
+        return;
+      }
+      
+      const exportData = {
+        entries: energyEntries,
+        exported: new Date().toISOString()
+      };
+      
+      // Try to use Noah's filesystem bridge
+      if (window.parent && window.parent !== window) {
+        const filename = \`energy-archaeology-\${new Date().toISOString().split('T')[0]}.json\`;
+        
+        window.parent.postMessage({
+          type: 'NOAH_SAVE_REQUEST',
+          payload: {
+            content: JSON.stringify(exportData, null, 2),
+            suggestedPath: \`noah-thinking/\${filename}\`,
+            description: \`Energy Archaeology data with \${energyEntries.length} entries\`,
+            agent: 'Energy Archaeology Tool',
+            metadata: {
+              type: 'energy-tracking',
+              totalEntries: energyEntries.length,
+              dateRange: {
+                start: Math.min(...energyEntries.map(e => new Date(e.timestamp).getTime())),
+                end: Math.max(...energyEntries.map(e => new Date(e.timestamp).getTime()))
+              }
+            }
+          }
+        }, '*');
+        
+        alert('Save request sent to Noah! Check your file operations panel.');
+      } else {
+        // Fallback: download as file
+        const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'energy-archaeology-data.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+    }
+    
+    // Export as CSV
+    function exportData() {
+      if (energyEntries.length === 0) {
+        alert('No data to export');
+        return;
+      }
+      
+      let csv = 'Date,Time,Activity,Category,Energy Level\\n';
+      energyEntries.forEach(entry => {
+        const date = entry.timestamp.toLocaleDateString('en-US');
+        const time = entry.timestamp.toLocaleTimeString('en-US');
+        csv += \`"\${date}","\${time}","\${entry.activity}","\${entry.category}",\${entry.energyLevel}\\n\`;
+      });
+      
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'energy-archaeology.csv';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+    
+    // Listen for load requests
+    window.addEventListener('message', (event) => {
+      if (event.data.type === 'NOAH_LOAD_RESPONSE') {
+        try {
+          const data = JSON.parse(event.data.payload.content);
+          energyEntries = data.entries.map(entry => ({
+            ...entry,
+            timestamp: new Date(entry.timestamp)
+          }));
+          persistData();
+          updateUI();
+          alert('Data loaded successfully!');
+        } catch (error) {
+          alert('Failed to load data: ' + error.message);
+        }
+      }
+    });
+    
+    // Initialize
+    updateEnergyDisplay();
+    loadData();
+  </script>
+</body>
+</html>`;
   }
 };

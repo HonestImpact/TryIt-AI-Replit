@@ -1,0 +1,61 @@
+Objective: Create energy pattern tracking tool (unique differentiator)
+
+Build the energy-archaeology tool - tracks what gives/drains energy to create personal energy map.
+CONTEXT:
+•	True differentiator: nobody tracks energy patterns like this
+•	Shows when user is most creative, social, analytical
+•	Helps optimize schedule to energy patterns
+REQUIREMENTS:
+1.	Add to src/lib/tools/boutique-templates.ts:
+o	energyArchaeology() function returning complete HTML
+o	Parameters: none (self-contained app)
+2.	Tool features:
+o	Activity logging: "What are you doing?" + "Energy level (1-10)"
+o	Time-based entries throughout the day
+o	Visual energy map (chart showing energy curve)
+o	Pattern analysis: "You're most creative at 10am"
+o	Activity categories: Creative, Social, Analytical, Physical, Rest
+o	Week view showing patterns across days
+3.	UI Design:
+o	Quick-log interface (fast entry is critical)
+o	Real-time energy chart (line graph)
+o	Color-coded activity categories
+o	Pattern insights panel
+o	Export data option
+4.	Features:
+o	Energy level slider (1-10)
+o	Activity quick-picks + custom entry
+o	Time auto-captured
+o	Rolling 7-day view
+o	Pattern detection: "Your energy peaks at [time]"
+o	Category analysis: "Social activities drain you"
+5.	Chart.js for visualization:
+o	Import from CDN: https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js
+o	Line chart showing energy over time
+o	Color-coded by activity category
+o	Responsive and animated
+6.	Data structure:
+typescript
+   interface EnergyEntry {
+     timestamp: Date;
+     activity: string;
+     category: 'creative' | 'social' | 'analytical' | 'physical' | 'rest';
+     energyLevel: number; // 1-10
+   }
+7.	Pattern analysis logic:
+o	Peak energy times (highest average by hour)
+o	Energy drainers (activities with biggest drops)
+o	Energy boosters (activities with biggest gains)
+o	Best time for each category
+8.	Save/load via postMessage (complete history)
+CRITICAL:
+•	Must be fast to log entries (< 5 seconds)
+•	Insights should be genuinely useful
+•	Don't judge user's patterns
+•	Privacy-conscious (data stays local)
+DELIVERABLES:
+•	Updated src/lib/tools/boutique-templates.ts with energyArchaeology()
+•	Tool definition in boutique-tools.ts
+•	Chart.js integration
+•	Pattern analysis algorithms
+•	Fully functional HTML artifact
