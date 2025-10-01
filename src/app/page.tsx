@@ -744,7 +744,7 @@ export default function TrustRecoveryProtocol() {
                           </div>
                         </div>
                         <a
-                          href={`/${file.path}`}
+                          href={`/api/filesystem/serve/${file.path}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="ml-2 px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded-lg hover:bg-green-700 transition-colors flex-shrink-0"

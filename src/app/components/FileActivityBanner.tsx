@@ -133,7 +133,7 @@ export default function FileActivityBanner({
                   )}
                 </div>
 
-                {!renamingOperation && (
+                {renamingOperation !== operation.path && (
                   <div className="flex flex-col gap-2">
                     <button
                       onClick={() => onApprove(operation.path)}
@@ -192,7 +192,7 @@ export default function FileActivityBanner({
                   <div className="text-white/80 text-sm">{operation.path}</div>
                 </div>
                 <a
-                  href={`/${operation.path}`}
+                  href={`/api/filesystem/serve/${operation.path}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="px-4 py-2 bg-white text-green-600 rounded-lg font-semibold hover:bg-white/90 transition-all hover:scale-105"

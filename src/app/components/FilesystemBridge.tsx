@@ -37,6 +37,14 @@ export default function FilesystemBridge({
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       try {
+        // Security: Only accept messages from same origin
+        if (event.origin !== window.location.origin) {
+          logger.warn('Rejected postMessage from unauthorized origin', { 
+            origin: event.origin 
+          });
+          return;
+        }
+
         const message = event.data as NoahMessage;
 
         if (!message || typeof message.type !== 'string') {
@@ -66,6 +74,9 @@ export default function FilesystemBridge({
             const timestamp = Date.now();
             const artifactId = `${sessionId}-${timestamp}`;
 
+            // Calculate file size using TextEncoder (browser-safe)
+            const fileSize = new TextEncoder().encode(content).length;
+
             const operation: FileOperation = {
               type: 'save_artifact',
               path: `noah-tools/user-requested/${fileName}`,
@@ -76,7 +87,7 @@ export default function FilesystemBridge({
                 sessionId,
                 artifactId,
                 description: description || `User-requested save: ${fileName}`,
-                fileSize: Buffer.byteLength(content, 'utf-8'),
+                fileSize,
                 fileType,
                 category: 'tool'
               },
@@ -95,7 +106,7 @@ export default function FilesystemBridge({
                     message: 'Save request received - waiting for user approval'
                   }
                 },
-                '*'
+                event.origin
               );
             }
             break;
@@ -115,7 +126,7 @@ export default function FilesystemBridge({
                     message: 'Load functionality not yet implemented'
                   }
                 },
-                '*'
+                event.origin
               );
             }
             break;
