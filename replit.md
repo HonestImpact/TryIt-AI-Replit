@@ -47,7 +47,7 @@ Preferred communication style: Simple, everyday language.
 - **Dynamic Generation**: Real-time tool and content creation.
 - **Structured Output**: Title/content separation.
 - **Session Management**: Persistence of artifacts across sessions in a "Your Toolbox" section.
-- **Boutique Creative Tools**: Assumption Breaker (reframing assumptions), Time Telescope (multi-time horizon decision analysis), scientific calculator, Pomodoro timer, unit converter.
+- **Boutique Creative Tools**: Assumption Breaker (reframing assumptions), Time Telescope (multi-time horizon decision analysis), Energy Archaeology (personal energy pattern tracking), scientific calculator, Pomodoro timer, unit converter.
 
 ## External Dependencies
 
