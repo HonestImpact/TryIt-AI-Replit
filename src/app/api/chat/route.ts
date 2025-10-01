@@ -14,6 +14,7 @@ import type { ChatMessage } from '@/lib/agents/types';
 import { analyticsService } from '@/lib/analytics';
 import { analyticsPool } from '@/lib/analytics/connection-pool';
 import { NoahSafetyService } from '@/lib/safety';
+import { ContextEnricher } from '@/lib/memory/context-enricher';
 
 const logger = createLogger('noah-chat');
 
@@ -316,6 +317,26 @@ async function noahChatHandler(req: NextRequest, context: LoggingContext): Promi
     // Initialize conversation state with analytics (async, zero performance impact)
     const conversationState = await initializeConversationState(req, context, skepticMode || false);
 
+    // 🧠 MEMORY ENRICHMENT - Retrieve session memory and enrich system prompt
+    let enrichedSystemPrompt = AI_CONFIG.CHAT_SYSTEM_PROMPT; // Default to base prompt
+    if (conversationState.sessionId) {
+      try {
+        const memoryContext = await sharedResourceManager.getMemoryContext(conversationState.sessionId);
+        enrichedSystemPrompt = ContextEnricher.enrichSystemPrompt(memoryContext);
+        
+        if (memoryContext && memoryContext.entities.length > 0) {
+          logger.debug('✨ System prompt enriched with memory context', {
+            sessionId: conversationState.sessionId.substring(0, 8) + '...',
+            entitiesCount: memoryContext.entities.length
+          });
+        }
+      } catch (error) {
+        logger.warn('Failed to enrich system prompt with memory, using base prompt', {
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
+    }
+
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
       return NextResponse.json({
         content: "I didn't receive any messages to respond to. Want to try sending me something?",
@@ -427,7 +448,7 @@ async function noahChatHandler(req: NextRequest, context: LoggingContext): Promi
             role: msg.role,
             content: msg.content
           })),
-          system: isToolGeneration ? getToolGenerationPrompt() : AI_CONFIG.CHAT_SYSTEM_PROMPT,
+          system: isToolGeneration ? getToolGenerationPrompt() : enrichedSystemPrompt,
           temperature: 0.7
         });
         result = await withTimeout(generatePromise, NOAH_TIMEOUT);
@@ -447,7 +468,7 @@ async function noahChatHandler(req: NextRequest, context: LoggingContext): Promi
           role: msg.role,
           content: msg.content
         })),
-        system: isToolGeneration ? getToolGenerationPrompt() : AI_CONFIG.CHAT_SYSTEM_PROMPT,
+        system: isToolGeneration ? getToolGenerationPrompt() : enrichedSystemPrompt,
         temperature: 0.7
       });
       result = await withTimeout(generatePromise, NOAH_TIMEOUT);
@@ -645,6 +666,26 @@ async function noahStreamingChatHandler(req: NextRequest, context: LoggingContex
     // Initialize conversation state with analytics (required for all paths)
     const conversationState = await initializeConversationState(req, context, skepticMode || false);
 
+    // 🧠 MEMORY ENRICHMENT - Retrieve session memory and enrich system prompt
+    let enrichedSystemPrompt = AI_CONFIG.CHAT_SYSTEM_PROMPT; // Default to base prompt
+    if (conversationState.sessionId) {
+      try {
+        const memoryContext = await sharedResourceManager.getMemoryContext(conversationState.sessionId);
+        enrichedSystemPrompt = ContextEnricher.enrichSystemPrompt(memoryContext);
+        
+        if (memoryContext && memoryContext.entities.length > 0) {
+          logger.debug('✨ System prompt enriched with memory context (streaming)', {
+            sessionId: conversationState.sessionId.substring(0, 8) + '...',
+            entitiesCount: memoryContext.entities.length
+          });
+        }
+      } catch (error) {
+        logger.warn('Failed to enrich system prompt with memory (streaming), using base prompt', {
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
+    }
+
     const streamingLastMessage = messages[messages.length - 1]?.content || '';
     
     // 🛡️ SAFETY CHECK - Required for all paths, including fast path
@@ -707,7 +748,7 @@ async function noahStreamingChatHandler(req: NextRequest, context: LoggingContex
           role: msg.role as 'user' | 'assistant' | 'system',
           content: msg.content
         })),
-        system: AI_CONFIG.CHAT_SYSTEM_PROMPT,
+        system: enrichedSystemPrompt,
         temperature: 0.3, // Lower temperature for factual questions
         onFinish: async (completion) => {
           const responseTime = Date.now() - startTime;
@@ -792,7 +833,7 @@ async function noahStreamingChatHandler(req: NextRequest, context: LoggingContex
             role: msg.role as 'user' | 'assistant' | 'system',
             content: msg.content
           })),
-          system: AI_CONFIG.CHAT_SYSTEM_PROMPT,
+          system: enrichedSystemPrompt,
           temperature: 0.7,
           onFinish: async (completion) => {
             const responseTime = Date.now() - startTime;
@@ -838,7 +879,7 @@ async function noahStreamingChatHandler(req: NextRequest, context: LoggingContex
           role: msg.role as 'user' | 'assistant' | 'system',
           content: msg.content
         })),
-        system: AI_CONFIG.CHAT_SYSTEM_PROMPT,
+        system: enrichedSystemPrompt,
         temperature: 0.7,
         onFinish: async (completion) => {
           const responseTime = Date.now() - startTime;

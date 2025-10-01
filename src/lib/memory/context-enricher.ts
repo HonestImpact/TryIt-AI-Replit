@@ -64,7 +64,7 @@ IMPORTANT BOUNDARIES:
   }
 
   /**
-   * Format user preferences (confidence threshold: 0.7)
+   * Format user preferences
    * Max: 5 most relevant preferences
    */
   private static formatPreferences(entities: MemoryEntity[]): string {
