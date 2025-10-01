@@ -51,7 +51,12 @@ export class MCPFilesystemService {
       // Initialize MCP client transport
       this.transport = new StdioClientTransport({
         command: 'npx',
-        args: ['-y', '@modelcontextprotocol/server-filesystem', ...this.allowedDirectories]
+        args: ['-y', '@modelcontextprotocol/server-filesystem', ...this.allowedDirectories],
+        env: {
+          ...process.env,
+          XDG_CONFIG_HOME: process.env.XDG_CONFIG_HOME || '/tmp/.config',
+          HOME: process.env.HOME || '/tmp'
+        }
       });
 
       this.client = new Client(

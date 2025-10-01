@@ -134,26 +134,32 @@ export const sharedResourceManager = {
       //   });
       // }
 
-      // Initialize MCP Filesystem Service (asynchronous, non-blocking)
+      // Initialize MCP Filesystem Service (asynchronous, with timeout to avoid blocking)
       let filesystemServiceAvailable = false;
       
-      // Start filesystem initialization in background (don't await to avoid blocking)
-      mcpFilesystemService.initialize()
-        .then(() => {
-          const status = mcpFilesystemService.getStatus();
-          if (status.available) {
-            logger.info('✅ MCP Filesystem Service initialized successfully', {
-              allowedDirs: status.allowedDirectories.length
-            });
-          } else {
-            logger.info('⚠️ Filesystem service unavailable, file operations disabled');
-          }
-        })
-        .catch((error) => {
-          logger.warn('Filesystem service initialization failed, file operations disabled', {
-            error: error instanceof Error ? error.message : String(error)
+      try {
+        // Initialize with a timeout to avoid blocking
+        await Promise.race([
+          mcpFilesystemService.initialize(),
+          new Promise((resolve) => setTimeout(resolve, 3000)) // 3 second timeout
+        ]);
+        
+        const status = mcpFilesystemService.getStatus();
+        filesystemServiceAvailable = status.available;
+        
+        if (status.available) {
+          logger.info('✅ MCP Filesystem Service initialized successfully', {
+            allowedDirs: status.allowedDirectories.length
           });
+        } else {
+          logger.info('⚠️ Filesystem service unavailable, file operations disabled');
+        }
+      } catch (error) {
+        logger.warn('Filesystem service initialization failed, file operations disabled', {
+          error: error instanceof Error ? error.message : String(error)
         });
+        filesystemServiceAvailable = false;
+      }
 
       const resources: AgentSharedResources = {
         knowledgeService,
