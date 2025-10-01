@@ -1,0 +1,64 @@
+Objective: Transparent file operations with user control
+Integrate @modelcontextprotocol/server-filesystem to make all file operations visible and user-controlled.
+CONTEXT:
+•	Every file operation needs user approval
+•	Files organized by category: noah-tools/, noah-thinking/, noah-sessions/
+•	Operations triggered when artifacts generated or user requests saves
+•	Integration similar to memory MCP pattern
+REQUIREMENTS:
+1.	Install @modelcontextprotocol/server-filesystem via npm
+
+2.	Create src/lib/filesystem/mcp-filesystem-service.ts with:
+o	FilesystemService class (singleton)
+o	initialize() spawning MCP server with allowed directories:
+	process.cwd() (current project)
+	./noah-tools/
+	./noah-thinking/
+	./noah-sessions/
+	./noah-reports/
+o	proposeFileOperation(operation: FileOperation): void
+o	executeFileOperation(operation: FileOperation): Promise<void>
+o	readFile(path: string): Promise<string>
+
+3.	FileOperation interface (src/lib/filesystem/types.ts):
+interface FileOperation {
+     type: 'save_artifact' | 'export_thinking' | 'save_conversation' | 'update_tool';
+     path: string;
+     content: string;
+     metadata: {
+       agent: 'noah' | 'wanderer' | 'tinkerer';
+       timestamp: number;
+       sessionId: string;
+       artifactId?: string;
+       description: string;
+       fileSize: number;
+       fileType: string;
+       category: 'tool' | 'thinking' | 'conversation' | 'report';
+     };
+     status: 'pending' | 'approved' | 'executing' | 'completed' | 'rejected';
+     userApprovalRequired: boolean;
+   }
+
+4.	File naming strategy (src/lib/filesystem/naming-strategy.ts):
+o	Auto-generate: category/descriptive-name-YYYY-MM-DD.ext
+o	Subfolder categorization: calculators/, timers/, converters/, data-tools/
+o	Sanitize titles: lowercase, hyphens, no special chars
+5.	Integration into artifact generation:
+o	When artifact created, propose file operation
+o	Operation goes to pending state
+o	User sees approval dialog (UI in next prompt)
+o	On approval, execute via MCP filesystem
+6.	Testing:
+o	Verify MCP server spawns with correct allowed directories
+o	Test file name generation
+o	Confirm directory sandboxing (can't write outside allowed paths)
+CRITICAL:
+•	All operations require user approval by default
+•	Never auto-save without permission
+•	Directory whitelisting for security
+•	UTF-8 encoding for all text files
+DELIVERABLES:
+•	src/lib/filesystem/mcp-filesystem-service.ts (new file)
+•	src/lib/filesystem/naming-strategy.ts (new file)
+•	src/lib/filesystem/types.ts (new file)
+•	Integration hooks in artifact generation flow

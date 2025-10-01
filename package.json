@@ -18,6 +18,7 @@
     "@ai-sdk/openai": "^2.0.38",
     "@chroma-core/default-embed": "^0.1.8",
     "@modelcontextprotocol/sdk": "^1.18.2",
+    "@modelcontextprotocol/server-filesystem": "^2025.8.21",
     "@modelcontextprotocol/server-memory": "^2025.9.25",
     "@octokit/rest": "^22.0.0",
     "@replit/object-storage": "^1.0.0",
