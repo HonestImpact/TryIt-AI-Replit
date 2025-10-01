@@ -20,6 +20,35 @@ The application implements a sophisticated Retrieval-Augmented Generation (RAG) 
 - **Pending Operations Management**: Track proposals, approve/reject workflow, execution after approval
 - **Storage Locations**: noah-tools/ (user tools), noah-thinking/ (AI reasoning), noah-sessions/ (conversations), noah-reports/ (analysis)
 
+#### UI Integration (Complete)
+- **FileActivityBanner**: Top banner showing pending/executing/completed operations with inline approve/reject/rename actions
+  - Gradient-coded by status: indigo/purple/pink (pending), blue (executing), green (completed)
+  - Auto-dismisses completed operations after 3 seconds
+  - Per-operation rename workflow with inline input and confirmation
+  - "Open file" links for completed saves
+- **FileApprovalDialog**: Modal dialog for detailed file approval with metadata display
+  - Shows file path, size, agent source, timestamp, description
+  - Rename input field for customizing file names
+  - Approve/Reject buttons with clear actions
+- **FilesystemBridge**: Invisible component listening for postMessage from tool iframes
+  - Handles NOAH_SAVE_REQUEST and NOAH_LOAD_REQUEST messages
+  - Same-origin validation for security (rejects unauthorized origins)
+  - Browser-safe file size calculation using TextEncoder
+  - Responds to iframe with targeted origin (not wildcard)
+- **Files Saved Section**: New sidebar section between Collaboration Progress and Artifacts
+  - Shows all saved files with file icons, sizes, timestamps
+  - "Open" button for each file linking to serve endpoint
+  - Real-time updates as files are approved and saved
+- **File Serving Endpoint**: `/api/filesystem/serve/[...path]` route for accessing saved files
+  - Content-type detection based on file extension
+  - Cache-Control: no-cache for fresh content
+  - Error handling with 404 for missing files
+- **State Management**: Complete operation lifecycle in page.tsx
+  - fileOperations state tracks pending/executing/completed operations
+  - savedFiles state maintains list of successfully saved files
+  - selectedOperation state controls approval dialog visibility
+  - Handlers: onFileOperationProposed, handleApprove, handleReject, handleRename
+
 ### Memory MCP Integration (October 2025)
 - **Cross-Session Memory**: Integrated official @modelcontextprotocol/server-memory package for persistent memory across conversations
 - **MCP SDK Client**: Implemented proper MCP SDK client using StdioClientTransport for reliable communication with memory server
