@@ -20,6 +20,7 @@ import { mcpFilesystemService } from '@/lib/filesystem/mcp-filesystem-service';
 import { FileNamingStrategy } from '@/lib/filesystem/naming-strategy';
 import type { FileOperation } from '@/lib/filesystem/types';
 import { boutiqueTools } from '@/lib/tools/boutique-tools';
+import { BoutiqueIntentDetector } from '@/lib/tools/boutique-intent-detector';
 
 const logger = createLogger('noah-chat');
 
@@ -934,6 +935,122 @@ async function noahStreamingChatHandler(req: NextRequest, context: LoggingContex
         'user',
         streamingLastMessage
       );
+    }
+
+    // 🚀 FAST-PATH: Check for boutique tool intent (<100ms response)
+    const boutiqueIntent = BoutiqueIntentDetector.detectIntent(streamingLastMessage);
+    if (boutiqueIntent.detected && boutiqueIntent.toolName && boutiqueIntent.confidence > 0.9) {
+      const fastPathStart = Date.now();
+      logger.info('⚡ Fast-path detected for boutique tool', {
+        toolName: boutiqueIntent.toolName,
+        confidence: boutiqueIntent.confidence
+      });
+
+      try {
+        const tool = boutiqueTools[boutiqueIntent.toolName];
+        const toolResult = await tool.execute(boutiqueIntent.parameters);
+        const fastPathTime = Date.now() - fastPathStart;
+        
+        logger.info('✨ Boutique tool executed via fast-path', {
+          toolName: boutiqueIntent.toolName,
+          executionTime: fastPathTime,
+          title: toolResult.title
+        });
+
+        // Create artifact
+        const artifactId = `${context.sessionId}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        const timestamp = Date.now();
+        
+        if (context.sessionId) {
+          if (!sessionArtifacts.has(context.sessionId)) {
+            sessionArtifacts.set(context.sessionId, []);
+          }
+          sessionArtifacts.get(context.sessionId)!.push({
+            title: toolResult.title,
+            content: toolResult.content,
+            timestamp,
+            agent: 'noah',
+            id: artifactId
+          });
+        }
+
+        // Propose file save operation
+        try {
+          const filesystemStatus = mcpFilesystemService.getStatus();
+          if (filesystemStatus.available && context.sessionId) {
+            const fileType = FileNamingStrategy.determineFileType(toolResult.title, toolResult.content);
+            const filePath = FileNamingStrategy.generateFilePath({
+              title: toolResult.title,
+              category: 'tool',
+              fileType,
+              timestamp
+            });
+
+            const fileOperation: FileOperation = {
+              type: 'save_artifact',
+              path: filePath,
+              content: toolResult.content,
+              metadata: {
+                agent: 'noah',
+                timestamp,
+                sessionId: context.sessionId,
+                artifactId,
+                description: `Save ${toolResult.title}`,
+                fileSize: new TextEncoder().encode(toolResult.content).length,
+                fileType,
+                category: 'tool'
+              },
+              status: 'pending',
+              userApprovalRequired: true
+            };
+
+            mcpFilesystemService.proposeFileOperation(fileOperation);
+            logger.info('📋 File save operation proposed for fast-path tool', {
+              toolName: boutiqueIntent.toolName,
+              title: toolResult.title,
+              filePath
+            });
+          }
+        } catch (error) {
+          logger.warn('Failed to propose file operation for fast-path tool', {
+            error: error instanceof Error ? error.message : String(error)
+          });
+        }
+
+        // Store tool result in memory
+        const updatedMessages = [...messages, {
+          role: 'assistant' as const,
+          content: `I've created a ${toolResult.title} for you! It's ready to use right now.`
+        }];
+        storeConversationMemories(context.sessionId, updatedMessages, true, artifactId, toolResult.title);
+
+        // Log response (fire-and-forget)
+        const responseTime = Date.now() - startTime;
+        if (conversationState.conversationId && conversationState.sessionId) {
+          conversationState.messageSequence++;
+          analyticsService.logMessage(
+            conversationState.conversationId,
+            conversationState.sessionId,
+            conversationState.messageSequence,
+            'assistant',
+            `I've created a ${toolResult.title} for you!`,
+            responseTime,
+            'noah'
+          );
+        }
+
+        // Return streaming response with artifact embedded
+        const model = AI_CONFIG.getProvider() === 'openai' ? openai(AI_CONFIG.getModel()) : anthropic(AI_CONFIG.getModel());
+        const responseText = `I've created a ${toolResult.title} for you! It's ready to use right now.\n\n<artifact title="${toolResult.title}">\n${toolResult.content}\n</artifact>`;
+        
+        return streamText({
+          model,
+          messages: [{ role: 'assistant', content: responseText }],
+          temperature: 0
+        }).toTextStreamResponse();
+      } catch (error) {
+        logger.error('Fast-path tool execution failed, falling back to normal flow', { error });
+      }
     }
 
     // Noah analyzes and decides internally (same logic as existing)
