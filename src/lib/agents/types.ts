@@ -50,3 +50,15 @@ export interface KnowledgeResult {
   };
   context?: string;
 }
+
+export interface MemoryEntity {
+  name: string;
+  entityType: 'user_preference' | 'conversation_theme' | 'tool_result' | 'challenge_event' | 'trust_signal';
+  observations: string[];
+}
+
+export interface MemoryContext {
+  entities: MemoryEntity[];
+  sessionId: string;
+  retrievedAt: Date;
+}

@@ -1,7 +1,8 @@
 // Shared resources for agents - Production RAG Integration Complete
-import type { LLMProvider } from './types';
+import type { LLMProvider, MemoryContext } from './types';
 import knowledgeService from '@/lib/knowledge/knowledge-singleton';
 import { ToolKnowledgeService } from './tool-knowledge-service';
+import { mcpMemoryService } from '@/lib/memory/mcp-memory-service';
 import { AI_CONFIG } from '@/lib/ai-config';
 import { createLogger } from '@/lib/logger';
 
@@ -25,6 +26,7 @@ export interface AgentSharedResources {
   ragIntegration?: RAGIntegration;
   solutionGenerator?: SolutionGenerator;
   toolKnowledgeService?: ToolKnowledgeService;
+  memoryServiceAvailable?: boolean;
 }
 
 class ProductionRAGIntegration implements RAGIntegration {
@@ -108,18 +110,38 @@ export const sharedResourceManager = {
         }
       }
 
+      // Initialize MCP Memory Service (but don't retrieve session-specific context yet)
+      let memoryServiceAvailable = false;
+      try {
+        await mcpMemoryService.initialize();
+        const status = mcpMemoryService.getStatus();
+        memoryServiceAvailable = status.available;
+        
+        if (memoryServiceAvailable) {
+          logger.info('✅ MCP Memory Service initialized successfully');
+        } else {
+          logger.info('⚠️ Memory service unavailable, proceeding without memory');
+        }
+      } catch (error) {
+        logger.warn('Memory service initialization failed, proceeding without memory', {
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
+
       const resources: AgentSharedResources = {
         knowledgeService,
         ragIntegration,
         solutionGenerator,
-        toolKnowledgeService
+        toolKnowledgeService,
+        memoryServiceAvailable
       };
 
       logger.info('✅ Shared agent resources initialized', {
         ragEnabled: ragIntegration.enabled,
         knowledgeServiceAvailable: !!resources.knowledgeService,
         solutionGeneratorAvailable: !!resources.solutionGenerator,
-        toolKnowledgeServiceAvailable: !!resources.toolKnowledgeService
+        toolKnowledgeServiceAvailable: !!resources.toolKnowledgeService,
+        memoryServiceAvailable: resources.memoryServiceAvailable
       });
 
       return resources;
@@ -131,8 +153,40 @@ export const sharedResourceManager = {
 
       // Return minimal resources on failure
       return {
-        ragIntegration: { enabled: false, search: async () => [] }
+        ragIntegration: { enabled: false, search: async () => [] },
+        memoryServiceAvailable: false
       };
+    }
+  },
+
+  async getMemoryContext(sessionId: string): Promise<MemoryContext | null> {
+    try {
+      const status = mcpMemoryService.getStatus();
+      
+      if (!status.available) {
+        logger.debug('Memory service not available');
+        return null;
+      }
+
+      logger.debug('Retrieving memory context for session', { sessionId });
+      const memoryContext = await mcpMemoryService.retrieveSessionContext(sessionId);
+      
+      if (memoryContext) {
+        logger.info('✅ Memory context retrieved', {
+          sessionId,
+          entitiesCount: memoryContext.entities.length
+        });
+      } else {
+        logger.debug('No existing memory found for session', { sessionId });
+      }
+
+      return memoryContext;
+    } catch (error) {
+      logger.warn('Failed to retrieve memory context', {
+        sessionId,
+        error: error instanceof Error ? error.message : String(error)
+      });
+      return null;
     }
   }
 };
