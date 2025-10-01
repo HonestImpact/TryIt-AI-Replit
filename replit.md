@@ -8,6 +8,18 @@ The application implements a sophisticated Retrieval-Augmented Generation (RAG) 
 
 ## Recent Changes
 
+### Filesystem MCP Integration (October 2025)
+- **Transparent File Operations**: Integrated @modelcontextprotocol/server-filesystem for user-controlled file saves
+- **Directory Sandboxing**: Strict whitelisting of Noah directories (noah-tools/, noah-thinking/, noah-sessions/, noah-reports/) with path traversal protection
+- **User Approval Required**: All file operations require explicit user approval before execution
+- **Smart File Naming**: Automatic categorization and sanitization with date-based naming (e.g., calculators/simple-calculator-2025-10-01.html)
+- **MCP Client Implementation**: StdioClientTransport with proper initialization and graceful degradation
+- **Artifact Save Proposals**: When artifacts generated, system proposes file save operation with metadata (agent, timestamp, file size)
+- **Non-Blocking Integration**: Asynchronous initialization prevents server startup delays
+- **Security**: Path validation prevents escapes, MCP server enforces allowed directories as second layer
+- **Pending Operations Management**: Track proposals, approve/reject workflow, execution after approval
+- **Storage Locations**: noah-tools/ (user tools), noah-thinking/ (AI reasoning), noah-sessions/ (conversations), noah-reports/ (analysis)
+
 ### Memory MCP Integration (October 2025)
 - **Cross-Session Memory**: Integrated official @modelcontextprotocol/server-memory package for persistent memory across conversations
 - **MCP SDK Client**: Implemented proper MCP SDK client using StdioClientTransport for reliable communication with memory server
