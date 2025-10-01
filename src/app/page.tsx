@@ -43,6 +43,7 @@ export default function TrustRecoveryProtocol() {
   const [viewingArtifact, setViewingArtifact] = useState<{
     title: string;
     content: string;
+    viewMode?: 'rendered' | 'code';
   } | null>(null);
   const [showReasoning, setShowReasoning] = useState(false);
   const [reasoning] = useState('');
@@ -797,7 +798,7 @@ export default function TrustRecoveryProtocol() {
                         <p className="text-xs opacity-75 mb-2">{new Date(sessionArtifact.timestamp).toLocaleTimeString()}</p>
                         <div className="flex flex-col gap-1.5">
                           <button 
-                            onClick={() => setViewingArtifact({ title: sessionArtifact.title, content: sessionArtifact.content })}
+                            onClick={() => setViewingArtifact({ title: sessionArtifact.title, content: sessionArtifact.content, viewMode: 'code' })}
                             className="w-full bg-white/20 hover:bg-white/30 text-white rounded-lg px-3 py-1 text-xs font-medium transition-colors flex items-center justify-center gap-1"
                           >
                             <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
@@ -839,7 +840,7 @@ export default function TrustRecoveryProtocol() {
                   <button
                     onClick={() => {
                       const latest = sessionArtifacts[sessionArtifacts.length - 1];
-                      setViewingArtifact({ title: latest.title, content: latest.content });
+                      setViewingArtifact({ title: latest.title, content: latest.content, viewMode: 'rendered' });
                     }}
                     className="w-full bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white rounded-lg px-4 py-2 text-xs font-medium transition-colors flex items-center justify-center gap-2"
                   >
@@ -888,6 +889,20 @@ export default function TrustRecoveryProtocol() {
             <div className="p-6 overflow-y-auto max-h-[calc(80vh-80px)]">
               {(() => {
                 const content = viewingArtifact.content;
+                const viewMode = viewingArtifact.viewMode || 'rendered'; // Default to rendered for backwards compatibility
+                
+                // If viewMode is 'code', always show raw code
+                if (viewMode === 'code') {
+                  return (
+                    <div className="bg-slate-900 rounded-lg p-6">
+                      <pre className="text-sm text-green-400 font-mono whitespace-pre-wrap overflow-x-auto">
+                        {content}
+                      </pre>
+                    </div>
+                  );
+                }
+                
+                // Otherwise, show rendered version (viewMode === 'rendered')
                 const trimmedContent = content.trim();
                 const lowerContent = trimmedContent.toLowerCase();
                 
