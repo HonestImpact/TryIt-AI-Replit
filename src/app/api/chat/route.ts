@@ -19,6 +19,7 @@ import { ObservationExtractor } from '@/lib/memory/observation-extractor';
 import { mcpFilesystemService } from '@/lib/filesystem/mcp-filesystem-service';
 import { FileNamingStrategy } from '@/lib/filesystem/naming-strategy';
 import type { FileOperation } from '@/lib/filesystem/types';
+import { boutiqueTools } from '@/lib/tools/boutique-tools';
 
 const logger = createLogger('noah-chat');
 
@@ -970,8 +971,8 @@ async function noahStreamingChatHandler(req: NextRequest, context: LoggingContex
         const tool = await withTimeout(tinkererBuild(messages, null, context), TINKERER_TIMEOUT);
         responseContent = tool.content;
       } else {
-        // Noah handles directly with streaming
-        logger.info('🦉 Noah handling directly with streaming...');
+        // Noah handles directly with streaming + boutique tools
+        logger.info('🦉 Noah handling directly with streaming + boutique tools...');
         const model = AI_CONFIG.getProvider() === 'openai' ? openai(AI_CONFIG.getModel()) : anthropic(AI_CONFIG.getModel());
         
         return streamText({
@@ -982,11 +983,13 @@ async function noahStreamingChatHandler(req: NextRequest, context: LoggingContex
           })),
           system: enrichedSystemPrompt,
           temperature: 0.7,
+          tools: boutiqueTools,
           onFinish: async (completion) => {
             const responseTime = Date.now() - startTime;
             logger.info('✅ Noah streaming response completed', {
               responseLength: completion.text.length,
-              responseTime
+              responseTime,
+              toolCallsCount: completion.toolCalls?.length || 0
             });
             
             // Log assistant response (fire-and-forget, same as existing)
@@ -1001,6 +1004,90 @@ async function noahStreamingChatHandler(req: NextRequest, context: LoggingContex
                 responseTime,
                 agentUsed
               );
+            }
+
+            // Handle tool results - create artifacts for tool outputs
+            if (completion.toolResults && completion.toolResults.length > 0) {
+              for (const toolResult of completion.toolResults) {
+                try {
+                  const result = (toolResult as any).result as { title: string; content: string };
+                  
+                  if (result && result.title && result.content) {
+                    logger.info('🛠️ Boutique tool invoked', {
+                      toolName: toolResult.toolName,
+                      title: result.title
+                    });
+
+                    // Add to session artifacts
+                    const artifactId = `${context.sessionId}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                    const timestamp = Date.now();
+                    
+                    if (context.sessionId) {
+                      if (!sessionArtifacts.has(context.sessionId)) {
+                        sessionArtifacts.set(context.sessionId, []);
+                      }
+                      sessionArtifacts.get(context.sessionId)!.push({
+                        title: result.title,
+                        content: result.content,
+                        timestamp,
+                        agent: 'noah',
+                        id: artifactId
+                      });
+                    }
+
+                    // Propose file save operation
+                    try {
+                      const filesystemStatus = mcpFilesystemService.getStatus();
+                      if (filesystemStatus.available && context.sessionId) {
+                        const fileType = FileNamingStrategy.determineFileType(result.title, result.content);
+                        const filePath = FileNamingStrategy.generateFilePath({
+                          title: result.title,
+                          category: 'tool',
+                          fileType,
+                          timestamp
+                        });
+
+                        const fileOperation: FileOperation = {
+                          type: 'save_artifact',
+                          path: filePath,
+                          content: result.content,
+                          metadata: {
+                            agent: 'noah',
+                            timestamp,
+                            sessionId: context.sessionId,
+                            artifactId,
+                            description: `Save ${result.title}`,
+                            fileSize: new TextEncoder().encode(result.content).length,
+                            fileType,
+                            category: 'tool'
+                          },
+                          status: 'pending',
+                          userApprovalRequired: true
+                        };
+
+                        mcpFilesystemService.proposeFileOperation(fileOperation);
+                        logger.info('📋 File save operation proposed for boutique tool', {
+                          toolName: toolResult.toolName,
+                          title: result.title,
+                          filePath
+                        });
+                      }
+                    } catch (error) {
+                      logger.warn('Failed to propose file operation for boutique tool', {
+                        error: error instanceof Error ? error.message : String(error)
+                      });
+                    }
+
+                    // Store tool result in memory
+                    const updatedMessages = [...messages, { role: 'assistant' as const, content: completion.text }];
+                    storeConversationMemories(context.sessionId, updatedMessages, true, artifactId, result.title);
+                  }
+                } catch (error) {
+                  logger.warn('Failed to process tool result', {
+                    error: error instanceof Error ? error.message : String(error)
+                  });
+                }
+              }
             }
 
             // Process artifacts in background (non-blocking)
@@ -1022,7 +1109,7 @@ async function noahStreamingChatHandler(req: NextRequest, context: LoggingContex
       agentUsed = 'noah';
       agentStrategy = 'noah_direct_fallback';
       
-      // Fallback to Noah Direct streaming
+      // Fallback to Noah Direct streaming with boutique tools
       const model = AI_CONFIG.getProvider() === 'openai' ? openai(AI_CONFIG.getModel()) : anthropic(AI_CONFIG.getModel());
       return streamText({
         model,
@@ -1032,11 +1119,13 @@ async function noahStreamingChatHandler(req: NextRequest, context: LoggingContex
         })),
         system: enrichedSystemPrompt,
         temperature: 0.7,
+        tools: boutiqueTools,
         onFinish: async (completion) => {
           const responseTime = Date.now() - startTime;
           logger.info('✅ Noah fallback streaming response completed', {
             responseLength: completion.text.length,
-            responseTime
+            responseTime,
+            toolCallsCount: completion.toolCalls?.length || 0
           });
           
           // Log response
