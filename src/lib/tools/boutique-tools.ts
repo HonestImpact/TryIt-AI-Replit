@@ -49,6 +49,17 @@ export const boutiqueTools = {
         content: BOUTIQUE_TEMPLATES.unitConverter(categories)
       };
     }
+  }),
+
+  assumption_breaker: tool({
+    description: 'Creates an Assumption Breaker tool that helps challenge and reframe assumptions about any problem or decision. Perfect for skeptics who want to think differently. Users describe their problem, and the tool generates 5-7 likely assumptions they can toggle on/off to see their problem reframed. Includes intelligent assumption generation for career, business, relationship, and decision-making contexts.',
+    parameters: z.object({}),
+    execute: async () => {
+      return {
+        title: 'Assumption Breaker',
+        content: BOUTIQUE_TEMPLATES.assumptionBreaker()
+      };
+    }
   })
 };
 
