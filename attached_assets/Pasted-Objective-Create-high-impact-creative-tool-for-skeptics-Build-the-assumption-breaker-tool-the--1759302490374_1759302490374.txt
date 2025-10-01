@@ -1,0 +1,54 @@
+Objective: Create high-impact creative tool for skeptics
+
+Build the assumption-breaker tool - the highest priority tool for building trust with skeptics.
+CONTEXT:
+•	This tool challenges users' assumptions about any problem
+•	Interactive: user describes problem, tool generates assumption list
+•	User can toggle assumptions off to see problem reframed
+•	Meta-cognitive: makes thinking visible
+•	Build time: 30 minutes (simple, powerful)
+REQUIREMENTS:
+1.	Add to src/lib/tools/boutique-templates.ts:
+o	assumptionBreaker() function returning complete HTML
+o	Self-contained app (no external dependencies)
+o	Dark mode by default (modern aesthetic)
+2.	Tool features:
+o	Input: "Describe your problem or decision"
+o	Generate: List of 5-7 likely assumptions
+o	Interactive: Toggle each assumption on/off
+o	Reframe: Show problem with assumption removed
+o	Save: Store session state via postMessage to Noah
+3.	UI Design:
+o	Clean, modern interface
+o	Assumption cards with toggle switches
+o	Reframed view updates in real-time
+o	Examples: "What if time WASN'T a constraint?"
+o	Save progress button (integrates with File MCP)
+4.	Implementation details:
+o	Vanilla JS (no frameworks needed)
+o	Tailwind-compatible utility classes only
+o	localStorage avoided (use postMessage for persistence)
+o	Responsive design (mobile-friendly)
+5.	Example assumptions for common problems:
+o	Career change: "You need to know what you want", "Money is the priority", "You need more education"
+o	Product launch: "Users know what they want", "More features = better", "We need to be perfect"
+o	Relationship: "The problem is the other person", "We need to talk more", "Love should be easy"
+6.	Integration:
+o	Add tool definition to boutiqueTools in boutique-tools.ts
+o	Parameters: none (tool is self-contained)
+o	Execute returns complete HTML artifact
+7.	Save/Load state:
+o	Implement postMessage protocol from FilesystemBridge
+o	Save: Current problem + assumptions + toggle states
+o	Load: Restore previous session
+CRITICAL:
+•	Tool must be genuinely useful, not gimmicky
+•	Assumptions should feel insightful, not generic
+•	UI should feel modern and professional
+•	Meta-message: "AI can help you think differently"
+DELIVERABLES:
+•	Updated src/lib/tools/boutique-templates.ts with assumptionBreaker()
+•	Tool definition in src/lib/tools/boutique-tools.ts
+•	Fully functional HTML artifact
+•	Test cases showing assumption generation
+

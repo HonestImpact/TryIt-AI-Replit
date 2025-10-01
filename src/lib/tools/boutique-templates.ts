@@ -725,5 +725,590 @@ export const BOUTIQUE_TEMPLATES = {
   </script>
 </body>
 </html>`;
+  },
+
+  /**
+   * Assumption Breaker - Challenge assumptions about any problem
+   * Designed for skeptics to think differently
+   */
+  assumptionBreaker(): string {
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Assumption Breaker</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+      color: #e2e8f0;
+      min-height: 100vh;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: rgba(30, 41, 59, 0.8);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      padding: 32px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+    }
+    h1 {
+      font-size: 2.5em;
+      margin-bottom: 12px;
+      background: linear-gradient(135deg, #a78bfa 0%, #ec4899 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      font-weight: 700;
+    }
+    .subtitle {
+      color: #94a3b8;
+      margin-bottom: 32px;
+      font-size: 1.1em;
+    }
+    .input-section {
+      margin-bottom: 32px;
+    }
+    label {
+      display: block;
+      margin-bottom: 8px;
+      color: #cbd5e1;
+      font-weight: 500;
+    }
+    textarea {
+      width: 100%;
+      min-height: 120px;
+      padding: 16px;
+      background: #1e293b;
+      border: 2px solid #334155;
+      border-radius: 12px;
+      color: #e2e8f0;
+      font-size: 1em;
+      font-family: inherit;
+      resize: vertical;
+      transition: border-color 0.2s;
+    }
+    textarea:focus {
+      outline: none;
+      border-color: #a78bfa;
+    }
+    textarea::placeholder {
+      color: #64748b;
+    }
+    .button-group {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 32px;
+      flex-wrap: wrap;
+    }
+    button {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 1em;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #a78bfa 0%, #ec4899 100%);
+      color: white;
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(167, 139, 250, 0.4);
+    }
+    .btn-secondary {
+      background: #334155;
+      color: #e2e8f0;
+    }
+    .btn-secondary:hover {
+      background: #475569;
+    }
+    .btn-save {
+      background: #059669;
+      color: white;
+    }
+    .btn-save:hover {
+      background: #047857;
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .examples {
+      margin-bottom: 24px;
+      padding: 16px;
+      background: rgba(51, 65, 85, 0.5);
+      border-radius: 8px;
+      border-left: 4px solid #a78bfa;
+    }
+    .examples h3 {
+      font-size: 0.9em;
+      color: #cbd5e1;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .example-btn {
+      display: inline-block;
+      padding: 6px 12px;
+      margin: 4px 4px 4px 0;
+      background: #1e293b;
+      border: 1px solid #475569;
+      border-radius: 6px;
+      color: #94a3b8;
+      font-size: 0.9em;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .example-btn:hover {
+      background: #334155;
+      color: #e2e8f0;
+      border-color: #64748b;
+    }
+    #assumptions-container {
+      display: none;
+    }
+    .assumptions-list {
+      margin-bottom: 32px;
+    }
+    .assumption-card {
+      background: #1e293b;
+      border: 2px solid #334155;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 16px;
+      transition: all 0.3s;
+    }
+    .assumption-card.disabled {
+      opacity: 0.5;
+      border-color: #475569;
+    }
+    .assumption-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .assumption-text {
+      flex: 1;
+      font-size: 1.1em;
+      color: #e2e8f0;
+      font-weight: 500;
+    }
+    .assumption-card.disabled .assumption-text {
+      text-decoration: line-through;
+      color: #64748b;
+    }
+    .toggle-switch {
+      position: relative;
+      width: 52px;
+      height: 28px;
+      flex-shrink: 0;
+      margin-left: 16px;
+    }
+    .toggle-input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #334155;
+      border-radius: 28px;
+      transition: 0.3s;
+    }
+    .toggle-slider:before {
+      position: absolute;
+      content: "";
+      height: 20px;
+      width: 20px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      border-radius: 50%;
+      transition: 0.3s;
+    }
+    .toggle-input:checked + .toggle-slider {
+      background: linear-gradient(135deg, #a78bfa 0%, #ec4899 100%);
+    }
+    .toggle-input:checked + .toggle-slider:before {
+      transform: translateX(24px);
+    }
+    .reframe-section {
+      background: rgba(167, 139, 250, 0.1);
+      border: 2px solid #a78bfa;
+      border-radius: 12px;
+      padding: 24px;
+      margin-top: 24px;
+    }
+    .reframe-section h2 {
+      color: #a78bfa;
+      margin-bottom: 16px;
+      font-size: 1.3em;
+    }
+    .reframe-text {
+      color: #cbd5e1;
+      font-size: 1.1em;
+      line-height: 1.8;
+      font-style: italic;
+    }
+    .empty-state {
+      text-align: center;
+      color: #64748b;
+      font-style: italic;
+      padding: 20px;
+    }
+    @media (max-width: 768px) {
+      .container {
+        padding: 20px;
+      }
+      h1 {
+        font-size: 2em;
+      }
+      .button-group {
+        flex-direction: column;
+      }
+      button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔍 Assumption Breaker</h1>
+    <p class="subtitle">Challenge your assumptions. Think differently.</p>
+
+    <div class="examples">
+      <h3>Try an example:</h3>
+      <span class="example-btn" onclick="loadExample('career')">Career Change</span>
+      <span class="example-btn" onclick="loadExample('product')">Product Launch</span>
+      <span class="example-btn" onclick="loadExample('relationship')">Relationship Issue</span>
+      <span class="example-btn" onclick="loadExample('business')">Business Decision</span>
+    </div>
+
+    <div class="input-section">
+      <label for="problem">Describe your problem or decision:</label>
+      <textarea 
+        id="problem" 
+        placeholder="Example: I'm stuck in my career and don't know if I should stay or change paths..."
+      ></textarea>
+    </div>
+
+    <div class="button-group">
+      <button class="btn-primary" onclick="generateAssumptions()">Generate Assumptions</button>
+      <button class="btn-secondary" onclick="resetTool()">Reset</button>
+      <button class="btn-save" onclick="saveSession()" id="saveBtn" disabled>Save Progress</button>
+    </div>
+
+    <div id="assumptions-container">
+      <div class="assumptions-list" id="assumptions-list"></div>
+      
+      <div class="reframe-section">
+        <h2>🎯 Reframed Perspective</h2>
+        <div class="reframe-text" id="reframe-text">
+          <div class="empty-state">Toggle assumptions off to see your problem reframed</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const exampleProblems = {
+      career: {
+        problem: "I'm stuck in my career. I want to change paths but don't know where to start or if it's the right move.",
+        assumptions: [
+          "You need to know exactly what you want before making a change",
+          "Money should be the top priority in career decisions",
+          "You need more education or credentials to switch careers",
+          "Starting over means losing all your progress",
+          "Your next step needs to be a permanent decision",
+          "You have to figure this out alone"
+        ]
+      },
+      product: {
+        problem: "We're launching a new product but worried it won't meet user expectations or stand out in the market.",
+        assumptions: [
+          "Users already know what they want from this product",
+          "More features automatically means a better product",
+          "The product needs to be perfect before launch",
+          "We need to compete on the same terms as competitors",
+          "Early negative feedback means the product failed",
+          "Marketing is separate from product development"
+        ]
+      },
+      relationship: {
+        problem: "My relationship is struggling and I'm not sure if we can fix the communication issues we're having.",
+        assumptions: [
+          "The problem is primarily the other person's fault",
+          "More communication will automatically solve things",
+          "Good relationships should feel easy and natural",
+          "Conflict means the relationship is fundamentally broken",
+          "We should both want the same things in the same way",
+          "Counseling is only for relationships in crisis"
+        ]
+      },
+      business: {
+        problem: "Should I expand my business now or wait? I'm worried about timing and taking on too much risk.",
+        assumptions: [
+          "There's a 'right' time that you can identify in advance",
+          "Expansion means taking on massive, all-or-nothing risk",
+          "You need to feel completely confident before acting",
+          "Past success guarantees future results with expansion",
+          "Growing too slowly means you'll lose competitive advantage",
+          "You need external funding to expand meaningfully"
+        ]
+      }
+    };
+
+    let currentAssumptions = [];
+    let currentProblem = '';
+
+    function loadExample(type) {
+      const example = exampleProblems[type];
+      document.getElementById('problem').value = example.problem;
+    }
+
+    function generateAssumptions() {
+      const problemText = document.getElementById('problem').value.trim();
+      if (!problemText) {
+        alert('Please describe your problem first.');
+        return;
+      }
+
+      currentProblem = problemText;
+      
+      // Intelligent assumption generation based on problem content
+      currentAssumptions = generateSmartAssumptions(problemText);
+      
+      displayAssumptions();
+      updateReframe();
+      
+      document.getElementById('assumptions-container').style.display = 'block';
+      document.getElementById('saveBtn').disabled = false;
+      
+      // Smooth scroll to assumptions
+      document.getElementById('assumptions-container').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function generateSmartAssumptions(problem) {
+      const lower = problem.toLowerCase();
+      let assumptions = [];
+      
+      // Career-related
+      if (lower.match(/career|job|work|profession|employment/)) {
+        assumptions.push(
+          { text: "You need to know exactly what you want before taking action", enabled: true },
+          { text: "Your past experience limits your future options", enabled: true },
+          { text: "Financial security must come before personal fulfillment", enabled: true },
+          { text: "Starting over means losing all your progress", enabled: true },
+          { text: "You need more credentials or education to change paths", enabled: true }
+        );
+      }
+      // Product/Business
+      else if (lower.match(/product|launch|business|startup|company|market/)) {
+        assumptions.push(
+          { text: "Users know what they want and can articulate it", enabled: true },
+          { text: "More features equal more value", enabled: true },
+          { text: "You need to be perfect before launching", enabled: true },
+          { text: "Success means competing directly with market leaders", enabled: true },
+          { text: "Early criticism indicates fundamental failure", enabled: true },
+          { text: "Growth must be rapid to be meaningful", enabled: true }
+        );
+      }
+      // Relationships
+      else if (lower.match(/relationship|partner|marriage|dating|love|communication/)) {
+        assumptions.push(
+          { text: "The problem is primarily the other person", enabled: true },
+          { text: "More talking will automatically solve issues", enabled: true },
+          { text: "Healthy relationships should feel easy and natural", enabled: true },
+          { text: "Conflict means something is fundamentally broken", enabled: true },
+          { text: "You should both want the same things at the same time", enabled: true }
+        );
+      }
+      // Decision-making
+      else if (lower.match(/decision|choice|decide|should i|whether to/)) {
+        assumptions.push(
+          { text: "There's one objectively 'right' choice to discover", enabled: true },
+          { text: "You need to feel certain before acting", enabled: true },
+          { text: "Making the wrong choice will have permanent consequences", enabled: true },
+          { text: "More analysis will make the answer clearer", enabled: true },
+          { text: "You should trust your gut feeling", enabled: true }
+        );
+      }
+      // Time/Timing
+      else if (lower.match(/time|timing|when|schedule|deadline|late|early/)) {
+        assumptions.push(
+          { text: "Time is the primary constraint you're facing", enabled: true },
+          { text: "There's a 'right time' you can identify in advance", enabled: true },
+          { text: "Moving faster will improve outcomes", enabled: true },
+          { text: "You're already too late to make a difference", enabled: true },
+          { text: "Timing is mostly outside your control", enabled: true }
+        );
+      }
+      // Generic fallback
+      else {
+        assumptions.push(
+          { text: "You already understand the core of this problem", enabled: true },
+          { text: "The obvious solution is the best one", enabled: true },
+          { text: "Your initial emotional reaction is the most accurate guide", enabled: true },
+          { text: "Past experiences directly predict future outcomes", enabled: true },
+          { text: "You need to choose between extreme opposing options", enabled: true },
+          { text: "Someone else has figured this out and you just need to find them", enabled: true }
+        );
+      }
+      
+      return assumptions;
+    }
+
+    function displayAssumptions() {
+      const container = document.getElementById('assumptions-list');
+      container.innerHTML = '';
+      
+      currentAssumptions.forEach((assumption, index) => {
+        const card = document.createElement('div');
+        card.className = 'assumption-card' + (assumption.enabled ? '' : ' disabled');
+        card.id = \`assumption-\${index}\`;
+        
+        card.innerHTML = \`
+          <div class="assumption-header">
+            <div class="assumption-text">\${assumption.text}</div>
+            <label class="toggle-switch">
+              <input type="checkbox" class="toggle-input" 
+                     \${assumption.enabled ? 'checked' : ''} 
+                     onchange="toggleAssumption(\${index})">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        \`;
+        
+        container.appendChild(card);
+      });
+    }
+
+    function toggleAssumption(index) {
+      currentAssumptions[index].enabled = !currentAssumptions[index].enabled;
+      
+      const card = document.getElementById(\`assumption-\${index}\`);
+      if (currentAssumptions[index].enabled) {
+        card.classList.remove('disabled');
+      } else {
+        card.classList.add('disabled');
+      }
+      
+      updateReframe();
+    }
+
+    function updateReframe() {
+      const disabledAssumptions = currentAssumptions.filter(a => !a.enabled);
+      const reframeEl = document.getElementById('reframe-text');
+      
+      if (disabledAssumptions.length === 0) {
+        reframeEl.innerHTML = '<div class="empty-state">Toggle assumptions off to see your problem reframed</div>';
+        return;
+      }
+      
+      const reframeQuestions = disabledAssumptions.map(a => {
+        const withoutPrefix = a.text.replace(/^(You need to |Your |You should |You |The |There's |Someone )/i, '');
+        return \`• What if <strong>\${withoutPrefix.toLowerCase()}</strong> wasn't true?\`;
+      }).join('<br>');
+      
+      let reframeText = \`
+        <p style="margin-bottom: 16px;">Here's your problem viewed differently:</p>
+        <p style="margin-bottom: 16px;"><strong>Original:</strong> \${currentProblem}</p>
+        <p style="margin-bottom: 12px;"><strong>New questions to explore:</strong></p>
+        <div style="padding-left: 12px; line-height: 2;">
+          \${reframeQuestions}
+        </div>
+      \`;
+      
+      if (disabledAssumptions.length >= 3) {
+        reframeText += \`
+          <p style="margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(167, 139, 250, 0.3); color: #a78bfa;">
+            💡 With \${disabledAssumptions.length} assumption(s) removed, you've opened up new solution spaces that weren't visible before.
+          </p>
+        \`;
+      }
+      
+      reframeEl.innerHTML = reframeText;
+    }
+
+    function resetTool() {
+      if (confirm('Reset everything and start over?')) {
+        document.getElementById('problem').value = '';
+        document.getElementById('assumptions-container').style.display = 'none';
+        document.getElementById('saveBtn').disabled = true;
+        currentAssumptions = [];
+        currentProblem = '';
+      }
+    }
+
+    function saveSession() {
+      const sessionData = {
+        problem: currentProblem,
+        assumptions: currentAssumptions,
+        timestamp: new Date().toISOString()
+      };
+      
+      // Try postMessage to Noah's FilesystemBridge
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({
+          type: 'NOAH_SAVE_REQUEST',
+          payload: {
+            filename: 'assumption-breaker-session.json',
+            content: JSON.stringify(sessionData, null, 2),
+            contentType: 'application/json'
+          }
+        }, '*');
+        
+        alert('Save request sent to Noah! Check your file operations panel.');
+      } else {
+        // Fallback: download as file
+        const blob = new Blob([JSON.stringify(sessionData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'assumption-breaker-session.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+    }
+
+    // Listen for load requests
+    window.addEventListener('message', (event) => {
+      if (event.data.type === 'NOAH_LOAD_RESPONSE') {
+        try {
+          const sessionData = JSON.parse(event.data.payload.content);
+          currentProblem = sessionData.problem;
+          currentAssumptions = sessionData.assumptions;
+          
+          document.getElementById('problem').value = currentProblem;
+          displayAssumptions();
+          updateReframe();
+          document.getElementById('assumptions-container').style.display = 'block';
+          document.getElementById('saveBtn').disabled = false;
+        } catch (error) {
+          alert('Failed to load session: ' + error.message);
+        }
+      }
+    });
+  </script>
+</body>
+</html>`;
   }
 };
