@@ -3,6 +3,7 @@ import type { LLMProvider, MemoryContext } from './types';
 import knowledgeService from '@/lib/knowledge/knowledge-singleton';
 import { ToolKnowledgeService } from './tool-knowledge-service';
 import { mcpMemoryService } from '@/lib/memory/mcp-memory-service';
+import { mcpFilesystemService } from '@/lib/filesystem/mcp-filesystem-service';
 import { AI_CONFIG } from '@/lib/ai-config';
 import { createLogger } from '@/lib/logger';
 
@@ -27,6 +28,7 @@ export interface AgentSharedResources {
   solutionGenerator?: SolutionGenerator;
   toolKnowledgeService?: ToolKnowledgeService;
   memoryServiceAvailable?: boolean;
+  filesystemServiceAvailable?: boolean;
 }
 
 class ProductionRAGIntegration implements RAGIntegration {
@@ -132,12 +134,33 @@ export const sharedResourceManager = {
       //   });
       // }
 
+      // Initialize MCP Filesystem Service (background initialization)
+      let filesystemServiceAvailable = false;
+      try {
+        await mcpFilesystemService.initialize();
+        const status = mcpFilesystemService.getStatus();
+        filesystemServiceAvailable = status.available;
+        
+        if (filesystemServiceAvailable) {
+          logger.info('✅ MCP Filesystem Service initialized successfully', {
+            allowedDirs: status.allowedDirectories.length
+          });
+        } else {
+          logger.info('⚠️ Filesystem service unavailable, file operations disabled');
+        }
+      } catch (error) {
+        logger.warn('Filesystem service initialization failed, proceeding without file operations', {
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
+
       const resources: AgentSharedResources = {
         knowledgeService,
         ragIntegration,
         solutionGenerator,
         toolKnowledgeService,
-        memoryServiceAvailable
+        memoryServiceAvailable,
+        filesystemServiceAvailable
       };
 
       logger.info('✅ Shared agent resources initialized', {
@@ -145,7 +168,8 @@ export const sharedResourceManager = {
         knowledgeServiceAvailable: !!resources.knowledgeService,
         solutionGeneratorAvailable: !!resources.solutionGenerator,
         toolKnowledgeServiceAvailable: !!resources.toolKnowledgeService,
-        memoryServiceAvailable: resources.memoryServiceAvailable
+        memoryServiceAvailable: resources.memoryServiceAvailable,
+        filesystemServiceAvailable: resources.filesystemServiceAvailable
       });
 
       return resources;
@@ -158,7 +182,8 @@ export const sharedResourceManager = {
       // Return minimal resources on failure
       return {
         ragIntegration: { enabled: false, search: async () => [] },
-        memoryServiceAvailable: false
+        memoryServiceAvailable: false,
+        filesystemServiceAvailable: false
       };
     }
   },

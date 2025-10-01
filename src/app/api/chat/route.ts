@@ -16,6 +16,9 @@ import { analyticsPool } from '@/lib/analytics/connection-pool';
 import { NoahSafetyService } from '@/lib/safety';
 import { ContextEnricher } from '@/lib/memory/context-enricher';
 import { ObservationExtractor } from '@/lib/memory/observation-extractor';
+import { mcpFilesystemService } from '@/lib/filesystem/mcp-filesystem-service';
+import { FileNamingStrategy } from '@/lib/filesystem/naming-strategy';
+import type { FileOperation } from '@/lib/filesystem/types';
 
 const logger = createLogger('noah-chat');
 
@@ -618,13 +621,60 @@ async function noahChatHandler(req: NextRequest, context: LoggingContext): Promi
         sessionArtifacts.set(sessionId, []);
       }
       
+      const artifactTimestamp = Date.now();
       sessionArtifacts.get(sessionId)!.push({
         title: parsed.title,
         content: parsed.content,
-        timestamp: Date.now(),
+        timestamp: artifactTimestamp,
         agent: agentUsed,
         id: artifactId
       });
+
+      // 📁 Propose file operation for artifact save (user approval required)
+      try {
+        const filesystemStatus = mcpFilesystemService.getStatus();
+        if (filesystemStatus.available) {
+          const fileType = FileNamingStrategy.determineFileType(parsed.title, parsed.content);
+          const filePath = FileNamingStrategy.generateFilePath({
+            title: parsed.title,
+            category: 'tool',
+            fileType,
+            timestamp: artifactTimestamp
+          });
+
+          const fileOperation: FileOperation = {
+            type: 'save_artifact',
+            path: filePath,
+            content: parsed.content,
+            metadata: {
+              agent: agentUsed as 'noah' | 'wanderer' | 'tinkerer',
+              timestamp: artifactTimestamp,
+              sessionId: sessionId,
+              artifactId: artifactId,
+              description: `Save ${parsed.title}`,
+              fileSize: Buffer.byteLength(parsed.content, 'utf-8'),
+              fileType,
+              category: 'tool'
+            },
+            status: 'pending',
+            userApprovalRequired: true
+          };
+
+          const operationId = mcpFilesystemService.proposeFileOperation(fileOperation);
+          logger.info('📋 File save operation proposed for artifact', {
+            artifactTitle: parsed.title.substring(0, 30),
+            operationId: operationId.substring(0, 12) + '...',
+            filePath
+          });
+        } else {
+          logger.debug('Filesystem service not available, skipping file operation proposal');
+        }
+      } catch (error) {
+        logger.warn('Failed to propose file operation for artifact', {
+          artifactTitle: parsed.title.substring(0, 30),
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
 
       const lines = result.content.split('\n');
       const firstFiveLines = lines.slice(0, 5).join('\n');
