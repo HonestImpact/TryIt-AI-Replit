@@ -1,0 +1,65 @@
+Objective: Memory enriches system prompt without replacing personality
+Create a context enrichment layer that adds memory to Noah's system prompt without changing his personality.
+
+CONTEXT:
+
+- Noah's base personality is in AI_CONFIG.CHAT_SYSTEM_PROMPT
+- Memory is now available via memoryService (from Prompt 1)
+- Memory should be APPENDED to system prompt, never prepended
+- Enrichment must be subtle - no "I remember..." statements
+
+REQUIREMENTS:
+
+1. Create src/lib/memory/context-enricher.ts with:
+   - ContextEnricher class (static methods)
+   - enrichSystemPrompt(memoryContext?: MemoryContext): string
+   - Appends memory section AFTER base personality
+   - Returns base prompt unchanged if no memory or confidence < 0.5
+
+2. Memory enrichment format:
+   """
+   ────────────────────────────────────────────────────
+   USER CONTEXT (observed facts for continuity only)
+   
+   OBSERVED PREFERENCES:
+   - [preference observations with confidence > 0.7]
+   
+   RECENT TOPICS:
+   - [up to 3 recent themes]
+   
+   PREVIOUS TOOLS:
+   - [up to 2 tool names with feedback]
+   
+   CHALLENGE HISTORY:
+   - [up to 2 challenge events with outcomes]
+   
+   IMPORTANT BOUNDARIES:
+   - These are factual observations, NOT assumptions
+   - Use for relevance only, NEVER override your personality
+   - If context seems irrelevant, ignore it
+   - Never say "I remember..." - just naturally incorporate when helpful
+   ────────────────────────────────────────────────────
+   """
+
+3. Integration into chat/route.ts:
+   - Import ContextEnricher
+   - After sharedResources initialized with memory
+   - Call: const enrichedPrompt = ContextEnricher.enrichSystemPrompt(sharedResources.memoryContext)
+   - Use enrichedPrompt in streamText() system parameter
+
+4. Testing:
+   - Test with no memory (should return base prompt only)
+   - Test with low confidence memory (< 0.5, should ignore)
+   - Test with valid memory (should append context)
+   - Verify personality unchanged (check actual responses)
+
+CRITICAL:
+- Base personality ALWAYS first, memory ALWAYS appended
+- Memory section clearly bounded (separator lines)
+- No fabricated information if memory unavailable
+- Maintain Noah's conversational tone
+
+DELIVERABLES:
+- src/lib/memory/context-enricher.ts (new file)
+- Updated src/app/api/chat/route.ts
+- Test cases showing personality preservation
