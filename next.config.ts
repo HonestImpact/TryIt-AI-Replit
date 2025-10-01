@@ -14,6 +14,24 @@ const nextConfig: NextConfig = {
     // Skip ESLint during builds for now
     ignoreDuringBuilds: true,
   },
+  webpack: (config, { dev }) => {
+    if (dev) {
+      // Prevent dev server from watching runtime-written directories
+      // This stops hot-reload loops when ChromaDB, memory service, etc. write files
+      config.watchOptions = {
+        ...config.watchOptions,
+        ignored: [
+          '**/node_modules/**',
+          '**/chroma/**',
+          '**/noah-memory-data/**',
+          '**/cache/**',
+          '**/rag/**',
+          '**/.git/**',
+        ],
+      };
+    }
+    return config;
+  },
 };
 
 export default nextConfig;
