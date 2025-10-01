@@ -13,6 +13,10 @@ The application implements a sophisticated Retrieval-Augmented Generation (RAG) 
 - **MCP SDK Client**: Implemented proper MCP SDK client using StdioClientTransport for reliable communication with memory server
 - **Knowledge Graph Storage**: Memories stored as entities with observations in local JSON-based knowledge graph
 - **Session-Specific Context**: Per-session memory retrieval with entity types (user_preference, conversation_theme, tool_result, challenge_event, trust_signal)
+- **Context Enrichment**: ContextEnricher class appends memory observations to Noah's system prompt without overriding personality
+- **Async Memory Storage**: Fire-and-forget observation storage after responses complete (zero performance impact on response times)
+- **ObservationExtractor**: Automatic extraction of conversation themes, challenge events, trust signals, user preferences, and tool results
+- **Resilient Storage**: Per-observation error handling ensures partial failures don't block subsequent observations
 - **Graceful Degradation**: Service operates with fallback behavior if memory server unavailable
 - **Shared Resources Integration**: Memory service initialized once, session context retrieved per-request
 - **Storage Location**: Memories persisted in ./noah-memory-data/memory.json (configurable via MEMORY_FILE_PATH environment variable)
