@@ -69,9 +69,7 @@ export default function TrustRecoveryProtocol() {
 
   const personas = [
     { id: 'collaborative', name: 'Collaborative Partner', icon: '✨', active: true },
-    { id: 'teacher', name: 'Patient Teacher', icon: '📚', active: false },
-    { id: 'analyst', name: 'Data Analyst', icon: '📊', active: false },
-    { id: 'engineer', name: 'Tech Expert', icon: '⚙️', active: false }
+    { id: 'teacher', name: 'AI Teacher', icon: '🤖', active: false }
   ];
 
   // Focus input on mount and update timestamp (no auto-scroll)
