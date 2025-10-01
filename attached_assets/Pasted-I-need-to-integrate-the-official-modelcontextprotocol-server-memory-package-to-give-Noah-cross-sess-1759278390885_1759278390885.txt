@@ -1,0 +1,47 @@
+I need to integrate the official @modelcontextprotocol/server-memory package to give Noah cross-session memory while preserving his personality.
+
+CONTEXT:
+- Current RAG (knowledge-singleton.ts) is a stub returning empty results
+- Noah's personality lives in ai-config.ts and safety-service.ts
+- Architecture uses shared-resources.ts to initialize services
+- Memory should ENRICH context, not REPLACE personality
+
+REQUIREMENTS:
+1. Install @modelcontextprotocol/server-memory via npm
+2. Create src/lib/memory/mcp-memory-service.ts with:
+   - MCPMemoryService class (singleton pattern)
+   - initialize() method spawning MCP server via stdio
+   - retrieveSessionContext(sessionId) returning MemoryContext
+   - storeObservation() for async memory writes
+   - Graceful degradation if MCP unavailable
+   - Memory stored in ./noah-memory-data/memory.json
+
+3. Memory schema (entities to store):
+   - user_preference: Communication style, skeptic mode
+   - conversation_theme: Topics discussed (last 7 days)
+   - tool_result: Previously created artifacts
+   - challenge_event: When user challenged Noah
+   - trust_signal: Positive/negative interaction moments
+
+4. Integration into shared-resources.ts:
+   - Add memoryContext?: MemoryContext to AgentSharedResources interface
+   - Call memoryService.initialize() in initializeResources()
+   - Pass sessionId to retrieve memory context
+   - Return memoryContext in resources object
+
+5. Testing:
+   - Verify MCP server spawns correctly
+   - Test memory retrieval returns null gracefully if unavailable
+   - Confirm Noah still works without memory (fallback behavior)
+
+CRITICAL:
+- Memory initialization happens AFTER NoahSafetyService check
+- Store memory path via environment variable: MEMORY_FILE_PATH
+- Use TypeScript strict types throughout
+- Follow existing code patterns (see practical-agent.ts for reference)
+
+DELIVERABLES:
+- src/lib/memory/mcp-memory-service.ts (new file)
+- Updated src/lib/agents/shared-resources.ts
+- Types in src/lib/agents/types.ts if needed
+- Console logging for memory service status
