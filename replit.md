@@ -84,6 +84,19 @@ The application implements a sophisticated Retrieval-Augmented Generation (RAG) 
 - **API Enhancement**: Updated artifacts endpoint to return sessionArtifacts array while maintaining backward compatibility
 - **User Experience**: Tools now show agent source, creation time, and maintain conversation flow after generation
 
+### Boutique Creative Tools Implementation (October 2025)
+- **Assumption Breaker Tool**: High-impact creative tool designed specifically for skeptics to challenge their thinking
+  - **Content-Aware Generation**: Intelligent assumption generation based on problem context (career, business, relationships, decisions, timing)
+  - **Interactive Reframing**: 5-7 toggleable assumption cards with real-time reframed perspective view
+  - **Professional UI**: Modern dark mode interface with mobile-responsive design
+  - **Persistence**: Save/load functionality via postMessage to FilesystemBridge
+  - **Meta-Cognitive**: Makes thinking visible by explicitly showing hidden assumptions
+  - **Example Scenarios**: Pre-built buttons for career transitions, product launches, relationships, and business decisions
+- **Fast-Path Detection**: BoutiqueIntentDetector with comprehensive pattern matching (0.87-0.95 confidence)
+- **AI SDK Integration**: Native tool calling with zod schema validation
+- **Performance**: <100ms response initiation via pre-built templates and synchronous execution
+- **Complete Toolset**: Scientific calculator, Pomodoro timer, unit converter, assumption breaker all instantly available
+
 ### Performance Optimization (September 2025)
 - **Major Performance Breakthrough**: Implemented task-specific LLM model selection achieving 83% faster tool generation (reduced from 28+ seconds to ~5 seconds)
 - **Model Optimization**: GPT-4o for tool generation, Sonnet 4 for conversation, GPT-4o-mini for research
