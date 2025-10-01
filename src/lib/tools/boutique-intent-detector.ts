@@ -1,6 +1,6 @@
 export interface BoutiqueToolIntent {
   detected: boolean;
-  toolName: 'scientific_calculator' | 'pomodoro_timer' | 'unit_converter' | 'assumption_breaker' | null;
+  toolName: 'scientific_calculator' | 'pomodoro_timer' | 'unit_converter' | 'assumption_breaker' | 'time_telescope' | null;
   parameters: Record<string, any>;
   confidence: number;
 }
@@ -64,8 +64,23 @@ export class BoutiqueIntentDetector {
       { pattern: /\bunconsciou(s|sly)\s+assuming\b/i, confidence: 0.90 }
     ];
     
+    const timeTelescopePatterns = [
+      { pattern: /\btime\s+telescope\b/i, confidence: 0.95 },
+      { pattern: /\bview\s+(my\s+)?decision\s+(across|over|through)\s+time\b/i, confidence: 0.93 },
+      { pattern: /\bperspective\s+(on|over)\s+time\b/i, confidence: 0.92 },
+      { pattern: /\btime\s+(perspective|horizon)s?\b/i, confidence: 0.93 },
+      { pattern: /\b(decision|choice)\s+perspective\s+tool\b/i, confidence: 0.91 },
+      { pattern: /\bview\s+through\s+time\b/i, confidence: 0.92 },
+      { pattern: /\blong[- ]term\s+(perspective|view)\b/i, confidence: 0.88 },
+      { pattern: /\bhow\s+(will|would)\s+this\s+(look|matter|seem)\s+in\s+\d+\s+(year|month|day)s?\b/i, confidence: 0.90 },
+      { pattern: /\bfuture\s+(perspective|view|outlook)\b/i, confidence: 0.87 },
+      { pattern: /\bdecision\s+paralysis\b/i, confidence: 0.89 },
+      { pattern: /\b(help|show|view)\s+(me\s+)?(see|understand)\s+(my\s+)?(decision|choice)\s+(from\s+)?(different|multiple)\s+(time|perspective)s?\b/i, confidence: 0.92 },
+      { pattern: /\b(stuck|struggling)\s+(on|with)\s+a\s+(decision|choice)\b/i, confidence: 0.88 }
+    ];
+    
     let maxConfidence = 0;
-    let detectedTool: 'scientific_calculator' | 'pomodoro_timer' | 'unit_converter' | 'assumption_breaker' | null = null;
+    let detectedTool: 'scientific_calculator' | 'pomodoro_timer' | 'unit_converter' | 'assumption_breaker' | 'time_telescope' | null = null;
     
     for (const { pattern, confidence } of calculatorPatterns) {
       if (pattern.test(lowerMessage) && confidence > maxConfidence) {
@@ -92,6 +107,13 @@ export class BoutiqueIntentDetector {
       if (pattern.test(lowerMessage) && confidence > maxConfidence) {
         maxConfidence = confidence;
         detectedTool = 'assumption_breaker';
+      }
+    }
+    
+    for (const { pattern, confidence } of timeTelescopePatterns) {
+      if (pattern.test(lowerMessage) && confidence > maxConfidence) {
+        maxConfidence = confidence;
+        detectedTool = 'time_telescope';
       }
     }
     
@@ -146,6 +168,16 @@ export class BoutiqueIntentDetector {
         detected: true,
         toolName: 'assumption_breaker',
         parameters: {},
+        confidence: maxConfidence
+      };
+    }
+    
+    if (detectedTool === 'time_telescope') {
+      const theme = lowerMessage.includes('light') ? 'light' : 'dark';
+      return {
+        detected: true,
+        toolName: 'time_telescope',
+        parameters: { theme },
         confidence: maxConfidence
       };
     }
