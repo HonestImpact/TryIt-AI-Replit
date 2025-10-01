@@ -1310,5 +1310,737 @@ export const BOUTIQUE_TEMPLATES = {
   </script>
 </body>
 </html>`;
+  },
+
+  /**
+   * Time Telescope - perspective-shifting decision tool
+   * Shows decisions across multiple time horizons
+   */
+  timeTelescope(theme: string = 'dark'): string {
+    const bgColor = theme === 'dark' ? '#1a1a2e' : '#f0f0f0';
+    const textColor = theme === 'dark' ? '#eee' : '#333';
+    const cardBg = theme === 'dark' ? '#16213e' : '#fff';
+    const accentColor = theme === 'dark' ? '#0f3460' : '#4a90e2';
+    
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Time Telescope - Perspective Shifting Decision Tool</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: ${bgColor};
+      color: ${textColor};
+      padding: 24px;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+      padding-bottom: 20px;
+      border-bottom: 2px solid ${accentColor};
+    }
+    
+    h1 {
+      font-size: 2.5em;
+      margin-bottom: 12px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .subtitle {
+      color: #888;
+      font-size: 1.1em;
+    }
+    
+    .decision-input-section {
+      background: ${cardBg};
+      padding: 32px;
+      border-radius: 16px;
+      margin-bottom: 32px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    }
+    
+    .decision-input-section h2 {
+      margin-bottom: 16px;
+      font-size: 1.5em;
+    }
+    
+    #decisionInput {
+      width: 100%;
+      padding: 16px;
+      font-size: 1.1em;
+      border: 2px solid ${accentColor};
+      border-radius: 8px;
+      background: ${bgColor};
+      color: ${textColor};
+      resize: vertical;
+      min-height: 80px;
+      font-family: inherit;
+    }
+    
+    .button-group {
+      display: flex;
+      gap: 12px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
+    
+    .btn-primary, .btn-secondary, .btn-save {
+      padding: 12px 24px;
+      font-size: 1em;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-weight: 600;
+    }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    
+    .btn-secondary {
+      background: ${accentColor};
+      color: white;
+    }
+    
+    .btn-save {
+      background: #27ae60;
+      color: white;
+    }
+    
+    .btn-primary:hover, .btn-secondary:hover, .btn-save:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    
+    .btn-primary:disabled, .btn-save:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .example-buttons {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+    
+    .example-btn {
+      padding: 8px 16px;
+      font-size: 0.9em;
+      border: 1px solid ${accentColor};
+      border-radius: 6px;
+      background: transparent;
+      color: ${textColor};
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .example-btn:hover {
+      background: ${accentColor};
+      color: white;
+    }
+    
+    #timelineSection {
+      display: none;
+      margin-bottom: 32px;
+    }
+    
+    .timeline-container {
+      background: ${cardBg};
+      padding: 32px;
+      border-radius: 16px;
+      margin-bottom: 32px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    }
+    
+    .timeline-controls {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+    
+    .zoom-btn {
+      padding: 8px 16px;
+      font-size: 0.9em;
+      border: 2px solid ${accentColor};
+      border-radius: 6px;
+      background: ${bgColor};
+      color: ${textColor};
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .zoom-btn.active {
+      background: ${accentColor};
+      color: white;
+      transform: scale(1.05);
+    }
+    
+    .zoom-btn:hover {
+      background: ${accentColor};
+      color: white;
+    }
+    
+    .timeline-svg-container {
+      width: 100%;
+      overflow-x: auto;
+      margin-bottom: 32px;
+    }
+    
+    svg {
+      width: 100%;
+      height: 120px;
+      min-width: 600px;
+    }
+    
+    .perspective-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin-top: 32px;
+    }
+    
+    .perspective-card {
+      background: linear-gradient(135deg, ${cardBg} 0%, ${accentColor} 100%);
+      padding: 24px;
+      border-radius: 12px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+      transition: all 0.3s ease;
+      opacity: 0.3;
+      transform: scale(0.95);
+    }
+    
+    .perspective-card.active {
+      opacity: 1;
+      transform: scale(1);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    }
+    
+    .perspective-card.focused {
+      grid-column: 1 / -1;
+      opacity: 1;
+      transform: scale(1);
+    }
+    
+    .timeframe {
+      font-size: 1.8em;
+      font-weight: 700;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .insight-label {
+      font-size: 0.9em;
+      color: #888;
+      margin-bottom: 12px;
+      font-style: italic;
+    }
+    
+    .perspective-text {
+      font-size: 1.1em;
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
+    
+    .wisdom-text {
+      font-size: 0.95em;
+      padding: 12px;
+      background: rgba(0,0,0,0.2);
+      border-radius: 8px;
+      border-left: 3px solid ${accentColor};
+    }
+    
+    @media (max-width: 768px) {
+      body { padding: 16px; }
+      h1 { font-size: 2em; }
+      .perspective-cards {
+        grid-template-columns: 1fr;
+      }
+      .timeline-controls {
+        gap: 8px;
+      }
+      .zoom-btn {
+        padding: 6px 12px;
+        font-size: 0.85em;
+      }
+    }
+    
+    @media print {
+      body {
+        background: white;
+        color: black;
+      }
+      .timeline-controls, .button-group {
+        display: none;
+      }
+      .perspective-card {
+        opacity: 1;
+        transform: scale(1);
+        page-break-inside: avoid;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🔭 Time Telescope</h1>
+      <p class="subtitle">View your decision across multiple time horizons</p>
+    </header>
+    
+    <div class="decision-input-section">
+      <h2>What decision are you facing?</h2>
+      <textarea 
+        id="decisionInput" 
+        placeholder="Describe the decision you're trying to make..."
+      ></textarea>
+      
+      <div class="example-buttons">
+        <button class="example-btn" onclick="loadExample('career')">Should I quit my job?</button>
+        <button class="example-btn" onclick="loadExample('move')">Should I move to a new city?</button>
+        <button class="example-btn" onclick="loadExample('relationship')">Should I end this relationship?</button>
+        <button class="example-btn" onclick="loadExample('startup')">Should I start my own business?</button>
+      </div>
+      
+      <div class="button-group">
+        <button class="btn-primary" onclick="generatePerspectives()">View Through Time</button>
+        <button class="btn-secondary" onclick="resetTool()">Reset</button>
+        <button class="btn-save" onclick="saveDecision()" id="saveBtn" disabled>Save Decision</button>
+      </div>
+    </div>
+    
+    <div id="timelineSection">
+      <div class="timeline-container">
+        <h2 style="text-align: center; margin-bottom: 24px;">Timeline View</h2>
+        
+        <div class="timeline-controls">
+          <button class="zoom-btn active" onclick="focusTimeframe('all')">All Perspectives</button>
+          <button class="zoom-btn" onclick="focusTimeframe('day')">1 Day</button>
+          <button class="zoom-btn" onclick="focusTimeframe('year')">1 Year</button>
+          <button class="zoom-btn" onclick="focusTimeframe('decade')">10 Years</button>
+          <button class="zoom-btn" onclick="focusTimeframe('century')">100 Years</button>
+        </div>
+        
+        <div class="timeline-svg-container">
+          <svg id="timelineSvg" viewBox="0 0 1000 120">
+            <!-- Timeline will be drawn here -->
+          </svg>
+        </div>
+        
+        <div class="perspective-cards" id="perspectiveCards">
+          <!-- Perspective cards will be generated here -->
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    let currentDecision = '';
+    let currentPerspectives = [];
+    let activeFocus = 'all';
+    
+    const examples = {
+      career: 'Should I quit my job to pursue a different career?',
+      move: 'Should I move to a new city for better opportunities?',
+      relationship: 'Should I end this relationship that isn\'t working?',
+      startup: 'Should I leave my stable job to start my own business?'
+    };
+    
+    function loadExample(type) {
+      document.getElementById('decisionInput').value = examples[type];
+    }
+    
+    function generatePerspectives() {
+      const decisionText = document.getElementById('decisionInput').value.trim();
+      
+      if (!decisionText) {
+        alert('Please enter a decision first.');
+        return;
+      }
+      
+      currentDecision = decisionText;
+      currentPerspectives = generateSmartPerspectives(decisionText);
+      
+      displayTimeline();
+      displayPerspectiveCards();
+      
+      document.getElementById('timelineSection').style.display = 'block';
+      document.getElementById('saveBtn').disabled = false;
+      
+      // Smooth scroll to timeline
+      setTimeout(() => {
+        document.getElementById('timelineSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    }
+    
+    function generateSmartPerspectives(decision) {
+      const lower = decision.toLowerCase();
+      
+      // Detect decision type
+      let perspectives = [];
+      
+      if (lower.includes('quit') || lower.includes('job') || lower.includes('career')) {
+        perspectives = [
+          {
+            timeframe: '1 Day',
+            key: 'day',
+            insight: 'Emotions dominate',
+            perspective: 'Immediate relief from current stress, but also immediate panic about finances and identity. Everything feels urgent and overwhelming.',
+            wisdom: 'Your emotions are real, but they\'re not the full picture. Give yourself permission to feel without making permanent decisions from temporary states.'
+          },
+          {
+            timeframe: '1 Year',
+            key: 'year',
+            insight: 'Practical outcomes matter',
+            perspective: 'Either you\'ll be grateful you made the leap, or you\'ll have learned valuable lessons about what you really want. The immediate panic will have resolved one way or another.',
+            wisdom: 'A year is where consequences become clear. Did this choice move you toward your goals, or did it teach you something important?'
+          },
+          {
+            timeframe: '10 Years',
+            key: 'decade',
+            insight: 'Character and growth matter',
+            perspective: 'This decision becomes a small chapter in your career story. What matters is whether you grew, learned resilience, and moved toward becoming who you want to be.',
+            wisdom: 'In a decade, you won\'t remember the anxiety of the decision. You\'ll remember whether you were brave enough to try, and what you learned about yourself.'
+          },
+          {
+            timeframe: '100 Years',
+            key: 'century',
+            insight: 'Only deep impact matters',
+            perspective: 'No one will remember or care about your job change. What might matter is whether you positively influenced people around you during this time.',
+            wisdom: 'Your career decisions are invisible at this scale. Your character, kindness, and impact on others are the only things that echo forward.'
+          }
+        ];
+      } else if (lower.includes('move') || lower.includes('city') || lower.includes('relocate')) {
+        perspectives = [
+          {
+            timeframe: '1 Day',
+            key: 'day',
+            insight: 'Emotions dominate',
+            perspective: 'Excitement mixed with fear of the unknown. Leaving feels both thrilling and terrifying. You\'re focused on logistics and goodbyes.',
+            wisdom: 'The magnitude of change feels overwhelming right now. That\'s normal. Every big move starts with this feeling.'
+          },
+          {
+            timeframe: '1 Year',
+            key: 'year',
+            insight: 'Practical outcomes matter',
+            perspective: 'You\'ve either built a new life and made new connections, or you\'ve learned that geography wasn\'t the answer you were looking for. Either way, you have clarity.',
+            wisdom: 'A year gives you time to build roots or realize you planted in the wrong soil. Both outcomes teach you something valuable.'
+          },
+          {
+            timeframe: '10 Years',
+            key: 'decade',
+            insight: 'Character and growth matter',
+            perspective: 'The city itself matters less than who you became through the experience of choosing, moving, and adapting. Your resilience and adaptability grew.',
+            wisdom: 'In a decade, it\'s not where you moved that matters - it\'s how you learned to build a life from scratch that counts.'
+          },
+          {
+            timeframe: '100 Years',
+            key: 'century',
+            insight: 'Only deep impact matters',
+            perspective: 'Your geographic location is meaningless. What might matter is whether you built community, helped others, and lived fully wherever you were.',
+            wisdom: 'Cities rise and fall. What endures is how you connected with and supported the people around you.'
+          }
+        ];
+      } else if (lower.includes('relationship') || lower.includes('marriage') || lower.includes('partner')) {
+        perspectives = [
+          {
+            timeframe: '1 Day',
+            key: 'day',
+            insight: 'Emotions dominate',
+            perspective: 'Pain, relief, guilt, freedom - all hitting at once. You\'re questioning everything and imagining worst-case scenarios on both sides.',
+            wisdom: 'Relationship decisions feel life-or-death in the moment. Give yourself space to feel without demanding immediate clarity.'
+          },
+          {
+            timeframe: '1 Year',
+            key: 'year',
+            insight: 'Practical outcomes matter',
+            perspective: 'You\'ve either rebuilt the relationship stronger, or you\'ve discovered who you are on your own. The acute pain has faded, replaced by growth.',
+            wisdom: 'A year reveals whether you made the right call. Trust yourself to handle whatever consequences unfold.'
+          },
+          {
+            timeframe: '10 Years',
+            key: 'decade',
+            insight: 'Character and growth matter',
+            perspective: 'This relationship was one chapter in your story of learning to love and be loved. What matters is what you learned about yourself and how to show up for others.',
+            wisdom: 'Relationships shape us. In a decade, this one will have taught you something essential about who you are and what you need.'
+          },
+          {
+            timeframe: '100 Years',
+            key: 'century',
+            insight: 'Only deep impact matters',
+            perspective: 'No one will remember the details of your relationship. What might persist is how you treated each other and what you taught your children or community about love.',
+            wisdom: 'Love itself matters across centuries, but specific relationships matter only for how they changed you and those around you.'
+          }
+        ];
+      } else if (lower.includes('business') || lower.includes('startup') || lower.includes('company')) {
+        perspectives = [
+          {
+            timeframe: '1 Day',
+            key: 'day',
+            insight: 'Emotions dominate',
+            perspective: 'Pure adrenaline and terror. You\'re either taking the leap or playing it safe, and both feel simultaneously right and wrong.',
+            wisdom: 'Starting a business is scary. The fear doesn\'t mean you shouldn\'t do it - it means it matters to you.'
+          },
+          {
+            timeframe: '1 Year',
+            key: 'year',
+            insight: 'Practical outcomes matter',
+            perspective: 'You\'ve either gained traction and learned you can build something, or you\'ve learned what doesn\'t work and gained invaluable experience. Both are wins.',
+            wisdom: 'A year shows whether your idea has legs. More importantly, it shows whether you have the resilience to keep going.'
+          },
+          {
+            timeframe: '10 Years',
+            key: 'decade',
+            insight: 'Character and growth matter',
+            perspective: 'Whether this specific business succeeded or failed, you\'ll have learned to think like an entrepreneur. That mindset is more valuable than any single venture.',
+            wisdom: 'In a decade, it\'s not about whether this business made you rich - it\'s about whether you became someone who can create value.'
+          },
+          {
+            timeframe: '100 Years',
+            key: 'century',
+            insight: 'Only deep impact matters',
+            perspective: 'Your business will be forgotten unless it fundamentally changed lives or industries. What matters is whether you created opportunities for others and treated people well.',
+            wisdom: 'Companies die. What lives on is whether you created something meaningful and treated your people with dignity.'
+          }
+        ];
+      } else {
+        // Generic perspectives
+        perspectives = [
+          {
+            timeframe: '1 Day',
+            key: 'day',
+            insight: 'Emotions dominate',
+            perspective: 'Right now, this decision feels urgent and overwhelming. Every option carries fear and hope in equal measure.',
+            wisdom: 'In this moment, your emotions are running high. That\'s okay. Don\'t mistake intensity for clarity.'
+          },
+          {
+            timeframe: '1 Year',
+            key: 'year',
+            insight: 'Practical outcomes matter',
+            perspective: 'You\'ll have concrete results. Some fears will have materialized, others won\'t. You\'ll know whether this choice moved you forward.',
+            wisdom: 'A year from now, you\'ll have data. You\'ll know what worked and what didn\'t. Trust yourself to adapt.'
+          },
+          {
+            timeframe: '10 Years',
+            key: 'decade',
+            insight: 'Character and growth matter',
+            perspective: 'This decision is one of many that shaped who you became. What matters is whether you learned, grew, and stayed true to your values.',
+            wisdom: 'In ten years, this is just another choice in a long chain. What matters is whether you kept growing through it.'
+          },
+          {
+            timeframe: '100 Years',
+            key: 'century',
+            insight: 'Only deep impact matters',
+            perspective: 'This specific decision is completely irrelevant. What might matter is whether you lived with integrity and kindness during this period.',
+            wisdom: 'Nothing about this decision will matter in a century except how you treated people and whether you lived authentically.'
+          }
+        ];
+      }
+      
+      return perspectives;
+    }
+    
+    function displayTimeline() {
+      const svg = document.getElementById('timelineSvg');
+      svg.innerHTML = '';
+      
+      // Draw main timeline line
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line.setAttribute('x1', '50');
+      line.setAttribute('y1', '60');
+      line.setAttribute('x2', '950');
+      line.setAttribute('y2', '60');
+      line.setAttribute('stroke', '#667eea');
+      line.setAttribute('stroke-width', '3');
+      svg.appendChild(line);
+      
+      // Timeline points
+      const timepoints = [
+        { x: 50, label: 'Now' },
+        { x: 283, label: '1 Day' },
+        { x: 516, label: '1 Year' },
+        { x: 750, label: '10 Years' },
+        { x: 950, label: '100 Years' }
+      ];
+      
+      timepoints.forEach((point, index) => {
+        // Circle
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('cx', point.x);
+        circle.setAttribute('cy', '60');
+        circle.setAttribute('r', index === 0 ? '8' : '6');
+        circle.setAttribute('fill', index === 0 ? '#764ba2' : '#667eea');
+        circle.setAttribute('class', 'timeline-point');
+        svg.appendChild(circle);
+        
+        // Label
+        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        text.setAttribute('x', point.x);
+        text.setAttribute('y', index === 0 ? '35' : '90');
+        text.setAttribute('text-anchor', 'middle');
+        text.setAttribute('fill', '${textColor}');
+        text.setAttribute('font-size', '14');
+        text.setAttribute('font-weight', index === 0 ? 'bold' : 'normal');
+        text.textContent = point.label;
+        svg.appendChild(text);
+      });
+    }
+    
+    function displayPerspectiveCards() {
+      const container = document.getElementById('perspectiveCards');
+      container.innerHTML = '';
+      
+      currentPerspectives.forEach((p, index) => {
+        const card = document.createElement('div');
+        card.className = 'perspective-card';
+        card.id = \`card-\${p.key}\`;
+        
+        card.innerHTML = \`
+          <div class="timeframe">\${p.timeframe}</div>
+          <div class="insight-label">\${p.insight}</div>
+          <div class="perspective-text">\${p.perspective}</div>
+          <div class="wisdom-text">\${p.wisdom}</div>
+        \`;
+        
+        container.appendChild(card);
+        
+        // Stagger animation
+        setTimeout(() => {
+          card.classList.add('active');
+        }, index * 150);
+      });
+    }
+    
+    function focusTimeframe(frame) {
+      activeFocus = frame;
+      
+      // Update button states
+      document.querySelectorAll('.zoom-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      event.target.classList.add('active');
+      
+      // Update card display
+      const cards = document.querySelectorAll('.perspective-card');
+      
+      if (frame === 'all') {
+        cards.forEach(card => {
+          card.classList.remove('focused');
+          card.classList.add('active');
+        });
+      } else {
+        cards.forEach(card => {
+          if (card.id === \`card-\${frame}\`) {
+            card.classList.add('focused');
+            card.classList.add('active');
+            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          } else {
+            card.classList.remove('focused');
+            card.classList.remove('active');
+          }
+        });
+      }
+    }
+    
+    function resetTool() {
+      document.getElementById('decisionInput').value = '';
+      document.getElementById('timelineSection').style.display = 'none';
+      document.getElementById('saveBtn').disabled = true;
+      currentDecision = '';
+      currentPerspectives = [];
+      activeFocus = 'all';
+      
+      // Reset zoom buttons
+      document.querySelectorAll('.zoom-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      document.querySelector('.zoom-btn').classList.add('active');
+    }
+    
+    function saveDecision() {
+      const decisionData = {
+        decision: currentDecision,
+        perspectives: currentPerspectives,
+        timestamp: new Date().toISOString(),
+        focus: activeFocus
+      };
+      
+      // Try to use Noah's filesystem bridge
+      if (window.parent && window.parent !== window) {
+        const filename = \`time-telescope-\${new Date().toISOString().split('T')[0]}.json\`;
+        
+        window.parent.postMessage({
+          type: 'NOAH_SAVE_REQUEST',
+          payload: {
+            content: JSON.stringify(decisionData, null, 2),
+            suggestedPath: \`noah-thinking/\${filename}\`,
+            description: \`Time Telescope decision analysis: \${currentDecision.substring(0, 50)}...\`,
+            agent: 'Time Telescope Tool',
+            metadata: {
+              type: 'decision-analysis',
+              timeframes: currentPerspectives.map(p => p.timeframe)
+            }
+          }
+        }, '*');
+        
+        alert('Save request sent to Noah! Check your file operations panel.');
+      } else {
+        // Fallback: download as file
+        const blob = new Blob([JSON.stringify(decisionData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'time-telescope-decision.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+    }
+    
+    // Listen for load requests
+    window.addEventListener('message', (event) => {
+      if (event.data.type === 'NOAH_LOAD_RESPONSE') {
+        try {
+          const decisionData = JSON.parse(event.data.payload.content);
+          currentDecision = decisionData.decision;
+          currentPerspectives = decisionData.perspectives;
+          
+          document.getElementById('decisionInput').value = currentDecision;
+          displayTimeline();
+          displayPerspectiveCards();
+          document.getElementById('timelineSection').style.display = 'block';
+          document.getElementById('saveBtn').disabled = false;
+        } catch (error) {
+          alert('Failed to load decision: ' + error.message);
+        }
+      }
+    });
+  </script>
+</body>
+</html>`;
   }
 };
