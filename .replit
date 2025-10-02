@@ -5,7 +5,6 @@ modules = ["nodejs-22", "postgresql-16", "python-3.11"]
 
 [nix]
 channel = "stable-24_11"
-packages = ["vimPlugins.vim-elixir"]
 
 [env]
 NEXT_TELEMETRY_DISABLED = "1"
@@ -17,13 +16,7 @@ run = ["npm", "start"]
 
 [[ports]]
 localPort = 5000
-externalPort = 5000
-
-[[ports]]
-localPort = 8000
 externalPort = 80
-exposeLocalhost = true
-
 [agent]
 expertMode = true
 integrations = ["github:1.0.0"]
