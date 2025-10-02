@@ -471,6 +471,26 @@ IMPORTANT:
       }
     }
 
+    // 🔍 SKEPTIC MODE - Add context when user has enabled skeptic mode
+    if (skepticMode) {
+      const skepticSection = `
+
+────────────────────────────────────────────────────
+SKEPTIC MODE ACTIVE
+The user has enabled Skeptic Mode, requesting that you provide additional verification and show more sources.
+
+When responding:
+- Be more explicit about your reasoning and sources
+- Acknowledge uncertainty more clearly when it exists
+- Provide more context and verification for claims
+- Show your work and explain how you arrived at conclusions
+- If asked about Skeptic Mode, explain that it's enabled and what it means
+────────────────────────────────────────────────────`;
+
+      enrichedSystemPrompt = enrichedSystemPrompt + skepticSection;
+      logger.debug('🔍 System prompt enriched with skeptic mode context');
+    }
+
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
       return NextResponse.json({
         content: "I didn't receive any messages to respond to. Want to try sending me something?",
@@ -865,6 +885,26 @@ async function noahStreamingChatHandler(req: NextRequest, context: LoggingContex
           error: error instanceof Error ? error.message : String(error)
         });
       }
+    }
+
+    // 🔍 SKEPTIC MODE - Add context when user has enabled skeptic mode
+    if (skepticMode) {
+      const skepticSection = `
+
+────────────────────────────────────────────────────
+SKEPTIC MODE ACTIVE
+The user has enabled Skeptic Mode, requesting that you provide additional verification and show more sources.
+
+When responding:
+- Be more explicit about your reasoning and sources
+- Acknowledge uncertainty more clearly when it exists
+- Provide more context and verification for claims
+- Show your work and explain how you arrived at conclusions
+- If asked about Skeptic Mode, explain that it's enabled and what it means
+────────────────────────────────────────────────────`;
+
+      enrichedSystemPrompt = enrichedSystemPrompt + skepticSection;
+      logger.debug('🔍 System prompt enriched with skeptic mode context (streaming)');
     }
 
     const streamingLastMessage = messages[messages.length - 1]?.content || '';
