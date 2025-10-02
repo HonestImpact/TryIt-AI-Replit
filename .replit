@@ -23,10 +23,6 @@ localPort = 8000
 externalPort = 80
 exposeLocalhost = true
 
-[[ports]]
-localPort = 38927
-externalPort = 3000
-
 [agent]
 expertMode = true
 integrations = ["github:1.0.0"]
