@@ -64,6 +64,7 @@ export default function TrustRecoveryProtocol() {
     size: number;
     type: string;
   }>>([]);
+  const [showWelcomeHint, setShowWelcomeHint] = useState(true);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -93,6 +94,7 @@ export default function TrustRecoveryProtocol() {
 
     const userMessage = input.trim();
     setInput('');
+    setShowWelcomeHint(false);
     setMessages(prev => [...prev, {
       role: 'user',
       content: userMessage,
@@ -590,6 +592,13 @@ export default function TrustRecoveryProtocol() {
               </div>
               
               <div className="p-8 space-y-8 max-h-[600px] overflow-y-auto">
+                {showWelcomeHint && (
+                  <div className="mb-6 p-4 bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-xl">
+                    <p className="text-sm text-slate-600 leading-relaxed">
+                      Not sure where to begin? Just say hi and see what happens. You're in control—if something doesn't feel right, click <span className="font-medium text-purple-600">"challenge"</span> or turn on <span className="font-medium text-amber-600">skeptic mode</span>. Just talk to Noah like a person and not like an AI, and see where it goes...
+                    </p>
+                  </div>
+                )}
                 {messages.map((message, index) => {
                   const chapterNumber = index + 1;
                   const isUser = message.role === 'user';
