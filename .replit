@@ -21,9 +21,10 @@ externalPort = 5000
 [[ports]]
 localPort = 8000
 externalPort = 80
+exposeLocalhost = true
 
 [[ports]]
-localPort = 35783
+localPort = 36989
 externalPort = 3000
 
 [agent]
@@ -62,13 +63,12 @@ outputType = "webview"
 name = "ChromaDB Service"
 author = "agent"
 
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "npx chromadb run --host 0.0.0.0 --port 8000"
-waitForPort = 8000
-
 [workflows.workflow.metadata]
 outputType = "console"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npx chromadb run --host localhost --port 8000"
 
 [objectStorage]
 defaultBucketID = "replit-objstore-32a254cd-ac94-492f-bdf5-f24008b95423"
