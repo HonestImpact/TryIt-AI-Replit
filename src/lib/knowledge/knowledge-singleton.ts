@@ -1,6 +1,8 @@
-// Knowledge Service - Simple implementation for Noah
+// Knowledge Service - ChromaDB Vector Store Integration for Noah
 import type { KnowledgeResult } from '../agents/types';
 import { createLogger } from '../logger';
+import { vectorStore } from '../../../rag/vector-store';
+import { AI_CONFIG } from '../ai-config';
 
 const logger = createLogger('knowledge-service');
 
@@ -35,20 +37,38 @@ class KnowledgeService {
       await this.initialize();
 
       const {
-        maxResults = 3,
-        minRelevanceScore = 0.7,
+        maxResults = AI_CONFIG.RAG_CONTEXT_LIMIT,
+        minRelevanceScore = AI_CONFIG.RAG_RELEVANCE_THRESHOLD,
         filter = {}
       } = options || {};
 
-      logger.info('🔍 Searching knowledge base', { 
+      logger.info('🔍 Searching knowledge base via ChromaDB', { 
         query: query.substring(0, 100),
         maxResults,
         minRelevanceScore
       });
 
-      // Simple implementation - return empty results for now
-      // The real knowledge is handled by ToolKnowledgeService via PostgreSQL
-      const knowledgeResults: KnowledgeResult[] = [];
+      // Search ChromaDB vector store
+      const searchResults = await vectorStore.search(query, {
+        maxResults,
+        minRelevanceScore,
+        filter
+      });
+
+      // Convert to KnowledgeResult format
+      const knowledgeResults: KnowledgeResult[] = searchResults.map(result => ({
+        item: {
+          content: result.content,
+          type: result.metadata.type,
+          metadata: {
+            id: result.id,
+            source: result.metadata.source,
+            timestamp: result.metadata.timestamp,
+            category: result.metadata.category,
+            relevanceScore: result.score
+          }
+        }
+      }));
 
       logger.info('✅ Knowledge search completed', { 
         resultsFound: knowledgeResults.length,

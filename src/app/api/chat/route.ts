@@ -436,6 +436,41 @@ async function noahChatHandler(req: NextRequest, context: LoggingContext): Promi
       }
     }
 
+    // 📚 KNOWLEDGE BASE SEARCH - Retrieve relevant knowledge from vector store
+    if (AI_CONFIG.RAG_ENABLED && messages && messages.length > 0) {
+      try {
+        const lastMessage = messages[messages.length - 1]?.content || '';
+        const knowledgeService = (await import('@/lib/knowledge/knowledge-singleton')).default;
+        const knowledgeResults = await knowledgeService.search(lastMessage);
+        
+        if (knowledgeResults && knowledgeResults.length > 0) {
+          const knowledgeSection = `
+
+────────────────────────────────────────────────────
+KNOWLEDGE BASE (factual information relevant to current query)
+${knowledgeResults.map((result: any, i: number) => `
+${i + 1}. ${result.item.content}
+   (Source: ${result.item.metadata.source || 'Unknown'})`).join('\n')}
+
+IMPORTANT:
+- Use this knowledge naturally when relevant to the user's question
+- Never fabricate or assume information not present here
+- If asked about topics covered here, reference this information
+────────────────────────────────────────────────────`;
+
+          enrichedSystemPrompt = enrichedSystemPrompt + knowledgeSection;
+          logger.debug('📚 System prompt enriched with knowledge base', {
+            knowledgeItemsFound: knowledgeResults.length,
+            query: lastMessage.substring(0, 50)
+          });
+        }
+      } catch (error) {
+        logger.warn('Failed to enrich with knowledge base', {
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
+    }
+
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
       return NextResponse.json({
         content: "I didn't receive any messages to respond to. Want to try sending me something?",

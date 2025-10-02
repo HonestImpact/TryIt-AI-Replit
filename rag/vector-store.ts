@@ -4,6 +4,7 @@
  */
 
 import { ChromaClient } from 'chromadb';
+import { DefaultEmbeddingFunction } from '@chroma-core/default-embed';
 import { createLogger } from '@/lib/logger';
 import { AI_CONFIG } from '@/lib/ai-config';
 
@@ -30,6 +31,7 @@ export interface SearchResult {
 
 export class VectorStore {
   private client: ChromaClient;
+  private embedder: DefaultEmbeddingFunction;
   private collection: { 
     add: (data: { ids: string[]; documents: string[]; metadatas: Record<string, unknown>[] }) => Promise<void>;
     query: (params: { queryTexts: string[]; nResults: number; where?: Record<string, unknown> }) => Promise<{ documents?: string[][]; distances?: number[][]; metadatas?: Record<string, unknown>[][]; ids?: string[][] }>;
@@ -45,6 +47,8 @@ export class VectorStore {
     this.client = new ChromaClient({
       path: process.env.CHROMA_URL || 'http://localhost:8000'
     });
+    // Initialize embedding function
+    this.embedder = new DefaultEmbeddingFunction();
   }
 
   /**
@@ -56,16 +60,18 @@ export class VectorStore {
     try {
       logger.info('🔗 Initializing ChromaDB vector store...');
 
-      // Get or create collection
+      // Get or create collection with embedding function
       try {
         this.collection = await this.client.getCollection({
-          name: this.collectionName
+          name: this.collectionName,
+          embeddingFunction: this.embedder
         }) as typeof this.collection;
         logger.info('✅ Connected to existing ChromaDB collection');
       } catch {
         // Collection doesn't exist, create it
         this.collection = await this.client.createCollection({
           name: this.collectionName,
+          embeddingFunction: this.embedder,
           metadata: {
             description: 'Noah agent knowledge base for RAG operations',
             created: new Date().toISOString()
@@ -151,7 +157,7 @@ export class VectorStore {
       
       for (let i = 0; i < results.documents[0].length; i++) {
         const distance = results.distances[0][i];
-        const score = distance !== null ? 1 - distance : 0; // Convert distance to similarity score
+        const score = distance !== null ? (2 - distance) / 2 : 0; // Convert cosine distance (0-2) to similarity score (0-1)
 
         if (score >= minRelevanceScore) {
           searchResults.push({

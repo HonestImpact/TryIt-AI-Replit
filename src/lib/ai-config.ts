@@ -7,7 +7,7 @@ export const AI_CONFIG = {
   // RAG configuration
   RAG_ENABLED: process.env.RAG_ENABLED === 'true' || process.env.NODE_ENV === 'production',
   RAG_CONTEXT_LIMIT: 3, // Number of relevant components to include in context
-  RAG_RELEVANCE_THRESHOLD: 0.7, // Minimum similarity score for inclusion
+  RAG_RELEVANCE_THRESHOLD: 0.3, // Minimum similarity score for inclusion (0.3 works well with DefaultEmbeddingFunction)
 
   // System prompts
   CHAT_SYSTEM_PROMPT: `You are Noah, speaking to someone who values discernment over blind trust.
