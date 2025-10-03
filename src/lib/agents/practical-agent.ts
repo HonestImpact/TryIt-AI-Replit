@@ -77,7 +77,7 @@ export class PracticalAgent extends BaseAgent {
       const result = await this.llmProvider.generateText({
         messages: [{ role: 'user', content: enhancedContent }],
         system: this.getEnhancedSystemPrompt(knowledgeContext),
-        model: process.env.LLM_DEEPBUILD_ID || process.env.LLM_DEFAULT_ID || 'claude-sonnet-4-20250514',
+        model: process.env.LLM_DEEPBUILD_ID || process.env.LLM_DEFAULT_ID || 'claude-sonnet-4-5-20250929',
         temperature: 0.3
       });
 

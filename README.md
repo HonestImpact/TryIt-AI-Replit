@@ -58,11 +58,13 @@ Noah is an advanced conversational AI system that generates functional web tools
    # Database
    DATABASE_URL=your_postgresql_url
    
-   # Optimized Model Configuration
+   # Optimized Model Configuration (task-specific)
    LLM_DEEPBUILD=openai
-   MODEL_ID_DEEPBUILD=gpt-4o
+   LLM_DEEPBUILD_ID=gpt-4o
    LLM_DEFAULT=anthropic
-   MODEL_ID_DEFAULT=claude-3-5-sonnet-20241022
+   LLM_DEFAULT_ID=claude-sonnet-4-5-20250929
+   LLM_RESEARCH=openai
+   LLM_RESEARCH_ID=gpt-4o-mini
    
    # RAG System
    RAG_ENABLED=true
@@ -155,19 +157,32 @@ Noah generates thoughtfully designed tools that go beyond standard utilities:
 ## 🔧 Configuration
 
 ### Model Configuration
+
+Noah uses a task-specific provider system for optimal performance. Configure via environment variables:
+
 ```env
-# For fastest tool generation
-LLM_DEEPBUILD=openai
-MODEL_ID_DEEPBUILD=gpt-4o
-
-# For best conversation quality  
+# Default/Conversation (Noah's primary conversational voice)
 LLM_DEFAULT=anthropic
-MODEL_ID_DEFAULT=claude-3-5-sonnet-20241022
+LLM_DEFAULT_ID=claude-sonnet-4-5-20250929
 
-# For research tasks
+# Deep Build (fast tool/artifact generation)
+LLM_DEEPBUILD=openai
+LLM_DEEPBUILD_ID=gpt-4o
+
+# Research (quick information gathering)
 LLM_RESEARCH=openai
-MODEL_ID_RESEARCH=gpt-4o-mini
+LLM_RESEARCH_ID=gpt-4o-mini
+
+# Fallback defaults (used if task-specific vars not set)
+LLM=anthropic
+MODEL_ID=claude-sonnet-4-5-20250929
 ```
+
+**How it works:**
+- Each task type (`default`, `deepbuild`, `research`) can use a different provider and model
+- Environment variables follow the pattern: `LLM_<TASKTYPE>` and `LLM_<TASKTYPE>_ID`
+- Falls back to `LLM_DEFAULT` → `LLM` for provider, `LLM_DEFAULT_ID` → `MODEL_ID` for model
+- If not set, uses optimized defaults (Anthropic Sonnet 4 for conversation, OpenAI GPT-4o for building)
 
 ### RAG Knowledge Base
 The system includes rich knowledge for intelligent responses:

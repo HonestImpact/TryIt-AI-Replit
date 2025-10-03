@@ -78,13 +78,13 @@ function getOptimalProviderForTask(taskType: TaskType): string {
 function getOptimalModelForTask(taskType: TaskType): string {
   switch (taskType) {
     case 'default':
-      return 'claude-sonnet-4-20250514';  // Noah's premium conversation
+      return 'claude-sonnet-4-5-20250929';  // Noah's premium conversation (latest Sonnet 4)
     case 'deepbuild':
-      return 'gpt-4o';                    // Fast, structured tool generation
+      return 'gpt-4o';                      // Fast, structured tool generation
     case 'research':
-      return 'gpt-4o-mini';               // Quick, efficient research
+      return 'gpt-4o-mini';                 // Quick, efficient research
     default:
-      return 'claude-sonnet-4-20250514';
+      return 'claude-sonnet-4-5-20250929';
   }
 }
 

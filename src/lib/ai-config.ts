@@ -1,7 +1,7 @@
 // Centralized AI configuration for TryIt-AI Kit
 export const AI_CONFIG = {
   // Model configuration - respects environment variables with correct Anthropic model names
-  getModel: () => process.env.MODEL_ID || 'claude-sonnet-4-20250514',
+  getModel: () => process.env.MODEL_ID || 'claude-sonnet-4-5-20250929',
   getProvider: () => process.env.LLM || 'anthropic',
 
   // RAG configuration

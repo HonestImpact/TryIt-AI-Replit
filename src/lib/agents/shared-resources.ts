@@ -71,7 +71,7 @@ class ProductionSolutionGenerator implements SolutionGenerator {
       const result = await this.llmProvider.generateText({
         messages: [{ role: 'user', content: request }],
         system: 'You are a solution generator. Provide practical, actionable solutions to the given request.',
-        model: process.env.LLM_DEFAULT_ID || 'claude-sonnet-4-20250514',
+        model: process.env.LLM_DEFAULT_ID || 'claude-sonnet-4-5-20250929',
         temperature: 0.7
       });
 
