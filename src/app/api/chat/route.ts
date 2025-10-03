@@ -417,7 +417,7 @@ async function noahChatHandler(req: NextRequest, context: LoggingContext): Promi
     const conversationState = await initializeConversationState(req, context, skepticMode || false);
 
     // 🧠 MEMORY ENRICHMENT - Retrieve session memory and enrich system prompt
-    let enrichedSystemPrompt = AI_CONFIG.CHAT_SYSTEM_PROMPT; // Default to base prompt
+    let enrichedSystemPrompt: string = AI_CONFIG.CHAT_SYSTEM_PROMPT; // Default to base prompt
     if (conversationState.sessionId) {
       try {
         const memoryContext = await sharedResourceManager.getMemoryContext(conversationState.sessionId);
@@ -767,7 +767,8 @@ When responding:
     }
 
     // Include session artifacts for accumulated toolbox - fetch from database
-    if (context.sessionId) {
+    // Use the UUID session ID from conversation state, not the potentially old session fingerprint
+    if (conversationState.sessionId) {
       try {
         const artifactsResult = await analyticsPool.executeQuery<Array<{ 
           id: string; 
@@ -777,7 +778,7 @@ When responding:
           generation_agent: string; 
         }>>(
           'SELECT id, title, content, created_at, generation_agent FROM generated_tools WHERE session_id = $1 ORDER BY created_at DESC',
-          [context.sessionId]
+          [conversationState.sessionId]
         );
         
         if (artifactsResult && artifactsResult.length > 0) {
@@ -868,7 +869,7 @@ async function noahStreamingChatHandler(req: NextRequest, context: LoggingContex
     const conversationState = await initializeConversationState(req, context, skepticMode || false);
 
     // 🧠 MEMORY ENRICHMENT - Retrieve session memory and enrich system prompt
-    let enrichedSystemPrompt = AI_CONFIG.CHAT_SYSTEM_PROMPT; // Default to base prompt
+    let enrichedSystemPrompt: string = AI_CONFIG.CHAT_SYSTEM_PROMPT; // Default to base prompt
     if (conversationState.sessionId) {
       try {
         const memoryContext = await sharedResourceManager.getMemoryContext(conversationState.sessionId);
