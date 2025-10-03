@@ -18,7 +18,7 @@ Noah is an advanced conversational AI system that generates functional web tools
 - **🔍 RAG-Powered Knowledge**: ChromaDB vector storage with 21 reference design patterns
 - **⚡ Optimized Performance**: 83% faster tool generation (5 seconds vs 28+ seconds)
 - **🤔 Skeptic Mode**: Request additional verification, sources, and transparent reasoning
-- **🎨 Boutique Creative Tools**: Unique decision-making aids like Assumption Breaker and Time Telescope
+- **🎨 Bespoke Creative Tools**: Unique decision-making aids like Assumption Breaker and Time Telescope
 - **🎵 Landing Page Song**: Original blues track about the journey from AI skepticism to trust
 - **📊 Trust Tracking**: Dynamic trust scoring and transparent reasoning
 - **🔄 Multi-Provider LLMs**: Supports Anthropic, OpenAI, Google, Mistral, and Cohere
@@ -164,7 +164,7 @@ Noah leverages Replit's infrastructure for enhanced capabilities:
 
 ## 🛠️ Core Features Explained
 
-### Boutique Creative Tools
+### Bespoke Creative Tools
 Noah generates thoughtfully designed tools that go beyond standard utilities:
 
 **Decision-Making Aids:**
