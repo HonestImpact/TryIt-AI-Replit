@@ -116,6 +116,45 @@ Noah uses two MCP systems for enhanced capabilities:
 - File activity banner and approval dialog for user control
 - Supports saving artifacts, thinking files, and session reports
 
+### Analytics & Database System
+
+Noah includes a comprehensive analytics system built on PostgreSQL with production-grade connection pooling:
+
+**Database Tables:**
+- `user_sessions` - Session tracking with fingerprints and environment detection
+- `conversations` - Full conversation metadata including trust levels, skeptic mode status, and completion tracking
+- `messages` - Complete message history with content, response times, and sentiment analysis
+- `generated_tools` - All artifacts with full content, generation metrics, and download tracking
+- `tool_usage_events` - User interaction tracking (generated, viewed, downloaded, reused)
+- `trust_events` - Trust level changes with trigger events and reasons
+- `message_annotations` - Message metadata and confidence scores
+
+**Connection Pool Configuration:**
+- Min 1 / Max 5 connections (optimized for analytics workload)
+- 30s idle timeout, 10s connection timeout
+- 5s statement timeout safety net
+- Application name: `noah-analytics`
+
+**What's Tracked:**
+- User engagement levels and conversation duration
+- Agent performance (response times, success rates)
+- Trust Recovery Protocol effectiveness (trust deltas, challenge counts)
+- Tool generation patterns and reuse metrics
+- Skeptic mode impact on verification requests
+
+### Replit Integration
+
+Noah leverages Replit's infrastructure for enhanced capabilities:
+
+**Object Storage** (`@replit/object-storage`):
+- Serves the landing page video (`intro-video.mp4`) - the "TryIt A.I. Blues" song
+- Supports range requests for efficient video streaming
+- 1-hour browser caching for optimal performance
+
+**GitHub Integration** (`@octokit/rest`):
+- Package installed for future GitHub-based features
+- Not currently active in the codebase
+
 ### Performance Optimizations
 
 - **Task-specific model selection**: Different LLMs optimized for different tasks
