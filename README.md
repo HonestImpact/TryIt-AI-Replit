@@ -17,7 +17,9 @@ Noah is an advanced conversational AI system that generates functional web tools
 - **📦 Session-Based Toolbox**: Accumulates all generated tools with individual download capabilities
 - **🔍 RAG-Powered Knowledge**: ChromaDB vector storage with 21 reference design patterns
 - **⚡ Optimized Performance**: 83% faster tool generation (5 seconds vs 28+ seconds)
-- **🤔 Skeptic Mode**: Optional challenging mode for more robust interactions
+- **🤔 Skeptic Mode**: Request additional verification, sources, and transparent reasoning
+- **🎨 Boutique Creative Tools**: Unique decision-making aids like Assumption Breaker and Time Telescope
+- **🎵 Landing Page Song**: Original blues track about the journey from AI skepticism to trust
 - **📊 Trust Tracking**: Dynamic trust scoring and transparent reasoning
 - **🔄 Multi-Provider LLMs**: Supports Anthropic, OpenAI, Google, Mistral, and Cohere
 
@@ -104,12 +106,24 @@ Noah is an advanced conversational AI system that generates functional web tools
 
 ## 🛠️ Core Features Explained
 
-### Tool Generation
-Noah can create complete web applications including:
+### Boutique Creative Tools
+Noah generates thoughtfully designed tools that go beyond standard utilities:
+
+**Decision-Making Aids:**
+- **Assumption Breaker**: Reframes your assumptions to reveal blind spots
+- **Time Telescope**: Multi-time horizon decision analysis (1 week, 1 month, 1 year, 5 years)
+- **Energy Archaeology**: Track personal energy patterns to optimize your schedule
+
+**Productivity Tools:**
+- **Scientific Calculator**: Full-featured scientific calculations
+- **Pomodoro Timer**: Focus session manager with break tracking
+- **Unit Converter**: Universal conversion tool
+
+**Plus Standard Applications:**
 - Interactive calculators and utilities
 - Data visualization tools  
 - Form builders and UI components
-- Games and productivity apps
+- Games and custom web apps
 
 ### Session-Based Toolbox
 - All generated tools persist across the conversation
@@ -118,12 +132,19 @@ Noah can create complete web applications including:
 - Preview of tool content
 
 ### Trust Recovery Protocol
-- **Skeptic Mode**: Challenge Noah's responses for more robust answers
+- **Skeptic Mode**: Toggle to request additional verification, explicit reasoning, and source citations
 - **Trust Scoring**: Dynamic trust levels based on interaction quality
-- **Transparent Reasoning**: Optional display of decision-making process
+- **Transparent Reasoning**: See Noah's decision-making process and uncertainty levels
 - **Honest Communication**: Direct feedback about limitations and uncertainties
+- **Landing Page Song**: "TryIt A.I. Blues" - an original blues track capturing the journey from AI skepticism to finding genuine value in technology
 
 ## 📊 Recent Improvements
+
+### October 2025 Updates
+- **Skeptic Mode Refinement**: Clean toggle-only UI with system prompt integration for enhanced verification
+- **Fixed Artifact Visualization**: Resolved UUID session handling bug that prevented toolbox display
+- **Landing Page Enhancement**: Added "TryIt A.I. Blues" song knowledge to RAG system
+- **ChromaDB Integration**: Full vector search with song metadata and tool patterns
 
 ### September 2025 Updates
 - **83% Performance Boost**: Optimized model selection reduced tool generation from 28s to 5s
@@ -149,12 +170,18 @@ MODEL_ID_RESEARCH=gpt-4o-mini
 ```
 
 ### RAG Knowledge Base
-The system includes 21 reference tools for intelligent design patterns:
+The system includes rich knowledge for intelligent responses:
+
+**Tool Reference Library (21 patterns):**
 - Budget trackers and financial tools
 - Scheduling and calendar components  
 - Form builders and data collection
 - Charts and visualization libraries
-- And more...
+
+**App Origin Knowledge:**
+- "TryIt A.I. Blues" song details and creation story
+- App philosophy and mission
+- Landing page features and symbolism
 
 ## 🧪 Development
 
