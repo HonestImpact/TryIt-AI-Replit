@@ -441,13 +441,13 @@ export class NoahContentFilter {
     // CRITICAL: Standalone age references with concerning context (ALL SHORTHAND FORMATS)
     const ageExploitationPatterns = [
       // COMPREHENSIVE age format coverage (want/like/love/desire/attracted to + ages 5-17)
+      // NOTE: Require age-related suffix to prevent false positives with time references like "5 years from now"
       /(want|like|love|desire|attracted.*to).*(1[0-7]|[5-9])[\s\-]*(year|yr)[\s\-]*olds?/,
-      /(want|like|love|desire|attracted.*to).*(1[0-7]|[5-9])[\s\-]*yo/,
-      /(want|like|love|desire|attracted.*to).*(1[0-7]|[5-9])[\s\-]*y\/o/,
-      /(want|like|love|desire|attracted.*to).*(1[0-7]|[5-9])[\s\-]*yrs?\b/,
+      /(want|like|love|desire|attracted.*to).*(1[0-7]|[5-9])[\s\-]*yo\b/,
+      /(want|like|love|desire|attracted.*to).*(1[0-7]|[5-9])[\s\-]*y\/o\b/,
+      /(want|like|love|desire|attracted.*to).*(1[0-7]|[5-9])[\s\-]*yrs?\b[\s\-]*olds?/,
       /(want|like|love|desire|attracted.*to).*(1[0-7]|[5-9])[\s\-]*years?[\s\-]*olds?/,
       /(want|like|love|desire|attracted.*to).*(1[0-7]|[5-9])[\s\-]*year[\s\-]*olds?/,
-      /(want|like|love|desire|attracted.*to).*\b(1[0-7]|[5-9])\b/,
       // Special case for "find X attractive" pattern - ALL AGE FORMATS
       /find.*(1[0-7]|[5-9])[\s\-]*(year|yr)[\s\-]*olds?.*attractive/,
       /find.*(1[0-7]|[5-9])[\s\-]*yo.*attractive/,
