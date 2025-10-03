@@ -559,10 +559,10 @@ export default function TrustRecoveryProtocol() {
         onFileOperationProposed={handleFileOperationProposed}
       />
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="max-w-7xl mx-auto px-6 pt-4 pb-8">
         <div className="grid grid-cols-3 gap-8">
           {/* Main Conversation Canvas - 2/3 width */}
-          <div className="col-span-2 space-y-8">
+          <div className="col-span-2 space-y-4">
             {/* Story Timeline */}
             <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 overflow-hidden">
               <div className="bg-gradient-to-r from-indigo-500 to-purple-500 p-4 text-white">
@@ -574,7 +574,7 @@ export default function TrustRecoveryProtocol() {
                 </h2>
               </div>
               
-              <div className="p-8 space-y-8 max-h-[600px] overflow-y-auto">
+              <div className="p-8 space-y-8 min-h-[200px] max-h-[600px] overflow-y-auto">
                 {showWelcomeHint && (
                   <div className="mb-6 p-4 bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-xl">
                     <p className="text-sm text-slate-600 leading-relaxed">
