@@ -152,10 +152,50 @@ Noah generates thoughtfully designed tools that go beyond standard utilities:
 
 ### Trust Recovery Protocol
 - **Skeptic Mode**: Toggle to request additional verification, explicit reasoning, and source citations
-- **Trust Scoring**: Dynamic trust levels based on interaction quality
+- **Trust Scoring**: Dynamic 0-100 scale with visual trust indicators (red-yellow-green gradient)
+- **Challenge Response**: Button on every AI response allowing users to challenge answers with feedback tracking
 - **Transparent Reasoning**: See Noah's decision-making process and uncertainty levels
 - **Honest Communication**: Direct feedback about limitations and uncertainties
 - **Landing Page Song**: "TryIt A.I. Blues" - an original blues track capturing the journey from AI skepticism to finding genuine value in technology
+
+## 🔒 Security & Guardrails
+
+Noah implements multiple layers of protection to ensure safe, controlled interactions:
+
+### File Security
+All file operations are restricted and require explicit user approval:
+
+- **Sandboxed Directories**: File operations strictly limited to: `noah-tools/`, `noah-thinking/`, `noah-sessions/`, `noah-reports/`
+- **Path Traversal Protection**: Active validation prevents files from being written outside allowed directories
+- **User Approval Workflow**: Every file operation requires explicit approval before execution via a file approval dialog
+- **Smart File Naming**: Automatic categorization, sanitization, and timestamping prevents conflicts
+- **Operation Tracking**: Each operation tracked through: `pending` → `approved` → `executing` → `completed`
+
+### Content Safety
+
+Noah uses a quiet, dignified approach to boundary enforcement:
+
+**Safety Violations Trigger Interface Lockdown:**
+- Content filter checks for: violence, self-harm, child safety violations, illegal activities, privacy violations, hate speech, adult content
+- Upon violation: Noah responds with intentional emptiness (spaces), and all interactive features disable
+- Users can see their exact message as context but cannot chat, click links, or download artifacts
+- Recovery path: Refresh browser to start fresh
+
+**Why This Approach Works:**
+- **Crystal Clear**: User immediately understands they crossed a boundary (no mysterious loading states)
+- **Meaningful**: Complete lockdown is proportional and teaches the limit
+- **Respectful**: No lecturing or explaining—quiet enforcement that respects user intelligence
+- **Trust-Aligned**: Dignified boundary setting without confusing radio silence that feels like a bug
+
+### User Control Features
+
+Users maintain complete control over their interaction:
+
+- **File Approval Dialog**: Review, approve, reject, or rename any file before it's saved
+- **Skeptic Mode Toggle**: Request enhanced verification and reasoning for all responses
+- **Challenge Button**: Question any response with one click
+- **Session Management**: All artifacts persist and remain accessible throughout the conversation
+- **Transparent Operations**: File activity banner shows real-time status of all operations
 
 ## 📊 Recent Improvements
 
