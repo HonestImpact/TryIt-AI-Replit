@@ -4,6 +4,15 @@
 
 "Noah" is a multi-agent AI system built with Next.js 15, TypeScript, and TailwindCSS, designed as a "Trust Recovery Protocol." Its core purpose is to foster genuine trust through honest interaction and collaborative problem-solving. The system features a conversational chat interface with artifact generation, integrating multiple AI agents for specialized tasks. It incorporates a sophisticated Retrieval-Augmented Generation (RAG) system using ChromaDB for vector storage and semantic search, supporting various LLM providers (Anthropic, OpenAI, Google, Mistral, Cohere) with environment-based model switching and task-specific optimization.
 
+## Recent Changes
+
+**October 3, 2025 - Persona & RAG Refinement:**
+- Fixed RAG semantic matching: Lowered threshold from 0.3 → 0.25 for conversational queries ("Do you remember..." patterns)
+- Rewrote video knowledge chunk with better keyword density - "video" queries now score 0.3-0.5 (was negative/filtered)
+- Refined Noah's persona (src/lib/ai-config.ts): Restored original sophisticated voice with surgical fixes to prevent transactional question-mirroring and overly self-analytical meta-commentary
+- Added explicit guidance: "Be naturally conversational - don't analyze or apologize for your own responses"
+- Noah now sounds sophisticated, thoughtful, and naturally conversational (not performative or overly chatty)
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
