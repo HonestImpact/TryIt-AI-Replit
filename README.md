@@ -98,6 +98,23 @@ Noah is an advanced conversational AI system that generates functional web tools
 - **Database**: PostgreSQL for analytics and tool storage
 - **Vector Store**: ChromaDB for RAG knowledge base
 - **AI Providers**: Anthropic Claude (primary), OpenAI, others via AI SDK
+- **MCP Systems**: Model Context Protocol for memory and filesystem operations
+
+### Model Context Protocol (MCP) Integration
+
+Noah uses two MCP systems for enhanced capabilities:
+
+**Memory MCP** (`@modelcontextprotocol/server-memory`):
+- Persistent cross-session memory using JSON-based knowledge graph
+- Stores user preferences, conversation themes, tool results, trust signals
+- Enables Noah to maintain context and continuity across conversations
+- Data stored in `noah-memory-data/memory.json`
+
+**Filesystem MCP** (`@modelcontextprotocol/server-filesystem`):
+- Transparent, user-approved file operations
+- Sandboxed to specific directories: `noah-tools/`, `noah-thinking/`, `noah-sessions/`, `noah-reports/`
+- File activity banner and approval dialog for user control
+- Supports saving artifacts, thinking files, and session reports
 
 ### Performance Optimizations
 
