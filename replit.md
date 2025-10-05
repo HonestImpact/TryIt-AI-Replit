@@ -6,6 +6,21 @@
 
 ## Recent Changes
 
+**October 5, 2025 - Session Persistence & Artifact Bug Fix:**
+- **Fixed critical artifact persistence bug**: Artifacts from previous sessions no longer appear after page refresh
+- **Session Management Overhaul**:
+  - Frontend now stores sessionId in localStorage for persistence across refreshes
+  - Backend accepts sessionId from request body instead of always generating from fingerprint
+  - New random UUID-based session IDs generated on first visit or when localStorage is cleared
+  - Challenge flow now properly maintains session continuity
+- **Artifact Persistence**:
+  - Artifacts correctly load from database on page refresh when sessionId exists
+  - Session artifacts stay tied to their specific session throughout the user's journey
+  - Clearing localStorage creates truly new sessions without showing old artifacts
+- **Technical Details**:
+  - `src/app/page.tsx`: Added localStorage session management and artifact loading on mount
+  - `src/app/api/chat/route.ts`: Updated `initializeConversationState` to accept optional sessionId, generate random UUIDs when none provided
+
 **October 3, 2025 - Persona & RAG Refinement:**
 - Fixed RAG semantic matching: Lowered threshold from 0.3 → 0.25 for conversational queries ("Do you remember..." patterns)
 - Rewrote video knowledge chunk with better keyword density - "video" queries now score 0.3-0.5 (was negative/filtered)
