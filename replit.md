@@ -6,9 +6,11 @@
 
 ## Recent Changes
 
-**October 5, 2025 - Session Persistence & Timeout Fix:**
+**October 5, 2025 - Session Persistence, Timeout Fix & Web Search:**
 - **Fixed critical artifact persistence bug**: Artifacts from previous sessions no longer appear after page refresh
 - **Fixed hanging request bug**: Added Next.js route timeout configuration to prevent requests from hanging indefinitely
+- **Added real-time web search capability**: Wanderer now uses Perplexity API for current information queries
+- **Fixed safety filter false positive**: "analyze" no longer triggers adult content filter (was matching "anal" substring)
 - **Session Management Overhaul**:
   - Frontend now stores sessionId in localStorage for persistence across refreshes
   - Backend accepts sessionId from request body instead of always generating from fingerprint
@@ -18,11 +20,19 @@
   - Artifacts correctly load from database on page refresh when sessionId exists
   - Session artifacts stay tied to their specific session throughout the user's journey
   - Clearing localStorage creates truly new sessions without showing old artifacts
+- **Web Search Integration**:
+  - Wanderer automatically detects queries needing current information (keywords: "current", "latest", "2025", "state of", etc.)
+  - Uses Perplexity `sonar` model for fast, cost-effective search with grounding
+  - Returns responses with citations from live web sources
 - **Technical Details**:
   - `src/app/page.tsx`: Added localStorage session management and artifact loading on mount
   - `src/app/api/chat/route.ts`: 
     - Updated `initializeConversationState` to accept optional sessionId, generate random UUIDs when none provided
     - Added `maxDuration = 300` (5 minutes) and `dynamic = 'force-dynamic'` exports for proper Next.js timeout handling
+    - Enhanced request analysis to detect current information needs
+  - `src/lib/agents/wanderer-agent.ts`: Added Perplexity integration with automatic web search detection
+  - `src/lib/agents/perplexity-search.ts`: New service for Perplexity API integration
+  - `src/lib/safety/content-filter.ts`: Fixed false positive by using whole-word matching for explicit keywords
 
 **October 3, 2025 - Persona & RAG Refinement:**
 - Fixed RAG semantic matching: Lowered threshold from 0.3 → 0.25 for conversational queries ("Do you remember..." patterns)

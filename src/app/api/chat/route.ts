@@ -159,10 +159,15 @@ function analyzeRequest(content: string): {
     'summary', 'advice', 'tips', 'steps', 'instructions'
   ];
 
-  // Only delegate for genuinely tough stuff
+  // Delegate to Wanderer for research and current information
   const needsWanderer = [
     'research the latest', 'research current', 'market analysis', 
-    'industry trends', 'comprehensive study', 'latest trends in'
+    'industry trends', 'comprehensive study', 'latest trends in',
+    // Current information indicators
+    'current state', 'latest', 'recent', 'today', 'this year', 'this month',
+    '2024', '2025', 'state of', 'what is happening', 'what\'s happening',
+    'news about', 'updated', 'status of', 'currently', 'right now',
+    'these days', 'at the moment', 'nowadays'
   ];
 
   const needsTinkerer = [
