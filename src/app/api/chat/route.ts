@@ -83,6 +83,15 @@ interface ChatResponse {
     complexity?: string;
     description?: string;
   };
+  // Additional artifact for noah_wanderer_tinkerer strategy (research artifact)
+  researchArtifact?: {
+    title: string;
+    content: string;
+    type?: string;
+    category?: string;
+    complexity?: string;
+    description?: string;
+  };
   // Session-scoped artifacts for accumulated toolbox
   sessionArtifacts?: Array<{
     title: string;
@@ -707,6 +716,7 @@ When someone shares something, get CURIOUS - don't default to task mode.
     let result: { content: string };
     let agentUsed: 'noah' | 'wanderer' | 'tinkerer' = 'noah';
     let agentStrategy = 'noah_direct';
+    let researchParsed: Awaited<ReturnType<typeof ArtifactService.handleArtifactWorkflow>> | null = null;
 
     try {
       // Handle ambiguous research-driven tool requests (need specific topic)
@@ -730,8 +740,46 @@ Once you give me a specific topic, I'll research it and create a beautiful tool 
         agentUsed = 'wanderer';
         agentStrategy = analysis.needsBuilding ? 'noah_wanderer_tinkerer' : 'noah_wanderer';
         const research = await withTimeout(wandererResearch(messages, context), WANDERER_TIMEOUT);
+        
         if (analysis.needsBuilding) {
           logger.info('🔧 Noah chaining to Tinkerer for building...');
+          
+          // Process Wanderer's research as first artifact
+          researchParsed = await ArtifactService.handleArtifactWorkflow(
+            research.content,
+            lastMessage,
+            context.sessionId,
+            conversationState,
+            'wanderer',
+            agentStrategy
+          );
+          
+          // Store Wanderer's artifact if created
+          let wandererArtifactId: string | undefined;
+          if (researchParsed.hasArtifact && researchParsed.title && researchParsed.content && context.sessionId) {
+            wandererArtifactId = `${context.sessionId}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            const sessionId = context.sessionId;
+            
+            if (!sessionArtifacts.has(sessionId)) {
+              sessionArtifacts.set(sessionId, []);
+            }
+            
+            const artifactTimestamp = Date.now();
+            sessionArtifacts.get(sessionId)!.push({
+              title: researchParsed.title,
+              content: researchParsed.content,
+              timestamp: artifactTimestamp,
+              agent: 'wanderer',
+              id: wandererArtifactId
+            });
+            
+            logger.info('✅ Wanderer artifact stored', { 
+              artifactId: wandererArtifactId.substring(0, 12) + '...',
+              title: researchParsed.title.substring(0, 30)
+            });
+          }
+          
+          // Now run Tinkerer for building
           agentUsed = 'tinkerer';
           const tool = await withTimeout(tinkererBuild(messages, research, context), TINKERER_TIMEOUT);
           result = { content: tool.content };
@@ -923,6 +971,22 @@ Once you give me a specific topic, I'll research it and create a beautiful tool 
         complexity: parsed.complexity,
         description: parsed.description
       };
+    }
+
+    // Include research artifact for noah_wanderer_tinkerer strategy
+    if (researchParsed && researchParsed.hasArtifact && researchParsed.title && researchParsed.content) {
+      response.researchArtifact = {
+        title: researchParsed.title,
+        content: researchParsed.content,
+        type: researchParsed.type,
+        category: researchParsed.category,
+        complexity: researchParsed.complexity,
+        description: researchParsed.description
+      };
+      logger.info('📋 Including research artifact in response', {
+        researchTitle: researchParsed.title.substring(0, 30),
+        tinkererTitle: parsed.title?.substring(0, 30)
+      });
     }
 
     // Include session artifacts for accumulated toolbox - fetch from database
