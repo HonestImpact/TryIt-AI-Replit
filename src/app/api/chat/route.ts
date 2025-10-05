@@ -125,18 +125,34 @@ function analyzeRequest(content: string): {
 } {
   const contentLower = content.toLowerCase();
 
-  // Things Noah can do quickly and easily
+  // Check for negations and informational queries FIRST (NOT tool requests)
+  const isNegatedOrInformational = [
+    'don\'t build', 'do not build', 'won\'t build', 'should not build',
+    'shouldn\'t build', 'can\'t build', 'cannot build',
+    'what is', 'what are', 'which tool', 'best tool for',
+    'recommend a tool', 'suggest a tool', 'tell me about',
+    'build trust', 'build rapport', 'build relationships', 'build confidence'
+  ].some(pattern => contentLower.includes(pattern));
+
+  // Flexible regex patterns for tool-building requests
+  // Allow optional words between imperative verb (build/create/make/generate) and artifact noun (tool/interactive)
+  const buildToolPatterns = [
+    /(build|create|make|generate)\s+(a\s+|an\s+|me\s+a\s+|me\s+an\s+)?tool/,  // build/create/make [me] a tool
+    /(build|create|make|generate)\s+.{0,30}?\s*interactive/,  // build/create/make ... interactive (within 30 chars)
+    /(build|create|make|generate)\s+.{0,20}?\s*tool\s+(that|for|to)/, // build ... tool that/for/to
+  ];
+
+  // Things Noah can do quickly and easily (conversational, not tools)
   const quickAndEasy = [
     // Simple conversation
     'how to', 'explain', 'help me understand', 'what is', 'tell me about',
     
-    // Quick tools Noah loves making
+    // Quick tools Noah loves making (when NOT prefixed with "build/create/make")
     'calculator', 'timer', 'converter', 'counter', 'stopwatch', 'clock',
     'password generator', 'random generator', 'color picker', 'notepad',
     
-    // Text-based stuff Noah's great at
-    'list', 'checklist', 'outline', 'template', 'email', 'letter',
-    'summary', 'plan', 'advice', 'tips', 'steps', 'instructions'
+    // Text-based conversational responses (when NOT asking to build a tool)
+    'summary', 'advice', 'tips', 'steps', 'instructions'
   ];
 
   // Only delegate for genuinely tough stuff
@@ -151,18 +167,26 @@ function analyzeRequest(content: string): {
     'database integration', 'api integration', 'complex interface'
   ];
 
+  // Check for tool-building requests using flexible regex patterns
+  // But exclude if it's negated or informational
+  const isToolRequest = !isNegatedOrInformational && 
+    buildToolPatterns.some(pattern => pattern.test(contentLower));
+  
   // Can Noah handle this quickly and easily?
   const canNoahDoThis = quickAndEasy.some(keyword => contentLower.includes(keyword));
   
-  // Only delegate if it's genuinely complex
+  // Only delegate for genuinely complex stuff
   const needsResearch = needsWanderer.some(keyword => contentLower.includes(keyword));
-  const needsBuilding = needsTinkerer.some(keyword => contentLower.includes(keyword));
+  const needsComplexBuilding = needsTinkerer.some(keyword => contentLower.includes(keyword));
+
+  // Combine tool requests with complex building needs
+  const needsBuilding = isToolRequest || needsComplexBuilding;
 
   let reasoning = '';
   if (needsResearch && needsBuilding) {
     reasoning = 'Too complex - needs research then building';
   } else if (needsBuilding) {
-    reasoning = 'Too complex - needs specialized building';
+    reasoning = isToolRequest ? 'Tool building request - Noah handles with artifacts' : 'Too complex - needs specialized building';
   } else if (needsResearch) {
     reasoning = 'Too complex - needs deep research';  
   } else if (canNoahDoThis) {
