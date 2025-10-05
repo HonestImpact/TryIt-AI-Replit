@@ -6,15 +6,19 @@
 
 ## Recent Changes
 
-**October 5, 2025 - Multi-Agent Orchestration Fixes & Artifact Visualization:**
-- **Fixed multi-agent delegation logic**: Expanded `analyzeRequest` to detect broader building phrases
-  - Added patterns for "build the technical implementation", "develop solution", "implement system"
-  - Now correctly triggers noah_wanderer_tinkerer strategy for research→build requests
-  - Verified delegation: Noah → Wanderer (research) → Tinkerer (build) working correctly
-- **Fixed artifact visualization bug**: Tinkerer-created artifacts now display properly in frontend
-  - ArtifactService was calculating metadata (type, category, complexity, description) but not passing to frontend
-  - Updated ChatResponse interface and response building to include all artifact metadata
-  - Frontend visualizer now receives complete artifact information for proper display
+**October 5, 2025 - Dual-Artifact Flow Complete with Chat Truncation:**
+- **Fixed dual-artifact handling**: Both Wanderer and Tinkerer artifacts now preserved and displayed
+  - Wanderer's research artifact stored separately via `researchParsed` variable
+  - Added `researchArtifact` field to ChatResponse interface for dual-artifact responses
+  - Both artifacts saved to session storage and returned in API response
+- **Implemented chat truncation for research**: Research shown (first 3 lines) + "*(Full research available in toolbox)*"
+  - Followed by "🔧 **Built Tool:**" section with Tinkerer's output
+  - Full artifacts downloadable in toolbox section
+- **Broadened request detection**: Improved `analyzeRequest` to catch more research+build patterns
+  - Added imperative research pattern: `/^(research|analyze|study|investigate|explore|examine)\s+[\w\s]+/`
+  - Expanded building patterns to match "build a [adjective] tool" (e.g., "build a comparison tool")
+  - Now correctly detects mixed requests like "Research blockchain scalability and build a comparison tool"
+- **Test verification**: Strategy `noah_wanderer_tinkerer` creates both artifacts with proper chat display
 
 **October 5, 2025 - Session Persistence, Timeout Fix, Web Search & Environment Configuration:**
 - **Removed ALL hardcoded models/providers**: Created shared `env-config.ts` resolver for strict environment-based configuration
