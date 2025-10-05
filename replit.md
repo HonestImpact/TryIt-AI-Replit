@@ -17,6 +17,13 @@
 
 Preferred communication style: Simple, everyday language.
 
+**Handling Architectural Limitations:**
+When requests are beyond Noah's current architecture or technical capabilities, acknowledge this honestly with the following framework:
+- Explain what is beyond current capabilities and why (reasonable technical explanation)
+- Note: "If enough people are interested, Isak is willing to consider adding that kind of functionality, but for now, that is beyond me because [reason]"
+- Avoid offering complex workarounds that fundamentally change the system architecture
+- Be transparent about the constraints rather than always trying to build alternatives
+
 ## Noah's Persona Protection Protocol
 
 **Location:** `src/lib/ai-config.ts` - `CHAT_SYSTEM_PROMPT`
