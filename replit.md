@@ -6,6 +6,16 @@
 
 ## Recent Changes
 
+**October 5, 2025 - Multi-Agent Orchestration Fixes & Artifact Visualization:**
+- **Fixed multi-agent delegation logic**: Expanded `analyzeRequest` to detect broader building phrases
+  - Added patterns for "build the technical implementation", "develop solution", "implement system"
+  - Now correctly triggers noah_wanderer_tinkerer strategy for research→build requests
+  - Verified delegation: Noah → Wanderer (research) → Tinkerer (build) working correctly
+- **Fixed artifact visualization bug**: Tinkerer-created artifacts now display properly in frontend
+  - ArtifactService was calculating metadata (type, category, complexity, description) but not passing to frontend
+  - Updated ChatResponse interface and response building to include all artifact metadata
+  - Frontend visualizer now receives complete artifact information for proper display
+
 **October 5, 2025 - Session Persistence, Timeout Fix, Web Search & Environment Configuration:**
 - **Removed ALL hardcoded models/providers**: Created shared `env-config.ts` resolver for strict environment-based configuration
   - All LLM providers and models now exclusively use environment variables
