@@ -68,10 +68,15 @@ class ProductionSolutionGenerator implements SolutionGenerator {
     try {
       logger.debug('Generating solution', { requestLength: request.length });
 
+      const modelId = process.env.LLM_DEFAULT_ID || process.env.MODEL_ID;
+      if (!modelId) {
+        throw new Error('No model configured for solution generation. Please set LLM_DEFAULT_ID or MODEL_ID in environment variables.');
+      }
+      
       const result = await this.llmProvider.generateText({
         messages: [{ role: 'user', content: request }],
         system: 'You are a solution generator. Provide practical, actionable solutions to the given request.',
-        model: process.env.LLM_DEFAULT_ID || 'claude-sonnet-4-5-20250929',
+        model: modelId,
         temperature: 0.7
       });
 

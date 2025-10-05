@@ -1,8 +1,20 @@
 // Centralized AI configuration for TryIt-AI Kit
 export const AI_CONFIG = {
-  // Model configuration - respects environment variables with correct Anthropic model names
-  getModel: () => process.env.MODEL_ID || 'claude-sonnet-4-5-20250929',
-  getProvider: () => process.env.LLM || 'anthropic',
+  // Model configuration - strictly uses environment variables (no hardcoded fallbacks)
+  getModel: () => {
+    const model = process.env.MODEL_ID || process.env.LLM_DEFAULT_ID;
+    if (!model) {
+      throw new Error('No model configured. Please set MODEL_ID or LLM_DEFAULT_ID in environment variables.');
+    }
+    return model;
+  },
+  getProvider: () => {
+    const provider = process.env.LLM || process.env.LLM_DEFAULT;
+    if (!provider) {
+      throw new Error('No provider configured. Please set LLM or LLM_DEFAULT in environment variables.');
+    }
+    return provider;
+  },
 
   // RAG configuration
   RAG_ENABLED: process.env.RAG_ENABLED === 'true' || process.env.NODE_ENV === 'production',

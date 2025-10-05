@@ -76,16 +76,15 @@ function getOptimalProviderForTask(taskType: TaskType): string {
 }
 
 function getOptimalModelForTask(taskType: TaskType): string {
-  switch (taskType) {
-    case 'default':
-      return 'claude-sonnet-4-5-20250929';  // Noah's premium conversation (latest Sonnet 4)
-    case 'deepbuild':
-      return 'gpt-4o';                      // Fast, structured tool generation
-    case 'research':
-      return 'gpt-4o-mini';                 // Quick, efficient research
-    default:
-      return 'claude-sonnet-4-5-20250929';
+  // Return environment variable value or throw descriptive error
+  const taskUpper = taskType.toUpperCase();
+  const modelId = process.env[`LLM_${taskUpper}_ID`] || process.env.LLM_DEFAULT_ID || process.env.MODEL_ID;
+  
+  if (!modelId) {
+    throw new Error(`No model configured for task type '${taskType}'. Please set LLM_${taskUpper}_ID, LLM_DEFAULT_ID, or MODEL_ID in environment variables.`);
   }
+  
+  return modelId;
 }
 
 export function createLLMProvider(taskType: TaskType = 'default'): LLMProvider {

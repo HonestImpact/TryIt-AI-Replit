@@ -83,10 +83,15 @@ export class WandererAgent extends BaseAgent {
       }
 
       // Fall back to LLM knowledge for non-current queries
+      const modelId = process.env.LLM_RESEARCH_ID || process.env.LLM_DEFAULT_ID;
+      if (!modelId) {
+        throw new Error('No model configured for research. Please set LLM_RESEARCH_ID or LLM_DEFAULT_ID in environment variables.');
+      }
+      
       const result = await this.llmProvider.generateText({
         messages: [{ role: 'user', content: request.content }],
         system: this.getSystemPrompt(),
-        model: process.env.LLM_RESEARCH_ID || process.env.LLM_DEFAULT_ID || 'claude-3-5-haiku-20241022',
+        model: modelId,
         temperature: 0.75
       });
 
