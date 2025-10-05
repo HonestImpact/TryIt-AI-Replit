@@ -144,6 +144,8 @@ function analyzeRequest(content: string): {
     /(build|create|make|generate)\s+(a\s+|an\s+|me\s+a\s+|me\s+an\s+)?tool/,  // build/create/make [me] a tool
     /(build|create|make|generate)\s+.{0,30}?\s*interactive/,  // build/create/make ... interactive (within 30 chars)
     /(build|create|make|generate)\s+.{0,20}?\s*tool\s+(that|for|to)/, // build ... tool that/for/to
+    /(build|create|develop|implement)\s+.{0,30}?\s*(the\s+)?(technical\s+)?(implementation|solution|system|application|prototype|demo)/,  // build the technical implementation/solution
+    /(build|create|develop)\s+.{0,20}?\s*(code|app|website|platform|interface)/,  // build/create/develop code/app/website
   ];
 
   // Things Noah can do quickly and easily (conversational, not tools)
