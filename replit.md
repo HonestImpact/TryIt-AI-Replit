@@ -6,7 +6,16 @@
 
 ## Recent Changes
 
-**October 5, 2025 - Session Persistence, Timeout Fix & Web Search:**
+**October 5, 2025 - Session Persistence, Timeout Fix, Web Search & Environment Configuration:**
+- **Removed ALL hardcoded models/providers**: Created shared `env-config.ts` resolver for strict environment-based configuration
+  - All LLM providers and models now exclusively use environment variables
+  - Fail-fast error handling with descriptive messages when env vars missing
+  - Zero hardcoded fallbacks - completely configurable via .env.local
+- **Environment Configuration Architecture**:
+  - `src/lib/providers/env-config.ts`: Single source of truth for getProvider(), getModelId(), getLLMConfig()
+  - `src/lib/providers/provider-factory.ts`: Uses shared resolver, throws error on unknown providers
+  - All agents (wanderer, practical, shared-resources) use consistent getModelId() calls
+  - Type-safe with proper fail-fast behavior
 - **Fixed critical artifact persistence bug**: Artifacts from previous sessions no longer appear after page refresh
 - **Fixed hanging request bug**: Added Next.js route timeout configuration to prevent requests from hanging indefinitely
 - **Added real-time web search capability**: Wanderer now uses Perplexity API for current information queries
