@@ -23,6 +23,9 @@ import { boutiqueTools } from '@/lib/tools/boutique-tools';
 import { BoutiqueIntentDetector } from '@/lib/tools/boutique-intent-detector';
 import { BOUTIQUE_TEMPLATES } from '@/lib/tools/boutique-templates';
 
+export const maxDuration = 300;
+export const dynamic = 'force-dynamic';
+
 const logger = createLogger('noah-chat');
 
 /**

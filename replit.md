@@ -6,8 +6,9 @@
 
 ## Recent Changes
 
-**October 5, 2025 - Session Persistence & Artifact Bug Fix:**
+**October 5, 2025 - Session Persistence & Timeout Fix:**
 - **Fixed critical artifact persistence bug**: Artifacts from previous sessions no longer appear after page refresh
+- **Fixed hanging request bug**: Added Next.js route timeout configuration to prevent requests from hanging indefinitely
 - **Session Management Overhaul**:
   - Frontend now stores sessionId in localStorage for persistence across refreshes
   - Backend accepts sessionId from request body instead of always generating from fingerprint
@@ -19,7 +20,9 @@
   - Clearing localStorage creates truly new sessions without showing old artifacts
 - **Technical Details**:
   - `src/app/page.tsx`: Added localStorage session management and artifact loading on mount
-  - `src/app/api/chat/route.ts`: Updated `initializeConversationState` to accept optional sessionId, generate random UUIDs when none provided
+  - `src/app/api/chat/route.ts`: 
+    - Updated `initializeConversationState` to accept optional sessionId, generate random UUIDs when none provided
+    - Added `maxDuration = 300` (5 minutes) and `dynamic = 'force-dynamic'` exports for proper Next.js timeout handling
 
 **October 3, 2025 - Persona & RAG Refinement:**
 - Fixed RAG semantic matching: Lowered threshold from 0.3 → 0.25 for conversational queries ("Do you remember..." patterns)
