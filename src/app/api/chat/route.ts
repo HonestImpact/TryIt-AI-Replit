@@ -122,6 +122,7 @@ function analyzeRequest(content: string): {
   needsBuilding: boolean;
   confidence: number;
   reasoning: string;
+  isAmbiguous?: boolean;
 } {
   const contentLower = content.toLowerCase();
 
@@ -181,7 +182,8 @@ function analyzeRequest(content: string): {
     'based on your research', 'research insights', 'research findings',
     'analyze and', 'gather insights', 'find information about'
   ];
-  const researchDrivenToolRegex = /top ten .{0,30}(reasons|ways|tips|insights|facts)/; // "top ten reasons/ways/etc"
+  // Match "top ten/best/list of [adjective/noun]" patterns that typically need research
+  const researchDrivenToolRegex = /(?:top ten|top \d+|best|list of) .{0,30}(reasons|ways|tips|insights|facts|benefits|features|advantages|methods|strategies|techniques|ideas|examples)/;
   
   const isResearchDrivenTool = isToolRequest && (
     researchDrivenToolKeywords.some(keyword => contentLower.includes(keyword)) ||
@@ -194,9 +196,24 @@ function analyzeRequest(content: string): {
 
   // Combine tool requests with complex building needs
   const needsBuilding = isToolRequest || needsComplexBuilding;
+  
+  // Detect ambiguous tool requests (missing specific topic) - INDEPENDENT of needsResearch
+  // Trigger clarification whenever user wants a tool that prompts for topics or generates lists without a specific subject
+  const ambiguityIndicators = [
+    'any topic', 'prompt for a topic', 'prompt me for', 'user enters',
+    'that prompts for', 'ask for a topic', 'input a topic', 'enter a topic',
+    'prompts for a', 'based on your research', 'using your research'
+  ];
+  const hasListPattern = /(?:top ten|top \d+|best|list of)(?!\s+(benefits|reasons|ways|features|advantages|tips|insights|methods|strategies|techniques|ideas|examples|of\s+\w+))/.test(contentLower);
+  const isAmbiguousRequest = isToolRequest && (
+    ambiguityIndicators.some(indicator => contentLower.includes(indicator)) ||
+    (hasListPattern && !/ of \w+ /.test(contentLower)) // "top ten list" without "of [topic]"
+  );
 
   let reasoning = '';
-  if (needsResearch && needsBuilding) {
+  if (isAmbiguousRequest) {
+    reasoning = 'Ambiguous research-driven tool request - needs specific topic';
+  } else if (needsResearch && needsBuilding) {
     reasoning = 'Too complex - needs research then building';
   } else if (needsBuilding) {
     reasoning = isToolRequest ? 'Tool building request - Noah handles with artifacts' : 'Too complex - needs specialized building';
@@ -212,7 +229,8 @@ function analyzeRequest(content: string): {
     needsResearch, 
     needsBuilding, 
     confidence: 0.9, 
-    reasoning 
+    reasoning,
+    isAmbiguous: isAmbiguousRequest 
   };
 }
 
@@ -393,7 +411,7 @@ async function tinkererBuild(messages: ChatMessage[], research: { content: strin
   logger.info('🔧 Using cached Tinkerer for building...');
   const tinkererLastMessage = messages[messages.length - 1]?.content || '';
   const buildContent = research
-    ? `${tinkererLastMessage}\n\nResearch Context:\n${research.content}`
+    ? `${tinkererLastMessage}\n\n**IMPORTANT: Research Context Provided Below**\nThe research data below contains actual insights and information. You MUST use this exact research data to populate your tool. DO NOT create placeholder content like "Item 1", "Item 2", or "Reason related to...". Extract and display the real information from this research.\n\nResearch Context:\n${research.content}`
     : tinkererLastMessage;
 
   const tool = await tinkererInstance.processRequest({
@@ -636,7 +654,23 @@ When someone shares something, get CURIOUS - don't default to task mode.
     let agentStrategy = 'noah_direct';
 
     try {
-      if (analysis.needsResearch) {
+      // Handle ambiguous research-driven tool requests (need specific topic)
+      if (analysis.isAmbiguous) {
+        logger.info('🤔 Ambiguous research-driven tool request detected - asking for clarification...');
+        agentStrategy = 'noah_clarification';
+        result = { 
+          content: `I'd love to help you build that research-driven tool! However, I need a bit more information.
+
+Since I create static HTML tools (not dynamic apps with backend APIs), I'll research a specific topic and build a tool that displays those insights. The tool won't be able to research different topics on demand - it will show the research results for the topic you choose.
+
+Could you tell me what specific topic you'd like me to research? For example:
+- "Build a tool showing top ten benefits of renewable energy"
+- "Create a tool with top ten TypeScript features for Python developers"
+- "Make a tool displaying top ten productivity tips for remote workers"
+
+Once you give me a specific topic, I'll research it and create a beautiful tool displaying those insights!` 
+        };
+      } else if (analysis.needsResearch) {
         logger.info('🔬 Noah delegating to Wanderer for research...');
         agentUsed = 'wanderer';
         agentStrategy = analysis.needsBuilding ? 'noah_wanderer_tinkerer' : 'noah_wanderer';
@@ -1284,8 +1318,21 @@ When someone shares something, get CURIOUS - don't default to task mode.
     let responseContent = '';
 
     try {
-      // Handle multi-agent orchestration (reuse existing logic)
-      if (analysis.needsResearch) {
+      // Handle ambiguous research-driven tool requests (need specific topic)
+      if (analysis.isAmbiguous) {
+        logger.info('🤔 Ambiguous research-driven tool request detected - asking for clarification...');
+        agentStrategy = 'noah_clarification';
+        responseContent = `I'd love to help you build that research-driven tool! However, I need a bit more information.
+
+Since I create static HTML tools (not dynamic apps with backend APIs), I'll research a specific topic and build a tool that displays those insights. The tool won't be able to research different topics on demand - it will show the research results for the topic you choose.
+
+Could you tell me what specific topic you'd like me to research? For example:
+- "Build a tool showing top ten benefits of renewable energy"
+- "Create a tool with top ten TypeScript features for Python developers"
+- "Make a tool displaying top ten productivity tips for remote workers"
+
+Once you give me a specific topic, I'll research it and create a beautiful tool displaying those insights!`;
+      } else if (analysis.needsResearch) {
         logger.info('🔬 Noah delegating to Wanderer for research...');
         agentUsed = 'wanderer';
         agentStrategy = analysis.needsBuilding ? 'noah_wanderer_tinkerer' : 'noah_wanderer';
