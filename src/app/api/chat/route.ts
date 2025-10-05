@@ -78,6 +78,10 @@ interface ChatResponse {
   artifact?: {
     title: string;
     content: string;
+    type?: string;
+    category?: string;
+    complexity?: string;
+    description?: string;
   };
   // Session-scoped artifacts for accumulated toolbox
   sessionArtifacts?: Array<{
@@ -913,7 +917,11 @@ Once you give me a specific topic, I'll research it and create a beautiful tool 
     if (parsed.hasArtifact && parsed.title && parsed.content) {
       response.artifact = {
         title: parsed.title,
-        content: parsed.content
+        content: parsed.content,
+        type: parsed.type,
+        category: parsed.category,
+        complexity: parsed.complexity,
+        description: parsed.description
       };
     }
 
