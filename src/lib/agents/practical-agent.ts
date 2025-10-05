@@ -1,6 +1,7 @@
 // Practical Agent (Tinkerer) - Technical Implementation Specialist (Simplified for initial deployment)
 import { BaseAgent } from './base-agent';
 import { createLogger } from '../logger';
+import { getModelId } from '../providers/env-config';
 import type { AgentSharedResources } from './shared-resources';
 import type {
   AgentCapability,
@@ -74,15 +75,10 @@ export class PracticalAgent extends BaseAgent {
         }
       }
 
-      const modelId = process.env.LLM_DEEPBUILD_ID || process.env.LLM_DEFAULT_ID;
-      if (!modelId) {
-        throw new Error('No model configured for deepbuild. Please set LLM_DEEPBUILD_ID or LLM_DEFAULT_ID in environment variables.');
-      }
-      
       const result = await this.llmProvider.generateText({
         messages: [{ role: 'user', content: enhancedContent }],
         system: this.getEnhancedSystemPrompt(knowledgeContext),
-        model: modelId,
+        model: getModelId('deepbuild'),
         temperature: 0.3
       });
 

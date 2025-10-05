@@ -5,6 +5,7 @@ import { ToolKnowledgeService } from './tool-knowledge-service';
 import { mcpMemoryService } from '@/lib/memory/mcp-memory-service';
 import { mcpFilesystemService } from '@/lib/filesystem/mcp-filesystem-service';
 import { AI_CONFIG } from '@/lib/ai-config';
+import { getModelId } from '@/lib/providers/env-config';
 import { createLogger } from '@/lib/logger';
 
 const logger = createLogger('shared-resources');
@@ -68,15 +69,10 @@ class ProductionSolutionGenerator implements SolutionGenerator {
     try {
       logger.debug('Generating solution', { requestLength: request.length });
 
-      const modelId = process.env.LLM_DEFAULT_ID || process.env.MODEL_ID;
-      if (!modelId) {
-        throw new Error('No model configured for solution generation. Please set LLM_DEFAULT_ID or MODEL_ID in environment variables.');
-      }
-      
       const result = await this.llmProvider.generateText({
         messages: [{ role: 'user', content: request }],
         system: 'You are a solution generator. Provide practical, actionable solutions to the given request.',
-        model: modelId,
+        model: getModelId('default'),
         temperature: 0.7
       });
 

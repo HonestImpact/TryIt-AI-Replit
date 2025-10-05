@@ -1,20 +1,10 @@
 // Centralized AI configuration for TryIt-AI Kit
+import { getModelId, getProvider } from './providers/env-config';
+
 export const AI_CONFIG = {
-  // Model configuration - strictly uses environment variables (no hardcoded fallbacks)
-  getModel: () => {
-    const model = process.env.MODEL_ID || process.env.LLM_DEFAULT_ID;
-    if (!model) {
-      throw new Error('No model configured. Please set MODEL_ID or LLM_DEFAULT_ID in environment variables.');
-    }
-    return model;
-  },
-  getProvider: () => {
-    const provider = process.env.LLM || process.env.LLM_DEFAULT;
-    if (!provider) {
-      throw new Error('No provider configured. Please set LLM or LLM_DEFAULT in environment variables.');
-    }
-    return provider;
-  },
+  // Model configuration - uses shared environment resolver (no hardcoded fallbacks)
+  getModel: () => getModelId('default'),
+  getProvider: () => getProvider('default'),
 
   // RAG configuration
   RAG_ENABLED: process.env.RAG_ENABLED === 'true' || process.env.NODE_ENV === 'production',
