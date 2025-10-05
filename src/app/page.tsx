@@ -68,11 +68,41 @@ export default function TrustRecoveryProtocol() {
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const isInitialMount = useRef(true);
 
   const personas = [
     { id: 'collaborative', name: 'Collaborative Partner', icon: '✨', active: true },
     { id: 'teacher', name: 'AI Teacher', icon: '🤖', active: false }
   ];
+
+  // Load session ID from localStorage on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined' && isInitialMount.current) {
+      const savedSessionId = localStorage.getItem('noah_session_id');
+      if (savedSessionId) {
+        setCurrentSessionId(savedSessionId);
+        logger.info('Restored session from localStorage', { 
+          sessionId: savedSessionId.substring(0, 8) + '...' 
+        });
+        
+        // Load artifacts for this session
+        fetch(`/api/artifacts?sessionId=${savedSessionId}`)
+          .then(res => res.json())
+          .then(data => {
+            if (data.sessionArtifacts && data.sessionArtifacts.length > 0) {
+              setSessionArtifacts(data.sessionArtifacts);
+              logger.info('Loaded artifacts from previous session', {
+                count: data.sessionArtifacts.length
+              });
+            }
+          })
+          .catch(error => {
+            logger.warn('Failed to load artifacts from previous session', { error });
+          });
+      }
+      isInitialMount.current = false;
+    }
+  }, []);
 
   // Focus input on mount and update timestamp (no auto-scroll)
   useEffect(() => {
@@ -124,6 +154,13 @@ export default function TrustRecoveryProtocol() {
       const sessionIdFromResponse = response.headers.get('X-Session-Id');
       if (sessionIdFromResponse && !currentSessionId) {
         setCurrentSessionId(sessionIdFromResponse);
+        // Persist session ID to localStorage
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('noah_session_id', sessionIdFromResponse);
+          logger.debug('Saved session ID to localStorage', {
+            sessionId: sessionIdFromResponse.substring(0, 8) + '...'
+          });
+        }
       }
 
       // Check if response is streaming (SSE) or JSON
@@ -362,6 +399,7 @@ export default function TrustRecoveryProtocol() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          sessionId: currentSessionId,
           messages: [
             ...messages.slice(0, messageIndex + 1),
             {
@@ -376,6 +414,19 @@ export default function TrustRecoveryProtocol() {
 
       if (!response.ok) {
         throw new Error('Failed to get response');
+      }
+
+      // Update session ID if received and not already set
+      const sessionIdFromResponse = response.headers.get('X-Session-Id');
+      if (sessionIdFromResponse && !currentSessionId) {
+        setCurrentSessionId(sessionIdFromResponse);
+        // Persist session ID to localStorage
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('noah_session_id', sessionIdFromResponse);
+          logger.debug('Saved session ID to localStorage from challenge', {
+            sessionId: sessionIdFromResponse.substring(0, 8) + '...'
+          });
+        }
       }
 
       const data = await response.json();
@@ -428,7 +479,7 @@ export default function TrustRecoveryProtocol() {
     }
 
     setIsLoading(false);
-  }, [messages, trustLevel, skepticMode, isLoading]);
+  }, [messages, trustLevel, skepticMode, isLoading, currentSessionId, interfaceLocked]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">

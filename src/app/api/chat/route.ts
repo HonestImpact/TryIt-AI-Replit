@@ -427,16 +427,57 @@ async function tinkererBuild(messages: ChatMessage[], research: { content: strin
 /**
  * Initialize conversation state with elegant analytics integration
  */
-async function initializeConversationState(req: NextRequest, context: LoggingContext, skepticMode: boolean): Promise<ConversationState> {
+async function initializeConversationState(
+  req: NextRequest, 
+  context: LoggingContext, 
+  skepticMode: boolean,
+  providedSessionId?: string | null
+): Promise<ConversationState> {
   const startTime = Date.now();
   
-  // Extract session information for analytics (privacy-first)
-  const userAgent = req.headers.get('user-agent') || undefined;
-  const forwardedFor = req.headers.get('x-forwarded-for') || undefined;
+  let sessionId: string | null = null;
   
-  // Fire-and-forget session management - zero performance impact
-  const sessionPromise = analyticsService.ensureSession(userAgent, forwardedFor);
-  const sessionId = await sessionPromise;
+  // Use provided session ID if available (from frontend localStorage)
+  if (providedSessionId) {
+    sessionId = providedSessionId;
+    logger.debug('Using provided session ID from request', {
+      sessionId: sessionId.substring(0, 8) + '...'
+    });
+  } else {
+    // Generate a NEW random session ID for fresh visits
+    // This ensures each new browser session gets a unique ID
+    const crypto = await import('crypto');
+    const randomSessionId = `noah_${crypto.randomBytes(8).toString('hex')}_${Date.now().toString(36)}`;
+    
+    logger.info('Creating new random session ID for fresh visit', {
+      sessionId: randomSessionId.substring(0, 8) + '...'
+    });
+    
+    // Create the session in the database
+    try {
+      const userAgent = req.headers.get('user-agent') || undefined;
+      const forwardedFor = req.headers.get('x-forwarded-for') || undefined;
+      const { generateSessionFingerprint } = await import('@/lib/analytics/session');
+      const fingerprint = generateSessionFingerprint(userAgent, forwardedFor, 'development');
+      
+      // Use the connection pool to create session directly
+      const { analyticsPool } = await import('@/lib/analytics/connection-pool');
+      const result = await analyticsPool.executeQuery<{ id: string }[]>(
+        `INSERT INTO user_sessions (id, session_fingerprint, environment) 
+         VALUES ($1, $2, $3) 
+         RETURNING id`,
+        [randomSessionId, fingerprint, 'development']
+      );
+      
+      sessionId = result && result.length > 0 ? result[0].id : randomSessionId;
+      logger.debug('New session created in database', { sessionId: sessionId.substring(0, 8) + '...' });
+    } catch (error) {
+      logger.warn('Failed to create session in database, using generated ID anyway', {
+        error: error instanceof Error ? error.message : String(error)
+      });
+      sessionId = randomSessionId;
+    }
+  }
   
   // Fire-and-forget conversation creation if session exists
   let conversationId: string | null = null;
@@ -463,13 +504,13 @@ async function noahChatHandler(req: NextRequest, context: LoggingContext): Promi
   try {
     // Parse request with timeout protection
     const parsePromise = req.json();
-    const { messages, skepticMode } = await withTimeout(parsePromise, 2000);
+    const { messages, skepticMode, sessionId: providedSessionId } = await withTimeout(parsePromise, 2000);
     
     // Store parsed body in context for logging middleware
-    context.requestBody = { messages, skepticMode };
+    context.requestBody = { messages, skepticMode, sessionId: providedSessionId };
 
     // Initialize conversation state with analytics (async, zero performance impact)
-    const conversationState = await initializeConversationState(req, context, skepticMode || false);
+    const conversationState = await initializeConversationState(req, context, skepticMode || false, providedSessionId);
 
     // 🧠 MEMORY ENRICHMENT - Retrieve session memory and enrich system prompt
     let enrichedSystemPrompt: string = AI_CONFIG.CHAT_SYSTEM_PROMPT; // Default to base prompt
@@ -950,10 +991,10 @@ async function noahStreamingChatHandler(req: NextRequest, context: LoggingContex
   try {
     // Parse request with timeout protection
     const parsePromise = req.json();
-    const { messages, skepticMode } = await withTimeout(parsePromise, 2000);
+    const { messages, skepticMode, sessionId: providedSessionId } = await withTimeout(parsePromise, 2000);
     
     // Store parsed body in context for logging middleware
-    context.requestBody = { messages, skepticMode };
+    context.requestBody = { messages, skepticMode, sessionId: providedSessionId };
 
     // CRITICAL: Validate messages before accessing
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
@@ -966,7 +1007,7 @@ async function noahStreamingChatHandler(req: NextRequest, context: LoggingContex
     }
 
     // Initialize conversation state with analytics (required for all paths)
-    const conversationState = await initializeConversationState(req, context, skepticMode || false);
+    const conversationState = await initializeConversationState(req, context, skepticMode || false, providedSessionId);
 
     // 🧠 MEMORY ENRICHMENT - Retrieve session memory and enrich system prompt
     let enrichedSystemPrompt: string = AI_CONFIG.CHAT_SYSTEM_PROMPT; // Default to base prompt
