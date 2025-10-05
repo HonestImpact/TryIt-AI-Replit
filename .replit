@@ -17,6 +17,10 @@ run = ["npm", "start"]
 [[ports]]
 localPort = 5000
 externalPort = 80
+
+[[ports]]
+localPort = 38447
+externalPort = 3000
 [agent]
 expertMode = true
 integrations = ["github:1.0.0"]

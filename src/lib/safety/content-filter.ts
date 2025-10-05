@@ -797,8 +797,14 @@ export class NoahContentFilter {
       'sexy', 'horny', 'aroused', 'turned on', 'wet', 'hard', 'erect', 'climax'
     ];
 
+    // Helper function to check for whole words only (avoid substring matches like 'anal' in 'analyze')
+    const containsWholeWord = (text: string, word: string): boolean => {
+      const regex = new RegExp(`\\b${word}\\b`, 'i');
+      return regex.test(text);
+    };
+
     for (const keyword of explicitKeywords) {
-      if (messageLower.includes(keyword)) {
+      if (containsWholeWord(messageLower, keyword)) {
         // Check if it's in a clearly sexual/pornographic context
         const sexualContext = [
           'show me', 'give me', 'want to see', 'generate', 'create', 'make me',
