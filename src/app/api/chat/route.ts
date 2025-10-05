@@ -154,11 +154,11 @@ function analyzeRequest(content: string): {
   // Flexible regex patterns for tool-building requests
   // Allow optional words between imperative verb (build/create/make/generate) and artifact noun (tool/interactive)
   const buildToolPatterns = [
-    /(build|create|make|generate)\s+(a\s+|an\s+|me\s+a\s+|me\s+an\s+)?tool/,  // build/create/make [me] a tool
+    /(build|create|make|generate)\s+(a\s+|an\s+|me\s+a\s+|me\s+an\s+)?.{0,30}?\s*tool/,  // build/create/make [me] [a] [adjective] tool (allows words before "tool")
     /(build|create|make|generate)\s+.{0,30}?\s*interactive/,  // build/create/make ... interactive (within 30 chars)
-    /(build|create|make|generate)\s+.{0,20}?\s*tool\s+(that|for|to)/, // build ... tool that/for/to
-    /(build|create|develop|implement)\s+.{0,30}?\s*(the\s+)?(technical\s+)?(implementation|solution|system|application|prototype|demo)/,  // build the technical implementation/solution
-    /(build|create|develop)\s+.{0,20}?\s*(code|app|website|platform|interface)/,  // build/create/develop code/app/website
+    /(build|create|make|generate)\s+.{0,30}?\s*(app|application|website|dashboard|interface|visualizer|calculator|tracker|analyzer|generator|simulator|planner)/,  // build ... app/website/dashboard/etc
+    /(build|create|develop|implement)\s+.{0,30}?\s*(the\s+)?(technical\s+)?(implementation|solution|system|prototype|demo)/,  // build the technical implementation/solution
+    /(build|create|develop)\s+.{0,20}?\s*(code|platform)/,  // build/create/develop code/platform
   ];
 
   // Things Noah can do quickly and easily (conversational, not tools)
@@ -184,6 +184,10 @@ function analyzeRequest(content: string): {
     'news about', 'updated', 'status of', 'currently', 'right now',
     'these days', 'at the moment', 'nowadays'
   ];
+
+  // Broader imperative research patterns: "research [topic]", "analyze [topic]", "study [topic]"
+  const imperativeResearchPattern = /^(research|analyze|study|investigate|explore|examine)\s+[\w\s]+/;
+  const hasImperativeResearch = imperativeResearchPattern.test(contentLower);
 
   const needsTinkerer = [
     'react component', 'vue component', 'angular component',
@@ -214,7 +218,7 @@ function analyzeRequest(content: string): {
   );
   
   // Only delegate for genuinely complex stuff
-  const needsResearch = needsWanderer.some(keyword => contentLower.includes(keyword)) || isResearchDrivenTool;
+  const needsResearch = needsWanderer.some(keyword => contentLower.includes(keyword)) || isResearchDrivenTool || hasImperativeResearch;
   const needsComplexBuilding = needsTinkerer.some(keyword => contentLower.includes(keyword));
 
   // Combine tool requests with complex building needs
@@ -947,10 +951,26 @@ Once you give me a specific topic, I'll research it and create a beautiful tool 
       // Natural conversation continuation
       const continuationMessage = `\n\nWhat would you like to build next, or do you have questions about how this works?`;
 
+      let tinkererContent = '';
       if (hasMoreContent) {
-        noahContent = `${firstFiveLines}${redirectMessage}${continuationMessage}`;
+        tinkererContent = `${firstFiveLines}${redirectMessage}`;
       } else {
-        noahContent = `${result.content}${redirectMessage}${continuationMessage}`;
+        tinkererContent = `${result.content}${redirectMessage}`;
+      }
+
+      // Include research summary in chat for noah_wanderer_tinkerer strategy
+      if (researchParsed && researchParsed.hasArtifact && agentStrategy === 'noah_wanderer_tinkerer') {
+        const researchLines = researchParsed.content.split('\n');
+        const firstThreeLines = researchLines.slice(0, 3).join('\n');
+        const researchHasMore = researchLines.length > 3;
+        
+        const researchSummary = researchHasMore 
+          ? `📊 **Research Findings:**\n${firstThreeLines}...\n\n*(Full research available in toolbox)*\n\n🔧 **Built Tool:**\n` 
+          : `📊 **Research Findings:**\n${researchParsed.content}\n\n🔧 **Built Tool:**\n`;
+        
+        noahContent = researchSummary + tinkererContent + continuationMessage;
+      } else {
+        noahContent = tinkererContent + continuationMessage;
       }
     }
 
