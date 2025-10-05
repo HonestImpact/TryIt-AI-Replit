@@ -175,8 +175,21 @@ function analyzeRequest(content: string): {
   // Can Noah handle this quickly and easily?
   const canNoahDoThis = quickAndEasy.some(keyword => contentLower.includes(keyword));
   
+  // Detect research-driven tool requests (tools that need research data)
+  const researchDrivenToolKeywords = [
+    'based on research', 'research-based', 'using research', 'from research',
+    'based on your research', 'research insights', 'research findings',
+    'analyze and', 'gather insights', 'find information about'
+  ];
+  const researchDrivenToolRegex = /top ten .{0,30}(reasons|ways|tips|insights|facts)/; // "top ten reasons/ways/etc"
+  
+  const isResearchDrivenTool = isToolRequest && (
+    researchDrivenToolKeywords.some(keyword => contentLower.includes(keyword)) ||
+    researchDrivenToolRegex.test(contentLower)
+  );
+  
   // Only delegate for genuinely complex stuff
-  const needsResearch = needsWanderer.some(keyword => contentLower.includes(keyword));
+  const needsResearch = needsWanderer.some(keyword => contentLower.includes(keyword)) || isResearchDrivenTool;
   const needsComplexBuilding = needsTinkerer.some(keyword => contentLower.includes(keyword));
 
   // Combine tool requests with complex building needs
